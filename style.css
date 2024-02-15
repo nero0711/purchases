@@ -1,0 +1,36 @@
+form.form_chek {
+    display: flex;
+    flex-direction: column;
+}
+
+.colls_rows {
+    display: flex;
+    margin: 30px 0px;
+}
+
+.colls_item {
+    display: flex;
+    margin: 30px 0px 50px 0px;
+}
+
+div.money {
+    padding: 0px 10px 0px 10px;
+    margin: 0px 20px 0px 20px;
+    border: 1px dotted;
+    font-size: 50px;
+    font-family: fantasy;
+    cursor: pointer;
+    user-select: none;
+    width: 2%;
+}
+
+div.items {
+    padding: 0px 10px 0px 10px;
+    margin: 0px 20px 0px 20px;
+    border: 1px dotted;
+    font-size: 50px;
+    font-family: fantasy;
+    cursor: pointer;
+    user-select: none;
+    width: 2%;
+}
