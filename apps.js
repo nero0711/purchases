@@ -9,7 +9,7 @@ const childAllItems = document.querySelectorAll('.items');
 const clearPressMoney = document.querySelector('.clear_money');
 const clearPressItems = document.querySelector('.clear_items');
 
-const listTag = document.querySelector('.chek_list');
+// const listTag = document.querySelector('.chek_list');
 
 const pressSaweShek = document.querySelector('.press_sours');
 
@@ -50,20 +50,23 @@ itemsBox.addEventListener('click', (e) => {
 })
 
 // очистка суммы и количества
+const clears = (iterableObj) => {
+    iterableObj.forEach((item) =>{
+        item.classList[1] ? item.textContent = 0 : false;
+    });
+}
+
+
 clearPressMoney.addEventListener('click', (e) =>{
     e.preventDefault();
 
-    childAllMoney.forEach((item) =>{
-        item.textContent = 0;
-    })
+    clears(childAllMoney);
 });
 
 clearPressItems.addEventListener('click', (e) =>{
     e.preventDefault();
 
-    childAllItems.forEach((item) =>{
-        item.textContent = 0;
-    })
+    clears(childAllItems);
 });
 
 // Запись чека
@@ -73,10 +76,6 @@ pressSaweShek.addEventListener('click', (e) =>{
 
     fullMoney = 0;
     fullItems = 0;
-
-    if(listTag.value == ''){
-        listTag.value = 'Без заметки';
-    };
 
     childAllMoney.forEach((item) =>{
         fullMoney += `${item.textContent}`;
@@ -88,36 +87,54 @@ pressSaweShek.addEventListener('click', (e) =>{
 
     idChildSheck = arrObj.length + 1;
 
-    arrObj.push({
-        "fullmoney" : Number(fullMoney), 
-        "items": Number(fullItems),
-        "money":  Number(fullMoney) / Number(fullItems),
-        "tag" : listTag.value, 
-        "id" : 'C_' + idChildSheck
-    });
+    if (Number(fullMoney) && Number(fullItems)){
+        arrObj.push({
+            "fullmoney" : Number(fullMoney), 
+            "items": Number(fullItems),
+            "money":  Number(fullMoney) / Number(fullItems),
+            // "tag" : listTag.value, 
+            "id" : 'C_' + idChildSheck
+        });
+    } 
 
-    listTag.value = '';
+    // listTag.value = '';
 
         //Создаем новый элемент
     const createChesk = (elem, elemArrObj, min = false) => {
         const newElem = document.createElement(elem);
         newElem.className = elemArrObj.id;
-        newElem.textContent = 
-            'Цена за штуку: ' + Number(elemArrObj.money).toFixed(2) + '\n' + 
-            'Количество: ' + elemArrObj.items + '\n' +
-            'Общая стоимость: ' + Number(elemArrObj.fullmoney).toFixed(2) + '\n' + 
-            'Заметка: ' + elemArrObj.tag;
+
+        newElem.innerHTML =`
+        <p class='money_position${idChildSheck--}'> 
+        ${Number(elemArrObj.money).toFixed(2)} руб. шт.
+
+        <span class='items${idChildSheck--}'>
+        [цена ${Number(elemArrObj.fullmoney).toFixed(2)} руб. /
+        </span>
+
+        <span class='items${idChildSheck--}'>
+        кол-во ${elemArrObj.items}]
+        </span>
+        </p>
+        ` 
+            // 'Цена за штуку: ' + Number(elemArrObj.money).toFixed(2) + '\n' + 
+            // 'Количество: ' + elemArrObj.items + '\n' +
+            // 'Цена: ' + Number(elemArrObj.fullmoney).toFixed(2) + '\n';
+            //     // + 'Заметка: ' + elemArrObj.tag;
 
         if(min){
-            newElem.style.margin = '10px';
-            newElem.style.border = '1px solid black';
+            newElem.style.padding = '10px';
+            newElem.style.textAlign = 'center';
+            newElem.style.width = '95%';
+            newElem.style.backgroundColor = 'aquamarine';
         }
         
         return newElem;
     }
 
         // Узнаем самую маленькую сумму за штуку в массиве, заполняем рендер лист
-        formChech.innerHTML = '';
+    formChech.innerHTML = '';
+
     arrObj.forEach((item, index) => {
         if (arrObj[index - 1] && Number(item.money) > Number(arrObj[index - 1].money)) {
             i = Number(arrObj[index - 1].money);
@@ -130,7 +147,10 @@ pressSaweShek.addEventListener('click', (e) =>{
         formChech.append(createChesk('div', item));
     });
 
-    formChech.prepend(createChesk('div', mins, true));
+    mins? formChech.prepend(createChesk('div', mins, true)): false;
+
+    clears(childAllItems);
+    clears(childAllMoney);
 
     
 
