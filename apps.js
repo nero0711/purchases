@@ -15,6 +15,8 @@ const pressSaweShek = document.querySelector('.press_sours');
 
 const formChech = document.querySelector('.list_check');
 
+const formCheckList = document.querySelector('.list_check');
+
 // Глобальные переменные
 let arrObj = [];
 let fullMoney = 0;
@@ -24,6 +26,7 @@ let idChildSheck = 0;
 let i = 0;
 let mins = 0;
 let renderChech = '';
+let positionCheck = 0;
 
 // выбор суммы и количества
 
@@ -93,73 +96,98 @@ pressSaweShek.addEventListener('click', (e) =>{
             "items": Number(fullItems),
             "money":  Number(fullMoney) / Number(fullItems),
             // "tag" : listTag.value, 
-            "id" : 'C_' + idChildSheck
+            "id" : 'C_' + idChildSheck + ' chekList'
         });
     } 
 
     // listTag.value = '';
 
-        //Создаем новый элемент
+    //Создаем новый элемент
+
     const createChesk = (elem, elemArrObj, min = false) => {
         const newElem = document.createElement(elem);
         newElem.className = elemArrObj.id;
 
         newElem.innerHTML =`
-        <p class='money_position${idChildSheck--}'> 
         ${Number(elemArrObj.money).toFixed(2)} руб. шт.
-
-        <span class='items${idChildSheck--}'>
         [цена ${Number(elemArrObj.fullmoney).toFixed(2)} руб. /
-        </span>
-
-        <span class='items${idChildSheck--}'>
         кол-во ${elemArrObj.items}]
-        </span>
-        </p>
         ` 
-            // 'Цена за штуку: ' + Number(elemArrObj.money).toFixed(2) + '\n' + 
-            // 'Количество: ' + elemArrObj.items + '\n' +
-            // 'Цена: ' + Number(elemArrObj.fullmoney).toFixed(2) + '\n';
-            //     // + 'Заметка: ' + elemArrObj.tag;
 
         if(min){
             newElem.style.padding = '10px';
             newElem.style.textAlign = 'center';
-            newElem.style.width = '95%';
-            newElem.style.backgroundColor = 'aquamarine';
+            newElem.style.backgroundColor = 'rgb(175, 255, 175)';
+            newElem.className = 'acssept';
         }
         
         return newElem;
     }
 
         // Узнаем самую маленькую сумму за штуку в массиве, заполняем рендер лист
-    formChech.innerHTML = '';
 
-    arrObj.forEach((item, index) => {
-        if (arrObj[index - 1] && Number(item.money) > Number(arrObj[index - 1].money)) {
-            i = Number(arrObj[index - 1].money);
-            mins = arrObj[index - 1];
-        } else {
-            i = Number(item.money);
-            mins = item;
-        }
+    const scalle = (arr) => {
 
-        formChech.append(createChesk('div', item));
-    });
+        formChech.innerHTML = '';
+        document.querySelector('.acssept') ? document.querySelector('.acssept').remove() :
+        false;
 
-    mins? formChech.prepend(createChesk('div', mins, true)): false;
+        arr.forEach((item, index) =>{
+            if (arr[index - 1] && Number(item.money) > Number(arr[index - 1].money)) {
+                i = Number(arr[index - 1].money);
+                mins = arr[index - 1];
+            } else {
+                i = Number(item.money);
+                mins = item;
+            }
+    
+            formChech.append(createChesk('div', item));
+        });
+
+        mins? formChech.before(createChesk('div', mins, true)): false;
+    };
+
+    scalle(arrObj);
 
     clears(childAllItems);
     clears(childAllMoney);
 
+
+    // Удаление записей из списка
+    formCheckList.onmousedown = (elem) => {
+
+        if(elem.target.classList[1] == 'chekList'){
+
+            positionCheck = elem.target.getBoundingClientRect().left;
+
+                document.onmousemove = (e) => {
+                    elem.target.style.position = 'absolute';
+                    elem.target.style.zIndex = 999; 
+                    elem.target.style.left = `${e.pageX - 50}px`; 
+                }
+
+        }
+    }
     
-
-    // formChech.append(renderChech);
-
-
-    // console.log('Min check', i.toFixed(2), 'min elem', mins);
-
-    // console.log(arrObj);
+    formCheckList.onmouseup = (elem) => {
+        document.onmousemove = null;
+        if(positionCheck + 100 > elem.target.getBoundingClientRect().left){
+            elem.target.style.position = 'static';
+        } else{
+            let newArr = [];
+            arrObj.filter((e, index) => {
+                if(e.id !=elem.target.className){
+                    newArr.push(e);
+                } else{
+                    delete arrObj[index]
+                };
+            });
+            scalle(newArr);
+            elem.target.remove();
+            
+        }
+    }
+    
 
 });
 
