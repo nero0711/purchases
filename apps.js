@@ -108,10 +108,10 @@ pressSaweShek.addEventListener('click', (e) =>{
         const newElem = document.createElement(elem);
         newElem.className = elemArrObj.id;
 
-        newElem.innerHTML =`
-        ${Number(elemArrObj.money).toFixed(2)} руб. шт.
-        [цена ${Number(elemArrObj.fullmoney).toFixed(2)} руб. /
-        кол-во ${elemArrObj.items}]
+        newElem.innerHTML =`<span id="delete_check" class="${elemArrObj.id}">&#10060</span>
+        ${Number(elemArrObj.money).toFixed(2)} &#x20bd шт.
+        [цена ${Number(elemArrObj.fullmoney).toFixed(2)} &#x20bd /
+        кол. ${elemArrObj.items}]
         ` 
 
         if(min){
@@ -119,6 +119,10 @@ pressSaweShek.addEventListener('click', (e) =>{
             newElem.style.textAlign = 'center';
             newElem.style.backgroundColor = 'rgb(175, 255, 175)';
             newElem.className = 'acssept';
+            newElem.innerHTML =`${Number(elemArrObj.money).toFixed(2)} &#x20bd шт.
+                                [цена ${Number(elemArrObj.fullmoney).toFixed(2)} &#x20bd /
+                                кол. ${elemArrObj.items}]
+                                ` 
         }
         
         return newElem;
@@ -129,6 +133,7 @@ pressSaweShek.addEventListener('click', (e) =>{
     const scalle = (arr) => {
 
         formChech.innerHTML = '';
+
         document.querySelector('.acssept') ? document.querySelector('.acssept').remove() :
         false;
 
@@ -144,7 +149,7 @@ pressSaweShek.addEventListener('click', (e) =>{
             formChech.append(createChesk('div', item));
         });
 
-        mins? formChech.before(createChesk('div', mins, true)): false;
+        arr.length? formChech.before(createChesk('div', mins, true)) : false;
     };
 
     scalle(arrObj);
@@ -154,39 +159,65 @@ pressSaweShek.addEventListener('click', (e) =>{
 
 
     // Удаление записей из списка
-    formCheckList.onmousedown = (elem) => {
 
-        if(elem.target.classList[1] == 'chekList'){
+    formCheckList.addEventListener('click', (elem) => {
 
-            positionCheck = elem.target.getBoundingClientRect().left;
 
-                document.onmousemove = (e) => {
-                    elem.target.style.position = 'absolute';
-                    elem.target.style.zIndex = 999; 
-                    elem.target.style.left = `${e.pageX - 50}px`; 
-                }
+        if(elem.target.id == 'delete_check'){
 
-        }
-    }
-    
-    formCheckList.onmouseup = (elem) => {
-        document.onmousemove = null;
-        if(positionCheck + 100 > elem.target.getBoundingClientRect().left){
-            elem.target.style.position = 'static';
-        } else{
             let newArr = [];
+
             arrObj.filter((e, index) => {
-                if(e.id !=elem.target.className){
+
+                if(e.id != elem.target.className){
                     newArr.push(e);
                 } else{
                     delete arrObj[index]
-                };
-            });
+                    };
+                });
+                
             scalle(newArr);
             elem.target.remove();
+            }
+
             
-        }
-    }
+    });
+        
+
+    // formCheckList.onpointerdown = (elem) => {
+
+    //     if(elem.target.classList[1] == 'chekList'){
+
+    //         positionCheck = elem.target.getBoundingClientRect().left;
+
+    //             document.onpointermove = (e) => {
+    //                 elem.target.style.position = 'absolute';
+    //                 elem.target.style.userSelect = 'none';
+    //                 elem.target.style.zIndex = 999; 
+    //                 elem.target.style.left = `${e.pageX - 50}px`; 
+    //             }
+
+    //     }
+    // }
+    
+    // formCheckList.onpointerup = (elem) => {
+    //     document.onpointermove = null;
+    //     if(positionCheck + 20 > elem.target.getBoundingClientRect().left){
+    //         elem.target.style.position = 'static';
+    //     } else{
+    //         let newArr = [];
+    //         arrObj.filter((e, index) => {
+    //             if(e.id !=elem.target.className){
+    //                 newArr.push(e);
+    //             } else{
+    //                 delete arrObj[index]
+    //             };
+    //         });
+    //         scalle(newArr);
+    //         elem.target.remove();
+            
+    //     }
+    // }
     
 
 });
