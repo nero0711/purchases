@@ -63,14 +63,6 @@ button.clear_items {
     cursor: pointer;
 }
 
-button.clear_money:hover {
-    background-color: rgb(233, 253, 233);
-}
-
-button.clear_items:hover {
-    background-color: rgb(233, 253, 233);
-}
-
 img.clear_img {
     width: 70%;
 }
@@ -94,11 +86,6 @@ button.press_sours {
     border-top-right-radius: 10px;
     padding: 2%;
     cursor: pointer;
-}
-
-
-button.press_sours:hover {
-    background-color: rgb(132, 143, 190);
 }
 
 form.list_check {
@@ -178,25 +165,17 @@ span#delete_check {
 @media (max-width: 550px) {
 
     img.clear_img {
-        width: 40%;
+        width: 0%;
     }
 
     button.clear_money {
-        width: 10px;
+        width: 5%;
         background-color: rgb(97, 32, 32);
     }
 
     button.clear_items {
-        width: 10px;
+        width: 5%;
         background-color: rgb(97, 32, 32);
-    }
-
-    button.clear_money:hover {
-        background-color: rgb(197, 139, 139);
-    }
-
-    button.clear_items:hover {
-        background-color: rgb(197, 139, 139);
     }
 
     .chekList{

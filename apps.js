@@ -94,13 +94,10 @@ pressSaweShek.addEventListener('click', (e) =>{
         arrObj.push({
             "fullmoney" : Number(fullMoney), 
             "items": Number(fullItems),
-            "money":  Number(fullMoney) / Number(fullItems),
-            // "tag" : listTag.value, 
+            "money":  Number(fullMoney) / Number(fullItems), 
             "id" : 'C_' + idChildSheck + ' chekList'
         });
-    } 
-
-    // listTag.value = '';
+    }
 
     //Создаем новый элемент
 
@@ -149,10 +146,10 @@ pressSaweShek.addEventListener('click', (e) =>{
             formChech.append(createChesk('div', item));
         });
 
-        arr.length? formChech.before(createChesk('div', mins, true)) : false;
+        arr.length? formChech.before(createChesk('div', mins, true)) : arrObj = [];
     };
 
-    scalle(arrObj);
+    arrObj.length ? scalle(arrObj): false;
 
     clears(childAllItems);
     clears(childAllMoney);
@@ -163,7 +160,7 @@ pressSaweShek.addEventListener('click', (e) =>{
     formCheckList.addEventListener('click', (elem) => {
 
 
-        if(elem.target.id == 'delete_check'){
+        if(elem.target.id == 'delete_check' && arrObj.length){
 
             let newArr = [];
 
