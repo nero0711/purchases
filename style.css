@@ -10,14 +10,14 @@ form.form_chek {
 .colls_rows {
     display: flex;
     margin: 30px 0px;
-    justify-content: start;
+    justify-content: space-between;
     width: 100%;
 }
 
 .colls_item {
     display: flex;
     margin: 30px 0px 50px 0px;
-    justify-content:start;
+    justify-content: space-between;
     width: 100%;
 }
 
@@ -48,17 +48,16 @@ div.items {
 }
 
 button.clear_money {
-    width: 35%;
-    margin: 0% 9% 25% 2%;
+    width: 5%;
     background-color: rgb(220, 245, 220);
     border-radius: 5px;
+    margin-right: 50px;
     border: none;
     cursor: pointer;
 }
 
 button.clear_items {
-    width: 35%;
-    margin: 0% 9% 25% 2%;
+    width: 5%;
     background-color: rgb(220, 245, 220);
     border-radius: 5px;
     border: none;
@@ -115,7 +114,6 @@ span#delete_check {
 .box1 {
     display: flex;
     flex-direction: column;
-    width: 80%;
 }
 
 .box2 {
@@ -123,6 +121,18 @@ span#delete_check {
     flex-direction: column;
     justify-content: space-around;
     max-width: 9%;
+}
+
+.minibox1 {
+    display: flex;
+    width: 80%;
+    justify-content: end;
+}
+
+.minibox2 {
+    display: flex;
+    width: 80%;
+    justify-content: end;
 }
 
 @media (max-width: 750px) {
@@ -136,21 +146,6 @@ span#delete_check {
         max-width: 7%;
     }
 
-    button.clear_money {
-        width: 45%;
-        height: 15%;
-        margin: 0% 5% 40% 1%;
-    }
-    
-    button.clear_items {
-        width: 45%;
-        height: 15%;
-        margin: 0% 5% 40% 1%;
-    }
-
-    img.clear_img {
-        width: 100%;
-    }
 }
 
 @media (max-width: 650px) {
@@ -176,26 +171,36 @@ span#delete_check {
 
 }
 
-@media (max-width: 550px) {
+@media (max-width: 460px) {
 
     img.clear_img {
         width: 100%;
     }
 
     button.clear_money {
-        width: 50%;
-        height: 10%;
         background-color: rgb(97, 32, 32);
+        margin-right: 20%;
+        width: 10%;
     }
 
     button.clear_items {
-        width: 50%;
-        height: 10%;
         background-color: rgb(97, 32, 32);
+        margin-right: 20%;
+        width: 10%;
     }
 
     .chekList{
         font-size: 14px;
+    }
+
+    div.money {
+        font-size: 40px;
+        max-width: 13%;
+    }
+
+    div.items {
+        font-size: 40px;
+        max-width: 13%;
     }
 
 }
