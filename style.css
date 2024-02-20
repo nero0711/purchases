@@ -48,7 +48,6 @@ div.items {
 }
 
 button.clear_money {
-    width: 5%;
     background-color: rgb(220, 245, 220);
     border-radius: 5px;
     margin-right: 50px;
@@ -57,15 +56,14 @@ button.clear_money {
 }
 
 button.clear_items {
-    width: 5%;
     background-color: rgb(220, 245, 220);
     border-radius: 5px;
     border: none;
     cursor: pointer;
 }
 
-img.clear_img {
-    width: 70%;
+.clear_img {
+    width: 100%;
 }
 
 form.list_check {
@@ -114,6 +112,7 @@ span#delete_check {
 .box1 {
     display: flex;
     flex-direction: column;
+    width: 100%;
 }
 
 .box2 {
