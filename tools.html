@@ -41,7 +41,38 @@
   .back:active{transform:scale(.92);}
   .hidden{display:none !important;}
 
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  /* ── Категории (список-папки) ── */
+  .catList{
+    display:flex;flex-direction:column;gap:10px;
+    animation:fade .18s ease;
+  }
+  .cat{
+    display:flex;align-items:center;gap:14px;
+    background:var(--sec);border:0;border-radius:16px;
+    padding:16px 18px;cursor:pointer;color:var(--text);
+    font-family:inherit;text-align:left;width:100%;
+    transition:transform .12s,opacity .12s;
+  }
+  .cat:active{transform:scale(.98);opacity:.85;}
+  .catIco{
+    font-size:28px;line-height:1;flex-shrink:0;
+    width:48px;height:48px;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--bg);
+  }
+  .catInfo{flex:1;min-width:0;}
+  .catTitle{font-size:16px;font-weight:700;margin-bottom:3px;}
+  .catSub{
+    font-size:12.5px;color:var(--hint);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .catCount{
+    font-size:14px;color:var(--hint);font-weight:700;
+    flex-shrink:0;display:flex;align-items:center;gap:2px;
+  }
+
+  /* ── Сетка инструментов ── */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;animation:fade .18s ease;}
   .card{
     background:var(--sec);border:0;border-radius:16px;
     padding:20px 14px;display:flex;flex-direction:column;
@@ -209,7 +240,6 @@
     border:1px solid var(--sep);background:#3498db;
   }
 
-  /* двухколоночный layout: только если широкая или landscape */
   .twoCols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
   @media (max-width:520px) and (orientation:portrait){
     .twoCols{grid-template-columns:1fr;}
@@ -217,7 +247,6 @@
   .twoCols.stacked{grid-template-columns:1fr !important;}
   .twoCols.force-horizontal{grid-template-columns:1fr 1fr !important;}
 
-  /* ── Diff grid ── */
   .diff2{
     margin-top:6px;background:var(--sec);border-radius:12px;padding:8px;
     display:grid;gap:2px 6px;
@@ -298,7 +327,6 @@
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (tg) {
   try { tg.ready(); tg.expand(); } catch(e){}
-  if (tg.BackButton) tg.BackButton.onClick(() => goHome());
   if (tg.setHeaderColor) { try { tg.setHeaderColor('secondary_bg_color'); } catch(e){} }
 }
 
@@ -370,7 +398,7 @@ function esc(s){
 }
 
 /* ============================================================
-   Поля даты с иконкой календаря
+   Поля даты
    ============================================================ */
 function parseUserDate(str, withTime){
   if (!str) return null;
@@ -391,11 +419,9 @@ function parseUserDate(str, withTime){
   }
 
   let y, mo, d;
-
   let m = str.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
-  if (m){
-    y = +m[1]; mo = +m[2]; d = +m[3];
-  } else {
+  if (m){ y = +m[1]; mo = +m[2]; d = +m[3]; }
+  else {
     m = str.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2,4})$/);
     if (m){
       d = +m[1]; mo = +m[2]; y = +m[3];
@@ -405,20 +431,15 @@ function parseUserDate(str, withTime){
       if (m){
         const s = m[1];
         const first4 = +s.slice(0,4);
-        if (first4 >= 1900 && first4 <= 2199){
-          y = first4; mo = +s.slice(4,6); d = +s.slice(6,8);
-        } else {
-          d = +s.slice(0,2); mo = +s.slice(2,4); y = +s.slice(4,8);
-        }
+        if (first4 >= 1900 && first4 <= 2199){ y = first4; mo = +s.slice(4,6); d = +s.slice(6,8); }
+        else { d = +s.slice(0,2); mo = +s.slice(2,4); y = +s.slice(4,8); }
       } else {
         m = str.match(/^(\d{6})$/);
         if (m){
           const s = m[1];
           d = +s.slice(0,2); mo = +s.slice(2,4); y = +s.slice(4,6);
           y += y < 70 ? 2000 : 1900;
-        } else {
-          return null;
-        }
+        } else return null;
       }
     }
   }
@@ -428,7 +449,6 @@ function parseUserDate(str, withTime){
   if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
   return { date: dt, hasTime };
 }
-
 function formatUserDate(date, withTime){
   const d = String(date.getDate()).padStart(2, '0');
   const mo = String(date.getMonth() + 1).padStart(2, '0');
@@ -441,7 +461,6 @@ function formatUserDate(date, withTime){
   }
   return s;
 }
-
 function toNativeValue(date, withTime){
   const y = date.getFullYear();
   const mo = String(date.getMonth() + 1).padStart(2, '0');
@@ -454,7 +473,6 @@ function toNativeValue(date, withTime){
   }
   return s;
 }
-
 function dateFieldWrap(id, initialValue, withTime){
   const placeholder = withTime ? 'дд.мм.гггг чч:мм' : 'дд.мм.гггг';
   return `
@@ -467,52 +485,38 @@ function dateFieldWrap(id, initialValue, withTime){
       <button type="button" class="dateBtn" data-for="${id}" aria-label="Выбрать дату">📅</button>
     </div>`;
 }
-
 function bindDateField(container, id, withTime, onChange){
   const txt = container.querySelector('#' + id);
   const native = container.querySelector('#' + id + '__native');
   const btn = container.querySelector('.dateBtn[data-for="' + id + '"]');
   if (!txt || !native || !btn) return;
-
   const syncNative = () => {
     const p = parseUserDate(txt.value, withTime);
     if (p) native.value = toNativeValue(p.date, withTime);
   };
-
   txt.addEventListener('input', () => { syncNative(); onChange(); });
   txt.addEventListener('blur', () => {
     const p = parseUserDate(txt.value, withTime);
-    if (p){
-      txt.value = formatUserDate(p.date, withTime);
-      onChange();
-    }
+    if (p){ txt.value = formatUserDate(p.date, withTime); onChange(); }
   });
-
   btn.addEventListener('click', e => {
     e.preventDefault();
     syncNative();
     try {
       if (typeof native.showPicker === 'function') native.showPicker();
       else native.click();
-    } catch(err) {
-      try { native.click(); } catch(_){}
-    }
+    } catch(err) { try { native.click(); } catch(_){} }
   });
-
   native.addEventListener('change', () => {
     if (!native.value) return;
     const parts = native.value.split('T');
     const [y, mo, d] = parts[0].split('-').map(Number);
     let hh = 0, mm = 0;
-    if (parts[1]){
-      const t = parts[1].split(':');
-      hh = +t[0]; mm = +t[1];
-    }
+    if (parts[1]){ const t = parts[1].split(':'); hh = +t[0]; mm = +t[1]; }
     const dt = new Date(y, mo - 1, d, hh, mm);
     txt.value = formatUserDate(dt, withTime);
     onChange();
   });
-
   syncNative();
 }
 
@@ -626,7 +630,7 @@ function b64Decode(b64){
 }
 
 /* ============================================================
-   Раскладка RU ↔ EN
+   Раскладка
    ============================================================ */
 const RU_TO_EN_CHARS = {
   'й':'q','ц':'w','у':'e','к':'r','е':'t','н':'y','г':'u','ш':'i',
@@ -641,7 +645,6 @@ const RU_TO_EN_CHARS = {
   'Ё':'~'
 };
 const EN_TO_RU_CHARS = (() => { const o={}; for (const [k,v] of Object.entries(RU_TO_EN_CHARS)) o[v]=k; return o; })();
-
 function convertLayout(text, dir, convertPunct = false){
   const map = dir === 'ru-en' ? RU_TO_EN_CHARS : EN_TO_RU_CHARS;
   const RE_LETTER = /\p{L}/u;
@@ -670,11 +673,7 @@ function translit(text, mode){
   let out = '';
   for (const ch of text) out += (TRANSLIT_MAP[ch] !== undefined) ? TRANSLIT_MAP[ch] : ch;
   if (mode === 'url'){
-    out = out.toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9\-_.~]/g, '')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+    out = out.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-_.~]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
   }
   return out;
 }
@@ -1009,7 +1008,7 @@ function hslToRgb(h,s,l){
 }
 
 /* ============================================================
-   Diff (LCS)
+   Diff
    ============================================================ */
 function diffLines(a, b){
   const A = a.split('\n'), B = b.split('\n');
@@ -1038,21 +1037,13 @@ function buildSideBySide(diff){
   let lnLeft = 1, lnRight = 1;
   while (i < diff.length){
     if (diff[i].t === 'same'){
-      rows.push({ left: diff[i].s, right: diff[i].s, same: true,
-                  leftNum: lnLeft, rightNum: lnRight });
-      lnLeft++; lnRight++;
-      i++;
+      rows.push({ left: diff[i].s, right: diff[i].s, same: true, leftNum: lnLeft, rightNum: lnRight });
+      lnLeft++; lnRight++; i++;
     } else {
-      const dels = [], adds = [];
-      const delNums = [], addNums = [];
+      const dels = [], adds = [], delNums = [], addNums = [];
       while (i < diff.length && diff[i].t !== 'same'){
-        if (diff[i].t === 'del'){
-          dels.push(diff[i].s);
-          delNums.push(lnLeft++);
-        } else {
-          adds.push(diff[i].s);
-          addNums.push(lnRight++);
-        }
+        if (diff[i].t === 'del'){ dels.push(diff[i].s); delNums.push(lnLeft++); }
+        else { adds.push(diff[i].s); addNums.push(lnRight++); }
         i++;
       }
       const n = Math.max(dels.length, adds.length);
@@ -1116,9 +1107,7 @@ function parseScalarValue(str){
   if (str === 'false' || str === 'no' || str === 'off') return false;
   if (/^-?\d+$/.test(str)) return parseInt(str,10);
   if (/^-?\d+\.\d+$/.test(str)) return parseFloat(str);
-  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))){
-    return str.slice(1,-1);
-  }
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) return str.slice(1,-1);
   if (str.startsWith('[') && str.endsWith(']')){
     const inner = str.slice(1,-1).trim();
     if (!inner) return [];
@@ -1164,9 +1153,8 @@ function parseYAML(text){
         if (!content.startsWith('-')) break;
         const rest = content === '-' ? '' : content.slice(1).trimStart();
         i++;
-        if (rest === ''){
-          arr.push(parseBlock(baseIndent + 2));
-        } else if (/^[^:]+:\s?/.test(rest) && !rest.startsWith('[') && !rest.startsWith('{')){
+        if (rest === '') arr.push(parseBlock(baseIndent + 2));
+        else if (/^[^:]+:\s?/.test(rest) && !rest.startsWith('[') && !rest.startsWith('{')){
           const obj = {};
           const m = rest.match(/^([^:]+):\s*(.*)$/);
           const k = m[1].trim();
@@ -1181,14 +1169,10 @@ function parseYAML(text){
             const mm = c.match(/^([^:]+):\s*(.*)$/);
             if (!mm) break;
             i++;
-            const kk = mm[1].trim();
-            const vv = mm[2].trim();
-            obj[kk] = vv === '' ? parseBlock(baseIndent + 4) : parseScalarValue(vv);
+            obj[mm[1].trim()] = mm[2].trim() === '' ? parseBlock(baseIndent + 4) : parseScalarValue(mm[2].trim());
           }
           arr.push(obj);
-        } else {
-          arr.push(parseScalarValue(rest));
-        }
+        } else arr.push(parseScalarValue(rest));
       }
       return arr;
     }
@@ -1201,15 +1185,11 @@ function parseYAML(text){
       const m = content.match(/^([^:]+):\s*(.*)$/);
       if (!m) break;
       i++;
-      const k = m[1].trim();
-      const v = m[2].trim();
+      const k = m[1].trim(), v = m[2].trim();
       if (v === ''){
-        if (i < lines.length && getIndent(lines[i]) > baseIndent){
-          obj[k] = parseBlock(getIndent(lines[i]));
-        } else obj[k] = null;
-      } else {
-        obj[k] = parseScalarValue(v);
-      }
+        if (i < lines.length && getIndent(lines[i]) > baseIndent) obj[k] = parseBlock(getIndent(lines[i]));
+        else obj[k] = null;
+      } else obj[k] = parseScalarValue(v);
     }
     return obj;
   }
@@ -1229,11 +1209,10 @@ function parseCSV(text){
       if (c === '"') inQuotes = true;
       else if (c === ','){ row.push(field); field = ''; }
       else if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
-      else if (c === '\r'){}
-      else field += c;
+      else if (c !== '\r') field += c;
     }
   }
-  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  if (field !== '' || row.length){ row.push(field); rows.push(row); }
   if (!rows.length) return [];
   const header = rows[0];
   return rows.slice(1).map(r => {
@@ -1259,9 +1238,7 @@ function stringifyCSV(data){
   }
   const headers = [...new Set(data.flatMap(o => Object.keys(o)))];
   const lines = [headers.map(csvCell).join(',')];
-  for (const o of data){
-    lines.push(headers.map(h => csvCell(o[h])).join(','));
-  }
+  for (const o of data) lines.push(headers.map(h => csvCell(o[h])).join(','));
   return lines.join('\n');
 }
 
@@ -1282,16 +1259,14 @@ const UNITS = {
   volume: { name: 'Объём', units: {
     ml:{n:'Миллилитр',f:0.001}, l:{n:'Литр',f:1}, m3:{n:'Кубометр',f:1000},
     floz:{n:'Унция жидкости (US)',f:0.0295735295625},
-    pt:{n:'Пинта (US)',f:0.473176473},
-    qt:{n:'Кварта (US)',f:0.946352946},
+    pt:{n:'Пинта (US)',f:0.473176473}, qt:{n:'Кварта (US)',f:0.946352946},
     gal:{n:'Галлон (US)',f:3.785411784}
   }},
   data: { name: 'Данные', units: {
     B:{n:'Байт',f:1}, KB:{n:'Килобайт (1000)',f:1000},
     MB:{n:'Мегабайт (1000²)',f:1e6}, GB:{n:'Гигабайт (1000³)',f:1e9},
     TB:{n:'Терабайт',f:1e12}, KiB:{n:'Кибибайт (1024)',f:1024},
-    MiB:{n:'Мебибайт (1024²)',f:1024**2},
-    GiB:{n:'Гибибайт (1024³)',f:1024**3},
+    MiB:{n:'Мебибайт (1024²)',f:1024**2}, GiB:{n:'Гибибайт (1024³)',f:1024**3},
     TiB:{n:'Тебибайт (1024⁴)',f:1024**4}
   }},
   temp: { name: 'Температура', units: {
@@ -1327,42 +1302,29 @@ function numberToWordsRu(num, gender){
   const neg = num < 0;
   num = Math.abs(Math.floor(num));
   if (num === 0) return 'ноль';
-
   const unitsM = ['', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'];
   const unitsF = ['', 'одна', 'две', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять'];
-  const teens  = ['десять', 'одиннадцать', 'двенадцать', 'тринадцать', 'четырнадцать',
-                  'пятнадцать', 'шестнадцать', 'семнадцать', 'восемнадцать', 'девятнадцать'];
-  const tens   = ['', '', 'двадцать', 'тридцать', 'сорок', 'пятьдесят',
-                  'шестьдесят', 'семьдесят', 'восемьдесят', 'девяносто'];
-  const hundreds = ['', 'сто', 'двести', 'триста', 'четыреста',
-                    'пятьсот', 'шестьсот', 'семьсот', 'восемьсот', 'девятьсот'];
-
+  const teens = ['десять','одиннадцать','двенадцать','тринадцать','четырнадцать','пятнадцать','шестнадцать','семнадцать','восемнадцать','девятнадцать'];
+  const tens = ['','','двадцать','тридцать','сорок','пятьдесят','шестьдесят','семьдесят','восемьдесят','девяносто'];
+  const hundreds = ['','сто','двести','триста','четыреста','пятьсот','шестьсот','семьсот','восемьсот','девятьсот'];
   function triad(n, g){
     const arr = g === 'f' ? unitsF : unitsM;
-    const h = Math.floor(n / 100);
-    const t = Math.floor((n % 100) / 10);
-    const u = n % 10;
+    const h = Math.floor(n / 100), t = Math.floor((n % 100) / 10), u = n % 10;
     const out = [];
     if (hundreds[h]) out.push(hundreds[h]);
     if (t === 1) out.push(teens[u]);
-    else {
-      if (tens[t]) out.push(tens[t]);
-      if (u) out.push(arr[u]);
-    }
+    else { if (tens[t]) out.push(tens[t]); if (u) out.push(arr[u]); }
     return out.join(' ');
   }
-
-  const billions  = Math.floor(num / 1e9);
-  const millions  = Math.floor((num % 1e9) / 1e6);
+  const billions = Math.floor(num / 1e9);
+  const millions = Math.floor((num % 1e9) / 1e6);
   const thousands = Math.floor((num % 1e6) / 1e3);
-  const rest      = num % 1000;
-
+  const rest = num % 1000;
   const parts = [];
-  if (billions)  parts.push(triad(billions, 'm')  + ' ' + pluralRu(billions,  ['миллиард','миллиарда','миллиардов']));
-  if (millions)  parts.push(triad(millions, 'm')  + ' ' + pluralRu(millions,  ['миллион','миллиона','миллионов']));
+  if (billions) parts.push(triad(billions, 'm') + ' ' + pluralRu(billions, ['миллиард','миллиарда','миллиардов']));
+  if (millions) parts.push(triad(millions, 'm') + ' ' + pluralRu(millions, ['миллион','миллиона','миллионов']));
   if (thousands) parts.push(triad(thousands, 'f') + ' ' + pluralRu(thousands, ['тысяча','тысячи','тысяч']));
   if (rest || parts.length === 0) parts.push(triad(rest, gender || 'm'));
-
   let s = parts.join(' ').replace(/\s+/g, ' ').trim();
   if (neg) s = 'минус ' + s;
   return s;
@@ -1372,15 +1334,10 @@ function numberToWordsEn(num){
   const neg = num < 0;
   num = Math.abs(Math.floor(num));
   if (num === 0) return 'zero';
-
-  const ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
-                'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen',
-                'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-  const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-
+  const ones = ['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  const tens = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
   function under1000(n){
-    const h = Math.floor(n / 100);
-    const r = n % 100;
+    const h = Math.floor(n / 100), r = n % 100;
     const out = [];
     if (h) out.push(ones[h] + ' hundred');
     if (r){
@@ -1392,13 +1349,9 @@ function numberToWordsEn(num){
     }
     return out.join(' ');
   }
-
   const groups = [
-    {v: 1e12, name: 'trillion'},
-    {v: 1e9,  name: 'billion'},
-    {v: 1e6,  name: 'million'},
-    {v: 1e3,  name: 'thousand'},
-    {v: 1,    name: ''}
+    {v: 1e12, name: 'trillion'},{v: 1e9, name: 'billion'},
+    {v: 1e6, name: 'million'},{v: 1e3, name: 'thousand'},{v: 1, name: ''}
   ];
   const out = [];
   for (const g of groups){
@@ -1417,8 +1370,8 @@ function moneyToWordsRu(amount){
   const abs = Math.abs(amount);
   const rub = Math.floor(abs);
   const kop = Math.round((abs - rub) * 100);
-  const rubForm = pluralRu(rub, ['рубль', 'рубля', 'рублей']);
-  const kopForm = pluralRu(kop, ['копейка', 'копейки', 'копеек']);
+  const rubForm = pluralRu(rub, ['рубль','рубля','рублей']);
+  const kopForm = pluralRu(kop, ['копейка','копейки','копеек']);
   let s = numberToWordsRu(rub, 'm') + ' ' + rubForm;
   s += ' ' + String(kop).padStart(2, '0') + ' ' + kopForm;
   if (neg) s = 'минус ' + s;
@@ -1436,84 +1389,53 @@ function moneyToWordsEn(amount){
 }
 
 /* ============================================================
-   Список инструментов
+   Справочник инструментов и категорий
    ============================================================ */
 const TOOLS = {
-  password:{ icon:'🔐', title:'Генератор паролей', render: renderPassword },
   case:    { icon:'Aa', title:'Регистр текста',   render: renderCase },
   layout:  { icon:'⌨️', title:'Смена раскладки',  render: renderLayout },
   translit:{ icon:'🔤', title:'Транслитерация',   render: renderTranslit },
   strings: { icon:'📝', title:'Сортировка строк', render: renderStrings },
   count:   { icon:'🔢', title:'Подсчёт символов', render: renderCount },
+  diff:    { icon:'📊', title:'Diff двух текстов',render: renderDiff },
+
+  hashb64: { icon:'#️⃣', title:'Хеши и Base64',   render: renderHashB64 },
+  dataconv:{ icon:'🗂️', title:'JSON / YAML / CSV',render: renderDataConv },
+  qr:      { icon:'📱', title:'QR-код',           render: renderQR },
+  short:   { icon:'🔗', title:'Сократить ссылку', render: renderShort },
+  password:{ icon:'🔐', title:'Генератор паролей', render: renderPassword },
+  color:   { icon:'🎨', title:'Конвертер цветов', render: renderColor },
+
   words:   { icon:'📖', title:'Числа прописью',   render: renderWords },
   percent: { icon:'💯', title:'Проценты',         render: renderPercent },
   dates:   { icon:'📅', title:'Калькулятор дат',  render: renderDates },
-  diff:    { icon:'📊', title:'Diff двух текстов',render: renderDiff },
-  hashb64: { icon:'#️⃣', title:'Хеши и Base64',   render: renderHashB64 },
-  qr:      { icon:'📱', title:'QR-код',           render: renderQR },
-  dataconv:{ icon:'🗂️', title:'JSON / YAML / CSV',render: renderDataConv },
-  color:   { icon:'🎨', title:'Конвертер цветов', render: renderColor },
-  units:   { icon:'📏', title:'Конвертер единиц', render: renderUnits },
   time:    { icon:'⏱️', title:'Таймстамп ↔ дата', render: renderTimestamp },
-  short:   { icon:'🔗', title:'Сократить ссылку', render: renderShort }
+  units:   { icon:'📏', title:'Конвертер единиц', render: renderUnits }
 };
 
-/* ── 1. Пароль ───────────────────────────────────────────── */
-function renderPassword(el){
-  el.innerHTML = `
-    <div class="panel">
-      <label class="fld">Длина: <span id="lenVal">16</span></label>
-      <input type="range" id="len" min="4" max="128" value="16">
-      <div style="margin-top:6px">
-        <label class="chk"><input type="checkbox" id="low" checked> Строчные <b style="font-family:monospace;font-weight:500">a-z</b></label>
-        <label class="chk"><input type="checkbox" id="up" checked> Прописные <b style="font-family:monospace;font-weight:500">A-Z</b></label>
-        <label class="chk"><input type="checkbox" id="dig" checked> Цифры <b style="font-family:monospace;font-weight:500">0-9</b></label>
-        <label class="chk"><input type="checkbox" id="sym" checked> Символы <b style="font-family:monospace;font-weight:500">!@#$%</b></label>
-        <label class="chk"><input type="checkbox" id="noSim"> Исключить похожие <b style="font-family:monospace;font-weight:500">l 1 I O 0 o</b></label>
-      </div>
-      <div class="row">
-        <button class="btn" id="genBtn">Сгенерировать</button>
-      </div>
-      <label class="fld" style="margin-top:16px">Пароль</label>
-      <div class="out" id="out" style="font-size:17px;letter-spacing:.5px;text-align:center"><span class="empty">Нажмите «Сгенерировать»…</span></div>
-      <div class="strength"><div class="bar" id="bar"></div></div>
-      <div class="hintnote" id="strNote">—</div>
-      <div class="row">
-        <button class="btn ghost" id="copyBtn">Копировать</button>
-      </div>
-    </div>`;
-  const $ = id => el.querySelector('#' + id);
-  const lenEl = $('len'), outEl = $('out'), barEl = $('bar'), noteEl = $('strNote');
-  let current = '';
+const CATEGORIES = {
+  text:    { icon:'📝', title:'Текст',
+             desc:'Регистр, раскладка, diff, подсчёт',
+             tools:['case','layout','translit','strings','count','diff'] },
+  data:    { icon:'💻', title:'Данные и код',
+             desc:'Хеши, Base64, JSON, QR, пароли',
+             tools:['hashb64','dataconv','qr','short','password','color'] },
+  numbers: { icon:'🔢', title:'Числа и время',
+             desc:'Проценты, даты, единицы, timestamp',
+             tools:['words','percent','dates','time','units'] }
+};
 
-  lenEl.addEventListener('input', () => $('lenVal').textContent = lenEl.value);
+const TOOL_CATEGORY = (() => {
+  const m = {};
+  for (const [catKey, cat] of Object.entries(CATEGORIES)){
+    for (const t of cat.tools) m[t] = catKey;
+  }
+  return m;
+})();
 
-  const doGen = () => {
-    const opts = {
-      lower: $('low').checked, upper: $('up').checked,
-      digits: $('dig').checked, symbols: $('sym').checked,
-      noSimilar: $('noSim').checked
-    };
-    if (!opts.lower && !opts.upper && !opts.digits && !opts.symbols){
-      toast('Выберите хотя бы один тип символов');
-      return;
-    }
-    current = genPassword(parseInt(lenEl.value,10), opts);
-    outEl.textContent = current;
-    const s = passwordStrength(current);
-    barEl.style.width = s.pct + '%';
-    barEl.style.background = s.color;
-    noteEl.textContent = `${s.label} • ~${s.bits} бит энтропии`;
-    refreshMainButton();
-  };
-  $('genBtn').onclick = doGen;
-  $('copyBtn').onclick = () => copyText(current);
-  ['low','up','dig','sym','noSim'].forEach(id => el.querySelector('#'+id).addEventListener('change', doGen));
-
-  setMainButton(() => current);
-}
-
-/* ── 2. Регистр ──────────────────────────────────────────── */
+/* ============================================================
+   ── 1. Регистр ──
+   ============================================================ */
 function renderCase(el){
   el.innerHTML = `
     <div class="panel">
@@ -1532,22 +1454,18 @@ function renderCase(el){
         <button class="btn ghost" data-x="nl">Убрать переносы</button>
         <button class="btn ghost" data-x="trimlines">Обрезать строки</button>
       </div>
-      <div class="row">
-        <button class="btn" id="copyBtn">Копировать результат</button>
-      </div>
+      <div class="row"><button class="btn" id="copyBtn">Копировать результат</button></div>
       <label class="fld" style="margin-top:16px">Результат</label>
       <div class="out" id="out"><span class="empty">—</span></div>
     </div>`;
   const inp = el.querySelector('#inp');
   const out = el.querySelector('#out');
-
   const apply = (fn) => {
     const v = inp.value;
     if (!v){ toast('Введите текст'); return; }
     out.textContent = fn(v);
     refreshMainButton();
   };
-
   el.querySelector('#caseBtns').addEventListener('click', e => {
     const b = e.target.closest('button[data-c]');
     if (!b) return;
@@ -1574,12 +1492,13 @@ function renderCase(el){
     });
   });
   el.querySelector('#copyBtn').onclick = () => copyText(out.textContent);
-
   setMainButton(() => out.textContent && out.textContent !== '—' && !out.querySelector('.empty') ? out.textContent : '');
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 3. Раскладка ────────────────────────────────────────── */
+/* ============================================================
+   ── 2. Раскладка ──
+   ============================================================ */
 function renderLayout(el){
   let dir = 'ru-en', convertPunct = false;
   el.innerHTML = `
@@ -1595,11 +1514,8 @@ function renderLayout(el){
       <label class="fld" style="margin-top:16px">Результат</label>
       <div class="out" id="out"><span class="empty">Здесь появится результат…</span></div>
     </div>`;
-  const inp = el.querySelector('#inp');
-  const out = el.querySelector('#out');
-  const seg = el.querySelector('#seg');
-  const chk = el.querySelector('#punctChk');
-
+  const inp = el.querySelector('#inp'), out = el.querySelector('#out');
+  const seg = el.querySelector('#seg'), chk = el.querySelector('#punctChk');
   const upd = () => {
     const v = inp.value;
     if (!v){ out.innerHTML = '<span class="empty">Здесь появится результат…</span>'; refreshMainButton(); return; }
@@ -1616,12 +1532,13 @@ function renderLayout(el){
     upd();
   });
   el.querySelector('#copyBtn').onclick = () => copyText(out.textContent);
-
   setMainButton(() => out.textContent && !out.querySelector('.empty') ? out.textContent : '');
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 4. Транслитерация ───────────────────────────────────── */
+/* ============================================================
+   ── 3. Транслитерация ──
+   ============================================================ */
 function renderTranslit(el){
   let mode = 'gost';
   el.innerHTML = `
@@ -1656,13 +1573,14 @@ function renderTranslit(el){
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 5. Сортировка и очистка строк ───────────────────────── */
+/* ============================================================
+   ── 4. Сортировка строк ──
+   ============================================================ */
 function renderStrings(el){
   el.innerHTML = `
     <div class="panel">
       <label class="fld">Список (одна строка = один элемент)</label>
       <textarea id="inp" placeholder="яблоко&#10;банан&#10;яблоко&#10;апельсин…" autocomplete="off" spellcheck="false"></textarea>
-
       <div class="caseBtns" id="ops">
         <button class="btn ghost" data-op="sortAsc">А → Я</button>
         <button class="btn ghost" data-op="sortDesc">Я → А</button>
@@ -1675,38 +1593,29 @@ function renderStrings(el){
         <button class="btn ghost" data-op="num">+ Нумерация</button>
         <button class="btn ghost" data-op="denum">− Нумерация</button>
       </div>
-
       <div class="row">
         <button class="btn ghost" id="undoBtn">↶ Отменить</button>
         <button class="btn" id="copyBtn">Копировать</button>
       </div>
-
       <div class="hintnote" id="info">Элементов: 0</div>
     </div>`;
   const inp = el.querySelector('#inp');
   const info = el.querySelector('#info');
   const undoBtn = el.querySelector('#undoBtn');
   const stack = [];
-
   const updInfo = () => {
     const v = inp.value;
     const n = v === '' ? 0 : v.split('\n').length;
     info.textContent = `Элементов: ${n} • Символов: ${[...v].length}`;
     refreshMainButton();
   };
-
-  const pushUndo = () => {
-    stack.push(inp.value);
-    if (stack.length > 30) stack.shift();
-  };
-
+  const pushUndo = () => { stack.push(inp.value); if (stack.length > 30) stack.shift(); };
   const apply = (fn) => {
     if (!inp.value.trim()){ toast('Введите список'); return; }
     pushUndo();
     inp.value = fn(inp.value);
     updInfo();
   };
-
   const ops = {
     sortAsc: v => v.split('\n').sort((a,b) => a.localeCompare(b, 'ru')).join('\n'),
     sortDesc: v => v.split('\n').sort((a,b) => b.localeCompare(a, 'ru')).join('\n'),
@@ -1724,23 +1633,17 @@ function renderStrings(el){
     },
     uniq: v => {
       const seen = new Set();
-      return v.split('\n').filter(x => {
-        if (seen.has(x)) return false;
-        seen.add(x);
-        return true;
-      }).join('\n');
+      return v.split('\n').filter(x => { if (seen.has(x)) return false; seen.add(x); return true; }).join('\n');
     },
     empty: v => v.split('\n').filter(x => x.trim() !== '').join('\n'),
     trim: v => v.split('\n').map(x => x.trim()).join('\n'),
     num: v => v.split('\n').map((x, i) => `${i+1}. ${x}`).join('\n'),
     denum: v => v.split('\n').map(x => x.replace(/^\s*\d+[.)]\s*/, '')).join('\n')
   };
-
   el.querySelector('#ops').addEventListener('click', e => {
     const b = e.target.closest('button[data-op]');
     if (!b) return;
-    const op = b.dataset.op;
-    if (ops[op]) apply(ops[op]);
+    if (ops[b.dataset.op]) apply(ops[b.dataset.op]);
   });
   undoBtn.onclick = () => {
     if (!stack.length){ toast('Нечего отменять'); return; }
@@ -1750,12 +1653,13 @@ function renderStrings(el){
   el.querySelector('#copyBtn').onclick = () => copyText(inp.value);
   inp.addEventListener('input', updInfo);
   updInfo();
-
   setMainButton(() => inp.value.trim() ? inp.value : '');
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 6. Подсчёт символов ─────────────────────────────────── */
+/* ============================================================
+   ── 5. Подсчёт символов ──
+   ============================================================ */
 function renderCount(el){
   el.innerHTML = `
     <div class="panel">
@@ -1780,7 +1684,6 @@ function renderCount(el){
   const $ = id => el.querySelector('#' + id);
   const lettersEl = $('letters');
   const RE_LETTER = /\p{L}/u, RE_NUMBER = /\p{N}/u, RE_SPACE = /\s/;
-
   const upd = () => {
     const v = inp.value;
     const chars = [...v];
@@ -1797,7 +1700,6 @@ function renderCount(el){
     }
     $('s7').textContent = special;
     $('s8').textContent = spaces;
-
     const counts = {};
     for (const ch of chars) if (RE_LETTER.test(ch)){
       const k = ch.toLowerCase();
@@ -1810,7 +1712,6 @@ function renderCount(el){
     refreshMainButton();
   };
   inp.addEventListener('input', upd);
-
   setMainButton(() => {
     const v = inp.value;
     if (!v.trim()) return '';
@@ -1819,283 +1720,9 @@ function renderCount(el){
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 7. Числа прописью ───────────────────────────────────── */
-function renderWords(el){
-  el.innerHTML = `
-    <div class="panel">
-      <label class="fld">Число</label>
-      <input type="text" id="inp" placeholder="1234.56" inputmode="decimal" autocomplete="off">
-
-      <div class="twoCols" style="margin-top:12px">
-        <div>
-          <label class="fld">Язык</label>
-          <select id="lang" class="sel">
-            <option value="ru">Русский</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-        <div>
-          <label class="fld">Формат</label>
-          <select id="fmt" class="sel">
-            <option value="num">Просто число</option>
-            <option value="money">Деньги</option>
-          </select>
-        </div>
-      </div>
-
-      <label class="fld" style="margin-top:16px">Прописью</label>
-      <div class="out" id="out" style="font-size:17px;line-height:1.6"><span class="empty">Введите число…</span></div>
-      <div class="row"><button class="btn" id="copyBtn">Копировать</button></div>
-    </div>`;
-  const $ = id => el.querySelector('#' + id);
-  const inp = $('inp'), langEl = $('lang'), fmtEl = $('fmt'), out = $('out');
-  let result = '';
-
-  const upd = () => {
-    const raw = inp.value.trim().replace(',', '.');
-    if (!raw){ out.innerHTML = '<span class="empty">Введите число…</span>'; result = ''; refreshMainButton(); return; }
-    const n = parseFloat(raw);
-    if (!isFinite(n)){ out.innerHTML = '<span class="empty">Не число…</span>'; result = ''; refreshMainButton(); return; }
-    const lang = langEl.value;
-    const fmt = fmtEl.value;
-    let s;
-    if (fmt === 'money'){
-      s = lang === 'ru' ? moneyToWordsRu(n) : moneyToWordsEn(n);
-    } else {
-      s = lang === 'ru' ? numberToWordsRu(n) : numberToWordsEn(n);
-    }
-    if (fmt === 'num' && raw.includes('.')){
-      const [whole, frac] = raw.split('.');
-      const wholeN = parseInt(whole, 10) || 0;
-      const wholeWords = lang === 'ru' ? numberToWordsRu(wholeN) : numberToWordsEn(wholeN);
-      const digits = frac.split('').map(d => {
-        const mapRu = ['ноль','один','два','три','четыре','пять','шесть','семь','восемь','девять'];
-        const mapEn = ['zero','one','two','three','four','five','six','seven','eight','nine'];
-        const dInt = parseInt(d, 10);
-        return (lang === 'ru' ? mapRu : mapEn)[dInt];
-      }).join(' ');
-      s = wholeWords + (lang === 'ru' ? ' запятая ' : ' point ') + digits;
-    }
-    result = s;
-    out.textContent = s.charAt(0).toUpperCase() + s.slice(1);
-    refreshMainButton();
-  };
-
-  inp.addEventListener('input', upd);
-  langEl.addEventListener('change', upd);
-  fmtEl.addEventListener('change', upd);
-  $('copyBtn').onclick = () => copyText(result);
-
-  setMainButton(() => result);
-  setTimeout(() => inp.focus(), 120);
-}
-
-/* ── 8. Проценты ─────────────────────────────────────────── */
-function renderPercent(el){
-  el.innerHTML = `
-    <div class="panel">
-      <div class="hashrow">
-        <div class="name">X% ОТ Y</div>
-      </div>
-      <div class="twoCols">
-        <input type="number" id="a1" placeholder="X%" inputmode="decimal">
-        <input type="number" id="a2" placeholder="Y" inputmode="decimal">
-      </div>
-      <div class="out" id="r1" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>
-
-      <div class="hashrow" style="margin-top:20px">
-        <div class="name">X СОСТАВЛЯЕТ % ОТ Y</div>
-      </div>
-      <div class="twoCols">
-        <input type="number" id="b1" placeholder="X" inputmode="decimal">
-        <input type="number" id="b2" placeholder="Y" inputmode="decimal">
-      </div>
-      <div class="out" id="r2" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>
-
-      <div class="hashrow" style="margin-top:20px">
-        <div class="name">НА СКОЛЬКО % X БОЛЬШЕ/МЕНЬШЕ Y</div>
-      </div>
-      <div class="twoCols">
-        <input type="number" id="c1" placeholder="X" inputmode="decimal">
-        <input type="number" id="c2" placeholder="Y" inputmode="decimal">
-      </div>
-      <div class="out" id="r3" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>
-
-      <div class="hashrow" style="margin-top:20px">
-        <div class="name">Y ± X%</div>
-      </div>
-      <div class="twoCols">
-        <input type="number" id="d1" placeholder="Y" inputmode="decimal">
-        <input type="number" id="d2" placeholder="X%" inputmode="decimal">
-      </div>
-      <div class="out" id="r4" style="margin-top:0;font-size:15px;text-align:center;font-weight:600"><span class="empty">—</span></div>
-    </div>`;
-
-  const fmt = n => {
-    if (!isFinite(n)) return '—';
-    const rounded = Math.round(n * 1e10) / 1e10;
-    return rounded.toLocaleString('ru-RU', { maximumFractionDigits: 10 });
-  };
-  const num = id => parseFloat(el.querySelector('#' + id).value.replace(',', '.'));
-
-  const upd1 = () => {
-    const x = num('a1'), y = num('a2');
-    const r = el.querySelector('#r1');
-    if (isNaN(x) || isNaN(y)){ r.innerHTML = '<span class="empty">—</span>'; return; }
-    r.textContent = fmt(x * y / 100);
-  };
-  const upd2 = () => {
-    const x = num('b1'), y = num('b2');
-    const r = el.querySelector('#r2');
-    if (isNaN(x) || isNaN(y) || y === 0){ r.innerHTML = '<span class="empty">—</span>'; return; }
-    r.textContent = fmt(x / y * 100) + '%';
-  };
-  const upd3 = () => {
-    const x = num('c1'), y = num('c2');
-    const r = el.querySelector('#r3');
-    if (isNaN(x) || isNaN(y) || y === 0){ r.innerHTML = '<span class="empty">—</span>'; return; }
-    const p = (x - y) / y * 100;
-    const sign = p >= 0 ? 'больше' : 'меньше';
-    r.textContent = `на ${fmt(Math.abs(p))}% ${sign}`;
-  };
-  const upd4 = () => {
-    const y = num('d1'), x = num('d2');
-    const r = el.querySelector('#r4');
-    if (isNaN(x) || isNaN(y)){ r.innerHTML = '<span class="empty">—</span>'; return; }
-    const plus = y * (1 + x / 100);
-    const minus = y * (1 - x / 100);
-    r.innerHTML = `+${fmt(x)}%: <b>${fmt(plus)}</b><br>−${fmt(x)}%: <b>${fmt(minus)}</b>`;
-  };
-
-  ['a1','a2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd1));
-  ['b1','b2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd2));
-  ['c1','c2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd3));
-  ['d1','d2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd4));
-
-  setMainButton(() => '');
-  setTimeout(() => el.querySelector('#a1').focus(), 120);
-}
-
-/* ── 9. Калькулятор дат ──────────────────────────────────── */
-function renderDates(el){
-  const today = new Date();
-  const todayStr = formatUserDate(today, false);
-
-  el.innerHTML = `
-    <div class="panel">
-      <div class="hashrow">
-        <div class="name">РАЗНИЦА МЕЖДУ ДАТАМИ</div>
-      </div>
-      <div class="twoCols">
-        ${dateFieldWrap('d1', todayStr, false)}
-        ${dateFieldWrap('d2', todayStr, false)}
-      </div>
-      <div class="stats" id="out1" style="margin-top:0"></div>
-
-      <div class="hashrow" style="margin-top:20px">
-        <div class="name">ДАТА + N ДНЕЙ</div>
-      </div>
-      <div class="twoCols">
-        ${dateFieldWrap('b1', todayStr, false)}
-        <input type="number" id="b2" placeholder="+ дней" inputmode="numeric">
-      </div>
-      <div class="out" id="out2" style="margin-top:0;font-size:18px;font-weight:600;text-align:center"><span class="empty">—</span></div>
-
-      <div class="hashrow" style="margin-top:20px">
-        <div class="name">ДЕНЬ НЕДЕЛИ И ВОЗРАСТ</div>
-      </div>
-      ${dateFieldWrap('c1', todayStr, false)}
-      <div class="stats" id="out3" style="margin-top:12px"></div>
-    </div>`;
-
-  const $ = id => el.querySelector('#' + id);
-  const fmtD = d => d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-
-  const getDate = id => {
-    const p = parseUserDate($(id).value, false);
-    return p ? p.date : null;
-  };
-
-  const upd1 = () => {
-    const dA = getDate('d1');
-    const dB = getDate('d2');
-    const out = $('out1');
-    if (!dA || !dB){
-      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите обе даты</div>';
-      return;
-    }
-    const ms = Math.abs(dB - dA);
-    const days = Math.floor(ms / 86400000);
-    const weeks = Math.floor(days / 7);
-    const hours = Math.floor(ms / 3600000);
-    const years = Math.floor(days / 365.25);
-    const months = Math.floor(days / 30.4375);
-    const earlier = dA < dB ? dA : dB;
-    const later   = dA < dB ? dB : dA;
-    let y = later.getFullYear() - earlier.getFullYear();
-    let m = later.getMonth() - earlier.getMonth();
-    let d = later.getDate() - earlier.getDate();
-    if (d < 0){
-      m--;
-      d += new Date(later.getFullYear(), later.getMonth(), 0).getDate();
-    }
-    if (m < 0){ y--; m += 12; }
-    out.innerHTML = `
-      <div class="stat"><div class="v">${days.toLocaleString('ru-RU')}</div><div class="k">дней</div></div>
-      <div class="stat"><div class="v">${weeks.toLocaleString('ru-RU')}</div><div class="k">недель</div></div>
-      <div class="stat"><div class="v">${months.toLocaleString('ru-RU')}</div><div class="k">месяцев (прибл.)</div></div>
-      <div class="stat"><div class="v">${years.toLocaleString('ru-RU')}</div><div class="k">лет (прибл.)</div></div>
-      <div class="stat full"><div class="v small">${y} г. ${m} мес. ${d} дн. • ${hours.toLocaleString('ru-RU')} часов</div><div class="k">точно</div></div>
-    `;
-  };
-
-  const upd2 = () => {
-    const base = getDate('b1');
-    const n = parseInt($('b2').value, 10);
-    const out = $('out2');
-    if (!base || isNaN(n)){ out.innerHTML = '<span class="empty">—</span>'; return; }
-    const r = new Date(base);
-    r.setDate(r.getDate() + n);
-    out.textContent = fmtD(r);
-  };
-
-  const upd3 = () => {
-    const d = getDate('c1');
-    const out = $('out3');
-    if (!d){
-      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>';
-      return;
-    }
-    const weekday = d.toLocaleDateString('ru-RU', { weekday: 'long' });
-    const now = new Date();
-    let years = now.getFullYear() - d.getFullYear();
-    let months = now.getMonth() - d.getMonth();
-    let days = now.getDate() - d.getDate();
-    if (days < 0){ months--; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
-    if (months < 0){ years--; months += 12; }
-    const totalDays = Math.floor((now - d) / 86400000);
-    out.innerHTML = `
-      <div class="stat"><div class="v small">${weekday.charAt(0).toUpperCase() + weekday.slice(1)}</div><div class="k">день недели</div></div>
-      <div class="stat"><div class="v small">${fmtD(d)}</div><div class="k">дата</div></div>
-      <div class="stat"><div class="v small">${years} г. ${months} мес. ${days} дн.</div><div class="k">возраст</div></div>
-      <div class="stat"><div class="v small">${totalDays.toLocaleString('ru-RU')}</div><div class="k">дней всего</div></div>
-    `;
-  };
-
-  bindDateField(el, 'd1', false, upd1);
-  bindDateField(el, 'd2', false, upd1);
-  bindDateField(el, 'b1', false, upd2);
-  bindDateField(el, 'c1', false, upd3);
-
-  $('b2').addEventListener('input', upd2);
-
-  setMainButton(() => '');
-
-  upd1();
-  upd3();
-}
-
-/* ── 10. Diff (side-by-side / unified) ───────────────────── */
+/* ============================================================
+   ── 6. Diff ──
+   ============================================================ */
 function renderDiff(el){
   const getAutoLayout = () =>
     window.matchMedia('(max-width: 520px) and (orientation: portrait)').matches ? 'v' : 'h';
@@ -2121,7 +1748,6 @@ function renderDiff(el){
         </div>
       </div>
       <div class="row"><button class="btn" id="goBtn">Сравнить</button></div>
-
       <label class="fld" style="margin-top:16px">Различия</label>
       <div class="seg sm" id="outSeg">
         <button class="on" data-o="split">⇄ Параллельно</button>
@@ -2150,10 +1776,8 @@ function renderDiff(el){
       if (r.left !== null) removed++;
       if (r.right !== null) added++;
     }
-
     out.className = 'diff2 ' + outLayout;
     const parts = [];
-
     if (outLayout === 'split'){
       parts.push('<div class="hdr span2">A (старый)</div>');
       parts.push('<div class="hdr span2">B (новый)</div>');
@@ -2191,26 +1815,21 @@ function renderDiff(el){
         }
       }
     }
-
     parts.push(`<div class="summary">+${added} добавлено, −${removed} удалено</div>`);
     out.innerHTML = parts.join('');
-
     diffText = lastDiff.map(i => (i.t==='add'?'+ ':i.t==='del'?'- ':'  ') + i.s).join('\n');
     refreshMainButton();
   };
-
   const run = () => {
     if (!A.value && !B.value){ toast('Введите тексты'); return; }
     lastDiff = diffLines(A.value, B.value);
     renderOut();
   };
-
   const applyLayout = () => {
     inputWrap.classList.toggle('stacked', inLayout === 'v');
     inputWrap.classList.toggle('force-horizontal', inLayout === 'h');
     inSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.l === inLayout));
   };
-
   inSeg.addEventListener('click', e => {
     const b = e.target.closest('button[data-l]');
     if (!b) return;
@@ -2224,23 +1843,17 @@ function renderDiff(el){
     }
     applyLayout();
   });
-
   const onResize = () => {
     if (userLocked) return;
     const auto = getAutoLayout();
-    if (auto !== inLayout){
-      inLayout = auto;
-      applyLayout();
-    }
+    if (auto !== inLayout){ inLayout = auto; applyLayout(); }
   };
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', onResize);
-
   _currentCleanup = () => {
     window.removeEventListener('resize', onResize);
     window.removeEventListener('orientationchange', onResize);
   };
-
   outSeg.addEventListener('click', e => {
     const b = e.target.closest('button[data-o]');
     if (!b) return;
@@ -2248,26 +1861,23 @@ function renderDiff(el){
     outSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
     renderOut();
   });
-
   el.querySelector('#goBtn').onclick = run;
   A.addEventListener('input', () => { if (B.value) run(); });
   B.addEventListener('input', () => { if (A.value) run(); });
-
   setMainButton(() => diffText);
   setTimeout(() => A.focus(), 120);
-
   applyLayout();
   renderOut();
 }
 
-/* ── 11. Хеши и Base64 ───────────────────────────────────── */
+/* ============================================================
+   ── 7. Хеши и Base64 ──
+   ============================================================ */
 function renderHashB64(el){
   el.innerHTML = `
     <div class="panel">
       <label class="fld">Текст</label>
-      <textarea id="inp" placeholder="Введите текст — хеши и Base64 посчитаются автоматически…"
-        autocomplete="off" spellcheck="false"></textarea>
-
+      <textarea id="inp" placeholder="Введите текст — хеши и Base64 посчитаются автоматически…" autocomplete="off" spellcheck="false"></textarea>
       <div class="hashrow">
         <div class="name">MD5</div>
         <div class="val"><span id="md5">—</span><button class="mini" type="button" data-c="md5">Копировать</button></div>
@@ -2288,7 +1898,6 @@ function renderHashB64(el){
     </div>`;
   const $ = id => el.querySelector('#' + id);
   const inp = $('inp'), m5 = $('md5'), sh = $('sha'), b64e = $('b64e'), b64d = $('b64d');
-
   const tryDecode = s => {
     if (!s) return '';
     const clean = s.replace(/\s+/g,'');
@@ -2306,7 +1915,6 @@ function renderHashB64(el){
       return d;
     } catch(e){ return ''; }
   };
-
   let t = null;
   const upd = () => {
     clearTimeout(t);
@@ -2315,8 +1923,7 @@ function renderHashB64(el){
       if (!v){
         m5.textContent = '—'; sh.textContent = '—';
         b64e.textContent = '—'; b64d.textContent = '—';
-        refreshMainButton();
-        return;
+        refreshMainButton(); return;
       }
       m5.textContent = md5(v);
       sh.textContent = sha256(v);
@@ -2328,7 +1935,6 @@ function renderHashB64(el){
     }, 60);
   };
   inp.addEventListener('input', upd);
-
   el.addEventListener('click', e => {
     const b = e.target.closest('button[data-c]');
     if (!b) return;
@@ -2339,7 +1945,6 @@ function renderHashB64(el){
     if (!v || v === '—'){ toast('Пусто'); return; }
     copyText(v);
   });
-
   setMainButton(() => {
     const v = inp.value;
     if (!v.trim()) return '';
@@ -2348,7 +1953,80 @@ function renderHashB64(el){
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 12. QR ──────────────────────────────────────────────── */
+/* ============================================================
+   ── 8. JSON / YAML / CSV ──
+   ============================================================ */
+function renderDataConv(el){
+  el.innerHTML = `
+    <div class="panel">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1">
+          <label class="fld">Из</label>
+          <select id="from" class="sel">
+            <option value="json" selected>JSON</option>
+            <option value="yaml">YAML</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label class="fld">В</label>
+          <select id="to" class="sel">
+            <option value="json">JSON</option>
+            <option value="yaml" selected>YAML</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
+      </div>
+      <label class="fld">Вход</label>
+      <textarea id="inp" placeholder='{"name": "John", "tags": ["a","b"]}' autocomplete="off" spellcheck="false" style="font-family:ui-monospace,monospace;font-size:13.5px"></textarea>
+      <div class="row">
+        <button class="btn" id="goBtn">Конвертировать</button>
+        <button class="btn ghost" id="copyBtn">Копировать</button>
+      </div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="out small" id="out" style="font-family:ui-monospace,monospace"><span class="empty">—</span></div>
+      <div class="err hidden" id="err"></div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  const out = $('out'), err = $('err');
+  let result = '';
+  const run = () => {
+    err.classList.add('hidden');
+    const src = $('from').value, dst = $('to').value;
+    const text = $('inp').value;
+    if (!text.trim()){ out.innerHTML = '<span class="empty">—</span>'; result = ''; refreshMainButton(); return; }
+    try {
+      let parsed;
+      if (src === 'json') parsed = JSON.parse(text);
+      else if (src === 'yaml') parsed = parseYAML(text);
+      else if (src === 'csv') parsed = parseCSV(text);
+      if (parsed === undefined || parsed === null) throw new Error('Не удалось разобрать');
+      let outStr;
+      if (dst === 'json') outStr = JSON.stringify(parsed, null, 2);
+      else if (dst === 'yaml') outStr = yamlStringify(parsed);
+      else if (dst === 'csv') outStr = stringifyCSV(parsed);
+      result = outStr;
+      out.textContent = outStr;
+    } catch(e){
+      result = '';
+      out.innerHTML = '<span class="empty">—</span>';
+      err.textContent = 'Ошибка: ' + (e.message || 'неверный формат');
+      err.classList.remove('hidden');
+    }
+    refreshMainButton();
+  };
+  $('goBtn').onclick = run;
+  $('from').onchange = run;
+  $('to').onchange = run;
+  $('inp').addEventListener('input', () => { clearTimeout(run._t); run._t = setTimeout(run, 400); });
+  $('copyBtn').onclick = () => copyText(result);
+  setMainButton(() => result);
+  setTimeout(() => $('inp').focus(), 120);
+}
+
+/* ============================================================
+   ── 9. QR ──
+   ============================================================ */
 function renderQR(el){
   let ecl = 'M';
   el.innerHTML = `
@@ -2410,305 +2088,9 @@ function renderQR(el){
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 13. Конвертер форматов ──────────────────────────────── */
-function renderDataConv(el){
-  el.innerHTML = `
-    <div class="panel">
-      <div style="display:flex;gap:8px;margin-bottom:12px">
-        <div style="flex:1">
-          <label class="fld">Из</label>
-          <select id="from" class="sel">
-            <option value="json" selected>JSON</option>
-            <option value="yaml">YAML</option>
-            <option value="csv">CSV</option>
-          </select>
-        </div>
-        <div style="flex:1">
-          <label class="fld">В</label>
-          <select id="to" class="sel">
-            <option value="json">JSON</option>
-            <option value="yaml" selected>YAML</option>
-            <option value="csv">CSV</option>
-          </select>
-        </div>
-      </div>
-      <label class="fld">Вход</label>
-      <textarea id="inp" placeholder='{"name": "John", "tags": ["a","b"]}' autocomplete="off" spellcheck="false" style="font-family:ui-monospace,monospace;font-size:13.5px"></textarea>
-      <div class="row">
-        <button class="btn" id="goBtn">Конвертировать</button>
-        <button class="btn ghost" id="copyBtn">Копировать</button>
-      </div>
-      <label class="fld" style="margin-top:16px">Результат</label>
-      <div class="out small" id="out" style="font-family:ui-monospace,monospace"><span class="empty">—</span></div>
-      <div class="err hidden" id="err"></div>
-    </div>`;
-  const $ = id => el.querySelector('#' + id);
-  const out = $('out'), err = $('err');
-  let result = '';
-
-  const run = () => {
-    err.classList.add('hidden');
-    const src = $('from').value, dst = $('to').value;
-    const text = $('inp').value;
-    if (!text.trim()){ out.innerHTML = '<span class="empty">—</span>'; result = ''; refreshMainButton(); return; }
-    try {
-      let parsed;
-      if (src === 'json') parsed = JSON.parse(text);
-      else if (src === 'yaml') parsed = parseYAML(text);
-      else if (src === 'csv') parsed = parseCSV(text);
-      if (parsed === undefined || parsed === null) throw new Error('Не удалось разобрать');
-
-      let outStr;
-      if (dst === 'json') outStr = JSON.stringify(parsed, null, 2);
-      else if (dst === 'yaml') outStr = yamlStringify(parsed);
-      else if (dst === 'csv') outStr = stringifyCSV(parsed);
-
-      result = outStr;
-      out.textContent = outStr;
-    } catch(e){
-      result = '';
-      out.innerHTML = '<span class="empty">—</span>';
-      err.textContent = 'Ошибка: ' + (e.message || 'неверный формат');
-      err.classList.remove('hidden');
-    }
-    refreshMainButton();
-  };
-  $('goBtn').onclick = run;
-  $('from').onchange = run;
-  $('to').onchange = run;
-  $('inp').addEventListener('input', () => { clearTimeout(run._t); run._t = setTimeout(run, 400); });
-  $('copyBtn').onclick = () => copyText(result);
-
-  setMainButton(() => result);
-  setTimeout(() => $('inp').focus(), 120);
-}
-
-/* ── 14. Цвет ────────────────────────────────────────────── */
-function renderColor(el){
-  el.innerHTML = `
-    <div class="panel">
-      <div class="colorPreview" id="prev"></div>
-      <label class="fld">HEX</label>
-      <input type="text" id="hex" value="#3498db" autocomplete="off" spellcheck="false">
-      <label class="fld" style="margin-top:12px">RGB</label>
-      <input type="text" id="rgb" value="52, 152, 219" autocomplete="off" spellcheck="false">
-      <label class="fld" style="margin-top:12px">HSL</label>
-      <input type="text" id="hsl" value="204, 70%, 53%" autocomplete="off" spellcheck="false">
-      <label class="fld" style="margin-top:14px">Или выберите</label>
-      <input type="color" id="picker" value="#3498db">
-      <div class="row">
-        <button class="btn" id="copyBtn">Копировать HEX</button>
-      </div>
-    </div>`;
-  const $ = id => el.querySelector('#' + id);
-  let currentHex = '#3498db';
-
-  const render = (rgb, source) => {
-    if (!rgb) return;
-    const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
-    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-    currentHex = hex;
-    $('prev').style.background = hex;
-    $('picker').value = hex;
-    if (source !== 'hex') $('hex').value = hex;
-    if (source !== 'rgb') $('rgb').value = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
-    if (source !== 'hsl') $('hsl').value = `${hsl.h}, ${hsl.s}%, ${hsl.l}%`;
-    refreshMainButton();
-  };
-
-  $('hex').addEventListener('input', () => {
-    const rgb = hexToRgb($('hex').value);
-    if (rgb) render(rgb, 'hex');
-  });
-  $('rgb').addEventListener('input', () => {
-    const m = $('rgb').value.match(/(\d+)[^\d]+(\d+)[^\d]+(\d+)/);
-    if (m) render({r: +m[1], g: +m[2], b: +m[3]}, 'rgb');
-  });
-  $('hsl').addEventListener('input', () => {
-    const m = $('hsl').value.match(/(\d+)[^\d]+(\d+)[^\d]*[%]?[^\d]+(\d+)/);
-    if (m) render(hslToRgb(+m[1], +m[2], +m[3]), 'hsl');
-  });
-  $('picker').addEventListener('input', () => {
-    const rgb = hexToRgb($('picker').value);
-    if (rgb) render(rgb, null);
-  });
-  $('copyBtn').onclick = () => copyText(currentHex);
-
-  setMainButton(() => currentHex);
-  render({r: 52, g: 152, b: 219}, null);
-}
-
-/* ── 15. Конвертер единиц ────────────────────────────────── */
-function renderUnits(el){
-  el.innerHTML = `
-    <div class="panel">
-      <label class="fld">Категория</label>
-      <select class="sel" id="cat">
-        ${Object.entries(UNITS).map(([k,v]) => `<option value="${k}">${v.name}</option>`).join('')}
-      </select>
-
-      <label class="fld" style="margin-top:14px">Значение</label>
-      <input type="text" id="val" value="1" inputmode="decimal" autocomplete="off">
-
-      <label class="fld" style="margin-top:14px">Единица измерения</label>
-      <select class="sel" id="unit"></select>
-
-      <div class="hashrow" style="margin-top:20px">
-        <div class="name">ПЕРЕВОД ВО ВСЕ ОСТАЛЬНЫЕ ЕДИНИЦЫ</div>
-        <div id="results"></div>
-      </div>
-    </div>`;
-  const $ = id => el.querySelector('#' + id);
-  const catEl = $('cat'), valEl = $('val'), unitEl = $('unit'), resultsEl = $('results');
-  let mainText = '';
-
-  const fillUnits = () => {
-    const cat = catEl.value;
-    const units = UNITS[cat].units;
-    const keys = Object.keys(units);
-    unitEl.innerHTML = keys.map(k => `<option value="${k}">${esc(units[k].n)} (${k})</option>`).join('');
-    unitEl.value = keys[0];
-    upd();
-  };
-
-  const upd = () => {
-    const cat = catEl.value;
-    const units = UNITS[cat].units;
-    const from = unitEl.value;
-    const v = parseFloat(String(valEl.value).replace(',', '.'));
-    if (isNaN(v)){
-      resultsEl.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите число</div>';
-      mainText = '';
-      refreshMainButton();
-      return;
-    }
-    const keys = Object.keys(units).filter(k => k !== from);
-    if (!keys.length){
-      resultsEl.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Единственная единица в категории</div>';
-      mainText = '';
-      refreshMainButton();
-      return;
-    }
-    const rows = keys.map(k => {
-      const conv = convertUnit(v, cat, from, k);
-      const display = conv.toLocaleString('ru-RU', { maximumFractionDigits: 8 });
-      return `<div class="convRow" data-v="${esc(String(conv))}">
-        <span class="cn">${esc(units[k].n)}</span>
-        <span class="cv">${esc(display)}<span class="cu">${esc(k)}</span></span>
-        <button class="mini" type="button">Копировать</button>
-      </div>`;
-    }).join('');
-    resultsEl.innerHTML = rows;
-
-    mainText = keys.map(k => {
-      const conv = convertUnit(v, cat, from, k);
-      return `${conv.toLocaleString('ru-RU',{maximumFractionDigits:8})} ${k}`;
-    }).join('\n');
-    refreshMainButton();
-  };
-
-  catEl.addEventListener('change', fillUnits);
-  valEl.addEventListener('input', upd);
-  unitEl.addEventListener('change', upd);
-  resultsEl.addEventListener('click', e => {
-    const btn = e.target.closest('button.mini');
-    if (!btn) return;
-    const row = btn.closest('.convRow');
-    if (!row) return;
-    copyText(row.dataset.v);
-  });
-
-  fillUnits();
-  setMainButton(() => mainText);
-}
-
-/* ── 16. Таймстамп ───────────────────────────────────────── */
-function renderTimestamp(el){
-  const now = new Date();
-  const nowStr = formatUserDate(now, true);
-
-  el.innerHTML = `
-    <div class="panel">
-      <label class="fld">Unix-таймстамп (секунды или мс)</label>
-      <input type="text" id="ts" placeholder="1700000000" inputmode="numeric" autocomplete="off">
-      <div class="row"><button class="btn ghost" id="nowBtn">Сейчас</button></div>
-      <div class="stats" id="tsOut"></div>
-
-      <div class="hashrow" style="margin-top:20px">
-        <div class="name">ОБРАТНО: ДАТА → TIMESTAMP</div>
-      </div>
-      ${dateFieldWrap('dt', nowStr, true)}
-      <div class="stats" id="dtOut"></div>
-    </div>`;
-  const $ = id => el.querySelector('#' + id);
-
-  const fmtRel = (ms) => {
-    const d = Date.now() - ms;
-    const abs = Math.abs(d);
-    const sec = Math.round(abs/1000), min = Math.round(abs/60000), hr = Math.round(abs/3600000);
-    const day = Math.round(abs/86400000), mo = Math.round(abs/2592000000), yr = Math.round(abs/31536000000);
-    let val;
-    if (sec < 60) val = `${sec} сек`;
-    else if (min < 60) val = `${min} мин`;
-    else if (hr < 24) val = `${hr} ч`;
-    else if (day < 30) val = `${day} дн`;
-    else if (mo < 12) val = `${mo} мес`;
-    else val = `${yr} г`;
-    return d >= 0 ? `${val} назад` : `через ${val}`;
-  };
-
-  const updTs = () => {
-    const raw = $('ts').value.trim();
-    if (!raw){ $('tsOut').innerHTML = ''; refreshMainButton(); return; }
-    let n = parseInt(raw.replace(/\D/g,''), 10);
-    if (!isFinite(n)){ $('tsOut').innerHTML = ''; refreshMainButton(); return; }
-    const ms = String(n).length > 10 ? n : n * 1000;
-    const d = new Date(ms);
-    if (isNaN(d.getTime())){ $('tsOut').innerHTML = ''; refreshMainButton(); return; }
-    $('tsOut').innerHTML = `
-      <div class="stat"><div class="v" style="font-size:14px">${d.toISOString()}</div><div class="k">ISO / UTC</div></div>
-      <div class="stat"><div class="v" style="font-size:14px">${d.toLocaleString('ru-RU')}</div><div class="k">Локальное время</div></div>
-      <div class="stat"><div class="v" style="font-size:14px">${Math.floor(ms/1000)}</div><div class="k">Секунды</div></div>
-      <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>
-      <div class="stat" style="grid-column:1/-1"><div class="v" style="font-size:14px">${fmtRel(ms)}</div><div class="k">Относительно</div></div>
-    `;
-    refreshMainButton();
-  };
-
-  const updDt = () => {
-    const p = parseUserDate($('dt').value, true);
-    if (!p){ $('dtOut').innerHTML = ''; refreshMainButton(); return; }
-    const ms = p.date.getTime(), sec = Math.floor(ms/1000);
-    $('dtOut').innerHTML = `
-      <div class="stat"><div class="v" style="font-size:14px">${sec}</div><div class="k">Секунды</div></div>
-      <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>
-    `;
-    refreshMainButton();
-  };
-
-  $('ts').addEventListener('input', updTs);
-  $('nowBtn').onclick = () => {
-    $('ts').value = String(Math.floor(Date.now()/1000));
-    updTs();
-  };
-
-  bindDateField(el, 'dt', true, updDt);
-
-  setMainButton(() => {
-    if ($('ts').value.trim()){
-      return `Timestamp: ${$('ts').value}\n${$('tsOut').textContent.slice(0,200)}`;
-    }
-    const p = parseUserDate($('dt').value, true);
-    if (p){
-      return `Дата: ${formatUserDate(p.date, true)}\nСекунды: ${Math.floor(p.date.getTime()/1000)}`;
-    }
-    return '';
-  });
-
-  updDt();
-}
-
-/* ── 17. Сокращатель ─────────────────────────────────────── */
+/* ============================================================
+   ── 10. Сократить ссылку ──
+   ============================================================ */
 async function fetchWithTimeout(url, opts = {}, ms = 12000){
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), ms);
@@ -2717,9 +2099,9 @@ async function fetchWithTimeout(url, opts = {}, ms = 12000){
 }
 async function shortenUrl(url){
   const attempts = [
-    { name:'clck.ru',  run: () => fetchWithTimeout('https://clck.ru/--?url=' + encodeURIComponent(url)) },
-    { name:'tinyurl',  run: () => fetchWithTimeout('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(url)) },
-    { name:'is.gd',    run: () => fetchWithTimeout('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(url)) }
+    { name:'clck.ru', run: () => fetchWithTimeout('https://clck.ru/--?url=' + encodeURIComponent(url)) },
+    { name:'tinyurl', run: () => fetchWithTimeout('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(url)) },
+    { name:'is.gd',   run: () => fetchWithTimeout('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(url)) }
   ];
   let lastErr = null;
   for (const a of attempts){
@@ -2750,10 +2132,8 @@ function renderShort(el){
   const inp = el.querySelector('#inp'), out = el.querySelector('#out');
   const err = el.querySelector('#err'), goBtn = el.querySelector('#goBtn');
   let result = '';
-
   const showErr = msg => { err.textContent = msg; err.classList.remove('hidden'); };
   const normalize = s => { s = s.trim(); if (!/^https?:\/\//i.test(s)) s = 'https://' + s; return s; };
-
   const run = async () => {
     err.classList.add('hidden');
     if (!inp.value.trim()){ showErr('Введите ссылку'); return; }
@@ -2785,48 +2165,552 @@ function renderShort(el){
 }
 
 /* ============================================================
-   Навигация
+   ── 11. Пароли ──
+   ============================================================ */
+function renderPassword(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Длина: <span id="lenVal">16</span></label>
+      <input type="range" id="len" min="4" max="128" value="16">
+      <div style="margin-top:6px">
+        <label class="chk"><input type="checkbox" id="low" checked> Строчные <b style="font-family:monospace;font-weight:500">a-z</b></label>
+        <label class="chk"><input type="checkbox" id="up" checked> Прописные <b style="font-family:monospace;font-weight:500">A-Z</b></label>
+        <label class="chk"><input type="checkbox" id="dig" checked> Цифры <b style="font-family:monospace;font-weight:500">0-9</b></label>
+        <label class="chk"><input type="checkbox" id="sym" checked> Символы <b style="font-family:monospace;font-weight:500">!@#$%</b></label>
+        <label class="chk"><input type="checkbox" id="noSim"> Исключить похожие <b style="font-family:monospace;font-weight:500">l 1 I O 0 o</b></label>
+      </div>
+      <div class="row"><button class="btn" id="genBtn">Сгенерировать</button></div>
+      <label class="fld" style="margin-top:16px">Пароль</label>
+      <div class="out" id="out" style="font-size:17px;letter-spacing:.5px;text-align:center"><span class="empty">Нажмите «Сгенерировать»…</span></div>
+      <div class="strength"><div class="bar" id="bar"></div></div>
+      <div class="hintnote" id="strNote">—</div>
+      <div class="row"><button class="btn ghost" id="copyBtn">Копировать</button></div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  const lenEl = $('len'), outEl = $('out'), barEl = $('bar'), noteEl = $('strNote');
+  let current = '';
+  lenEl.addEventListener('input', () => $('lenVal').textContent = lenEl.value);
+  const doGen = () => {
+    const opts = {
+      lower: $('low').checked, upper: $('up').checked,
+      digits: $('dig').checked, symbols: $('sym').checked,
+      noSimilar: $('noSim').checked
+    };
+    if (!opts.lower && !opts.upper && !opts.digits && !opts.symbols){
+      toast('Выберите хотя бы один тип символов'); return;
+    }
+    current = genPassword(parseInt(lenEl.value,10), opts);
+    outEl.textContent = current;
+    const s = passwordStrength(current);
+    barEl.style.width = s.pct + '%';
+    barEl.style.background = s.color;
+    noteEl.textContent = `${s.label} • ~${s.bits} бит энтропии`;
+    refreshMainButton();
+  };
+  $('genBtn').onclick = doGen;
+  $('copyBtn').onclick = () => copyText(current);
+  ['low','up','dig','sym','noSim'].forEach(id => el.querySelector('#'+id).addEventListener('change', doGen));
+  setMainButton(() => current);
+}
+
+/* ============================================================
+   ── 12. Цвет ──
+   ============================================================ */
+function renderColor(el){
+  el.innerHTML = `
+    <div class="panel">
+      <div class="colorPreview" id="prev"></div>
+      <label class="fld">HEX</label>
+      <input type="text" id="hex" value="#3498db" autocomplete="off" spellcheck="false">
+      <label class="fld" style="margin-top:12px">RGB</label>
+      <input type="text" id="rgb" value="52, 152, 219" autocomplete="off" spellcheck="false">
+      <label class="fld" style="margin-top:12px">HSL</label>
+      <input type="text" id="hsl" value="204, 70%, 53%" autocomplete="off" spellcheck="false">
+      <label class="fld" style="margin-top:14px">Или выберите</label>
+      <input type="color" id="picker" value="#3498db">
+      <div class="row"><button class="btn" id="copyBtn">Копировать HEX</button></div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  let currentHex = '#3498db';
+  const render = (rgb, source) => {
+    if (!rgb) return;
+    const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    currentHex = hex;
+    $('prev').style.background = hex;
+    $('picker').value = hex;
+    if (source !== 'hex') $('hex').value = hex;
+    if (source !== 'rgb') $('rgb').value = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+    if (source !== 'hsl') $('hsl').value = `${hsl.h}, ${hsl.s}%, ${hsl.l}%`;
+    refreshMainButton();
+  };
+  $('hex').addEventListener('input', () => { const rgb = hexToRgb($('hex').value); if (rgb) render(rgb, 'hex'); });
+  $('rgb').addEventListener('input', () => {
+    const m = $('rgb').value.match(/(\d+)[^\d]+(\d+)[^\d]+(\d+)/);
+    if (m) render({r: +m[1], g: +m[2], b: +m[3]}, 'rgb');
+  });
+  $('hsl').addEventListener('input', () => {
+    const m = $('hsl').value.match(/(\d+)[^\d]+(\d+)[^\d]*[%]?[^\d]+(\d+)/);
+    if (m) render(hslToRgb(+m[1], +m[2], +m[3]), 'hsl');
+  });
+  $('picker').addEventListener('input', () => { const rgb = hexToRgb($('picker').value); if (rgb) render(rgb, null); });
+  $('copyBtn').onclick = () => copyText(currentHex);
+  setMainButton(() => currentHex);
+  render({r: 52, g: 152, b: 219}, null);
+}
+
+/* ============================================================
+   ── 13. Числа прописью ──
+   ============================================================ */
+function renderWords(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Число</label>
+      <input type="text" id="inp" placeholder="1234.56" inputmode="decimal" autocomplete="off">
+      <div class="twoCols" style="margin-top:12px">
+        <div>
+          <label class="fld">Язык</label>
+          <select id="lang" class="sel">
+            <option value="ru">Русский</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div>
+          <label class="fld">Формат</label>
+          <select id="fmt" class="sel">
+            <option value="num">Просто число</option>
+            <option value="money">Деньги</option>
+          </select>
+        </div>
+      </div>
+      <label class="fld" style="margin-top:16px">Прописью</label>
+      <div class="out" id="out" style="font-size:17px;line-height:1.6"><span class="empty">Введите число…</span></div>
+      <div class="row"><button class="btn" id="copyBtn">Копировать</button></div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  const inp = $('inp'), langEl = $('lang'), fmtEl = $('fmt'), out = $('out');
+  let result = '';
+  const upd = () => {
+    const raw = inp.value.trim().replace(',', '.');
+    if (!raw){ out.innerHTML = '<span class="empty">Введите число…</span>'; result = ''; refreshMainButton(); return; }
+    const n = parseFloat(raw);
+    if (!isFinite(n)){ out.innerHTML = '<span class="empty">Не число…</span>'; result = ''; refreshMainButton(); return; }
+    const lang = langEl.value, fmt = fmtEl.value;
+    let s;
+    if (fmt === 'money') s = lang === 'ru' ? moneyToWordsRu(n) : moneyToWordsEn(n);
+    else s = lang === 'ru' ? numberToWordsRu(n) : numberToWordsEn(n);
+    if (fmt === 'num' && raw.includes('.')){
+      const [whole, frac] = raw.split('.');
+      const wholeN = parseInt(whole, 10) || 0;
+      const wholeWords = lang === 'ru' ? numberToWordsRu(wholeN) : numberToWordsEn(wholeN);
+      const digits = frac.split('').map(d => {
+        const mapRu = ['ноль','один','два','три','четыре','пять','шесть','семь','восемь','девять'];
+        const mapEn = ['zero','one','two','three','four','five','six','seven','eight','nine'];
+        return (lang === 'ru' ? mapRu : mapEn)[parseInt(d,10)];
+      }).join(' ');
+      s = wholeWords + (lang === 'ru' ? ' запятая ' : ' point ') + digits;
+    }
+    result = s;
+    out.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+    refreshMainButton();
+  };
+  inp.addEventListener('input', upd);
+  langEl.addEventListener('change', upd);
+  fmtEl.addEventListener('change', upd);
+  $('copyBtn').onclick = () => copyText(result);
+  setMainButton(() => result);
+  setTimeout(() => inp.focus(), 120);
+}
+
+/* ============================================================
+   ── 14. Проценты ──
+   ============================================================ */
+function renderPercent(el){
+  el.innerHTML = `
+    <div class="panel">
+      <div class="hashrow"><div class="name">X% ОТ Y</div></div>
+      <div class="twoCols">
+        <input type="number" id="a1" placeholder="X%" inputmode="decimal">
+        <input type="number" id="a2" placeholder="Y" inputmode="decimal">
+      </div>
+      <div class="out" id="r1" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>
+      <div class="hashrow" style="margin-top:20px"><div class="name">X СОСТАВЛЯЕТ % ОТ Y</div></div>
+      <div class="twoCols">
+        <input type="number" id="b1" placeholder="X" inputmode="decimal">
+        <input type="number" id="b2" placeholder="Y" inputmode="decimal">
+      </div>
+      <div class="out" id="r2" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>
+      <div class="hashrow" style="margin-top:20px"><div class="name">НА СКОЛЬКО % X БОЛЬШЕ/МЕНЬШЕ Y</div></div>
+      <div class="twoCols">
+        <input type="number" id="c1" placeholder="X" inputmode="decimal">
+        <input type="number" id="c2" placeholder="Y" inputmode="decimal">
+      </div>
+      <div class="out" id="r3" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>
+      <div class="hashrow" style="margin-top:20px"><div class="name">Y ± X%</div></div>
+      <div class="twoCols">
+        <input type="number" id="d1" placeholder="Y" inputmode="decimal">
+        <input type="number" id="d2" placeholder="X%" inputmode="decimal">
+      </div>
+      <div class="out" id="r4" style="margin-top:0;font-size:15px;text-align:center;font-weight:600"><span class="empty">—</span></div>
+    </div>`;
+  const fmt = n => isFinite(n) ? (Math.round(n * 1e10) / 1e10).toLocaleString('ru-RU', { maximumFractionDigits: 10 }) : '—';
+  const num = id => parseFloat(el.querySelector('#' + id).value.replace(',', '.'));
+  const upd1 = () => {
+    const x = num('a1'), y = num('a2'), r = el.querySelector('#r1');
+    if (isNaN(x) || isNaN(y)){ r.innerHTML = '<span class="empty">—</span>'; return; }
+    r.textContent = fmt(x * y / 100);
+  };
+  const upd2 = () => {
+    const x = num('b1'), y = num('b2'), r = el.querySelector('#r2');
+    if (isNaN(x) || isNaN(y) || y === 0){ r.innerHTML = '<span class="empty">—</span>'; return; }
+    r.textContent = fmt(x / y * 100) + '%';
+  };
+  const upd3 = () => {
+    const x = num('c1'), y = num('c2'), r = el.querySelector('#r3');
+    if (isNaN(x) || isNaN(y) || y === 0){ r.innerHTML = '<span class="empty">—</span>'; return; }
+    const p = (x - y) / y * 100;
+    r.textContent = `на ${fmt(Math.abs(p))}% ${p >= 0 ? 'больше' : 'меньше'}`;
+  };
+  const upd4 = () => {
+    const y = num('d1'), x = num('d2'), r = el.querySelector('#r4');
+    if (isNaN(x) || isNaN(y)){ r.innerHTML = '<span class="empty">—</span>'; return; }
+    r.innerHTML = `+${fmt(x)}%: <b>${fmt(y * (1 + x/100))}</b><br>−${fmt(x)}%: <b>${fmt(y * (1 - x/100))}</b>`;
+  };
+  ['a1','a2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd1));
+  ['b1','b2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd2));
+  ['c1','c2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd3));
+  ['d1','d2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd4));
+  setMainButton(() => '');
+  setTimeout(() => el.querySelector('#a1').focus(), 120);
+}
+
+/* ============================================================
+   ── 15. Калькулятор дат ──
+   ============================================================ */
+function renderDates(el){
+  const today = new Date();
+  const todayStr = formatUserDate(today, false);
+  el.innerHTML = `
+    <div class="panel">
+      <div class="hashrow"><div class="name">РАЗНИЦА МЕЖДУ ДАТАМИ</div></div>
+      <div class="twoCols">
+        ${dateFieldWrap('d1', todayStr, false)}
+        ${dateFieldWrap('d2', todayStr, false)}
+      </div>
+      <div class="stats" id="out1" style="margin-top:0"></div>
+      <div class="hashrow" style="margin-top:20px"><div class="name">ДАТА + N ДНЕЙ</div></div>
+      <div class="twoCols">
+        ${dateFieldWrap('b1', todayStr, false)}
+        <input type="number" id="b2" placeholder="+ дней" inputmode="numeric">
+      </div>
+      <div class="out" id="out2" style="margin-top:0;font-size:18px;font-weight:600;text-align:center"><span class="empty">—</span></div>
+      <div class="hashrow" style="margin-top:20px"><div class="name">ДЕНЬ НЕДЕЛИ И ВОЗРАСТ</div></div>
+      ${dateFieldWrap('c1', todayStr, false)}
+      <div class="stats" id="out3" style="margin-top:12px"></div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  const fmtD = d => d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  const getDate = id => { const p = parseUserDate($(id).value, false); return p ? p.date : null; };
+  const upd1 = () => {
+    const dA = getDate('d1'), dB = getDate('d2'), out = $('out1');
+    if (!dA || !dB){ out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите обе даты</div>'; return; }
+    const ms = Math.abs(dB - dA);
+    const days = Math.floor(ms / 86400000);
+    const weeks = Math.floor(days / 7);
+    const hours = Math.floor(ms / 3600000);
+    const years = Math.floor(days / 365.25);
+    const months = Math.floor(days / 30.4375);
+    const earlier = dA < dB ? dA : dB, later = dA < dB ? dB : dA;
+    let y = later.getFullYear() - earlier.getFullYear();
+    let m = later.getMonth() - earlier.getMonth();
+    let d = later.getDate() - earlier.getDate();
+    if (d < 0){ m--; d += new Date(later.getFullYear(), later.getMonth(), 0).getDate(); }
+    if (m < 0){ y--; m += 12; }
+    out.innerHTML = `
+      <div class="stat"><div class="v">${days.toLocaleString('ru-RU')}</div><div class="k">дней</div></div>
+      <div class="stat"><div class="v">${weeks.toLocaleString('ru-RU')}</div><div class="k">недель</div></div>
+      <div class="stat"><div class="v">${months.toLocaleString('ru-RU')}</div><div class="k">месяцев (прибл.)</div></div>
+      <div class="stat"><div class="v">${years.toLocaleString('ru-RU')}</div><div class="k">лет (прибл.)</div></div>
+      <div class="stat full"><div class="v small">${y} г. ${m} мес. ${d} дн. • ${hours.toLocaleString('ru-RU')} часов</div><div class="k">точно</div></div>
+    `;
+  };
+  const upd2 = () => {
+    const base = getDate('b1'), n = parseInt($('b2').value, 10), out = $('out2');
+    if (!base || isNaN(n)){ out.innerHTML = '<span class="empty">—</span>'; return; }
+    const r = new Date(base); r.setDate(r.getDate() + n);
+    out.textContent = fmtD(r);
+  };
+  const upd3 = () => {
+    const d = getDate('c1'), out = $('out3');
+    if (!d){ out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>'; return; }
+    const weekday = d.toLocaleDateString('ru-RU', { weekday: 'long' });
+    const now = new Date();
+    let years = now.getFullYear() - d.getFullYear();
+    let months = now.getMonth() - d.getMonth();
+    let days = now.getDate() - d.getDate();
+    if (days < 0){ months--; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
+    if (months < 0){ years--; months += 12; }
+    const totalDays = Math.floor((now - d) / 86400000);
+    out.innerHTML = `
+      <div class="stat"><div class="v small">${weekday.charAt(0).toUpperCase() + weekday.slice(1)}</div><div class="k">день недели</div></div>
+      <div class="stat"><div class="v small">${fmtD(d)}</div><div class="k">дата</div></div>
+      <div class="stat"><div class="v small">${years} г. ${months} мес. ${days} дн.</div><div class="k">возраст</div></div>
+      <div class="stat"><div class="v small">${totalDays.toLocaleString('ru-RU')}</div><div class="k">дней всего</div></div>
+    `;
+  };
+  bindDateField(el, 'd1', false, upd1);
+  bindDateField(el, 'd2', false, upd1);
+  bindDateField(el, 'b1', false, upd2);
+  bindDateField(el, 'c1', false, upd3);
+  $('b2').addEventListener('input', upd2);
+  setMainButton(() => '');
+  upd1(); upd3();
+}
+
+/* ============================================================
+   ── 16. Таймстамп ──
+   ============================================================ */
+function renderTimestamp(el){
+  const now = new Date();
+  const nowStr = formatUserDate(now, true);
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Unix-таймстамп (секунды или мс)</label>
+      <input type="text" id="ts" placeholder="1700000000" inputmode="numeric" autocomplete="off">
+      <div class="row"><button class="btn ghost" id="nowBtn">Сейчас</button></div>
+      <div class="stats" id="tsOut"></div>
+      <div class="hashrow" style="margin-top:20px"><div class="name">ОБРАТНО: ДАТА → TIMESTAMP</div></div>
+      ${dateFieldWrap('dt', nowStr, true)}
+      <div class="stats" id="dtOut"></div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  const fmtRel = (ms) => {
+    const d = Date.now() - ms;
+    const abs = Math.abs(d);
+    const sec = Math.round(abs/1000), min = Math.round(abs/60000), hr = Math.round(abs/3600000);
+    const day = Math.round(abs/86400000), mo = Math.round(abs/2592000000), yr = Math.round(abs/31536000000);
+    let val;
+    if (sec < 60) val = `${sec} сек`;
+    else if (min < 60) val = `${min} мин`;
+    else if (hr < 24) val = `${hr} ч`;
+    else if (day < 30) val = `${day} дн`;
+    else if (mo < 12) val = `${mo} мес`;
+    else val = `${yr} г`;
+    return d >= 0 ? `${val} назад` : `через ${val}`;
+  };
+  const updTs = () => {
+    const raw = $('ts').value.trim();
+    if (!raw){ $('tsOut').innerHTML = ''; refreshMainButton(); return; }
+    const n = parseInt(raw.replace(/\D/g,''), 10);
+    if (!isFinite(n)){ $('tsOut').innerHTML = ''; refreshMainButton(); return; }
+    const ms = String(n).length > 10 ? n : n * 1000;
+    const d = new Date(ms);
+    if (isNaN(d.getTime())){ $('tsOut').innerHTML = ''; refreshMainButton(); return; }
+    $('tsOut').innerHTML = `
+      <div class="stat"><div class="v" style="font-size:14px">${d.toISOString()}</div><div class="k">ISO / UTC</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${d.toLocaleString('ru-RU')}</div><div class="k">Локальное время</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${Math.floor(ms/1000)}</div><div class="k">Секунды</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>
+      <div class="stat" style="grid-column:1/-1"><div class="v" style="font-size:14px">${fmtRel(ms)}</div><div class="k">Относительно</div></div>
+    `;
+    refreshMainButton();
+  };
+  const updDt = () => {
+    const p = parseUserDate($('dt').value, true);
+    if (!p){ $('dtOut').innerHTML = ''; refreshMainButton(); return; }
+    const ms = p.date.getTime(), sec = Math.floor(ms/1000);
+    $('dtOut').innerHTML = `
+      <div class="stat"><div class="v" style="font-size:14px">${sec}</div><div class="k">Секунды</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>
+    `;
+    refreshMainButton();
+  };
+  $('ts').addEventListener('input', updTs);
+  $('nowBtn').onclick = () => { $('ts').value = String(Math.floor(Date.now()/1000)); updTs(); };
+  bindDateField(el, 'dt', true, updDt);
+  setMainButton(() => {
+    if ($('ts').value.trim()) return `Timestamp: ${$('ts').value}\n${$('tsOut').textContent.slice(0,200)}`;
+    const p = parseUserDate($('dt').value, true);
+    if (p) return `Дата: ${formatUserDate(p.date, true)}\nСекунды: ${Math.floor(p.date.getTime()/1000)}`;
+    return '';
+  });
+  updDt();
+}
+
+/* ============================================================
+   ── 17. Конвертер единиц ──
+   ============================================================ */
+function renderUnits(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Категория</label>
+      <select class="sel" id="cat">
+        ${Object.entries(UNITS).map(([k,v]) => `<option value="${k}">${v.name}</option>`).join('')}
+      </select>
+      <label class="fld" style="margin-top:14px">Значение</label>
+      <input type="text" id="val" value="1" inputmode="decimal" autocomplete="off">
+      <label class="fld" style="margin-top:14px">Единица измерения</label>
+      <select class="sel" id="unit"></select>
+      <div class="hashrow" style="margin-top:20px">
+        <div class="name">ПЕРЕВОД ВО ВСЕ ОСТАЛЬНЫЕ ЕДИНИЦЫ</div>
+        <div id="results"></div>
+      </div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  const catEl = $('cat'), valEl = $('val'), unitEl = $('unit'), resultsEl = $('results');
+  let mainText = '';
+  const fillUnits = () => {
+    const cat = catEl.value;
+    const units = UNITS[cat].units;
+    const keys = Object.keys(units);
+    unitEl.innerHTML = keys.map(k => `<option value="${k}">${esc(units[k].n)} (${k})</option>`).join('');
+    unitEl.value = keys[0];
+    upd();
+  };
+  const upd = () => {
+    const cat = catEl.value;
+    const units = UNITS[cat].units;
+    const from = unitEl.value;
+    const v = parseFloat(String(valEl.value).replace(',', '.'));
+    if (isNaN(v)){
+      resultsEl.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите число</div>';
+      mainText = ''; refreshMainButton(); return;
+    }
+    const keys = Object.keys(units).filter(k => k !== from);
+    if (!keys.length){
+      resultsEl.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Единственная единица в категории</div>';
+      mainText = ''; refreshMainButton(); return;
+    }
+    resultsEl.innerHTML = keys.map(k => {
+      const conv = convertUnit(v, cat, from, k);
+      const display = conv.toLocaleString('ru-RU', { maximumFractionDigits: 8 });
+      return `<div class="convRow" data-v="${esc(String(conv))}">
+        <span class="cn">${esc(units[k].n)}</span>
+        <span class="cv">${esc(display)}<span class="cu">${esc(k)}</span></span>
+        <button class="mini" type="button">Копировать</button>
+      </div>`;
+    }).join('');
+    mainText = keys.map(k => `${convertUnit(v, cat, from, k).toLocaleString('ru-RU',{maximumFractionDigits:8})} ${k}`).join('\n');
+    refreshMainButton();
+  };
+  catEl.addEventListener('change', fillUnits);
+  valEl.addEventListener('input', upd);
+  unitEl.addEventListener('change', upd);
+  resultsEl.addEventListener('click', e => {
+    const btn = e.target.closest('button.mini');
+    if (!btn) return;
+    const row = btn.closest('.convRow');
+    if (!row) return;
+    copyText(row.dataset.v);
+  });
+  fillUnits();
+  setMainButton(() => mainText);
+}
+
+/* ============================================================
+   Навигация: главная → категория → инструмент
    ============================================================ */
 const mainEl  = document.getElementById('main');
 const titleEl = document.getElementById('title');
 const backBtn = document.getElementById('backBtn');
 
-function goHome(){
+let _view = 'home';
+let _currentCat = null;
+
+function cleanup(){
   if (_currentCleanup) { try { _currentCleanup(); } catch(e){} _currentCleanup = null; }
-  titleEl.textContent = 'Инструменты';
-  backBtn.classList.add('hidden');
+}
+
+function resetMain(){
   _mbGetter = null;
   if (tg && tg.MainButton) { try { tg.MainButton.hide(); } catch(e){} }
+}
+
+function renderHome(){
+  cleanup();
+  _view = 'home';
+  _currentCat = null;
+  titleEl.textContent = 'Инструменты';
+  backBtn.classList.add('hidden');
   if (tg && tg.BackButton) { try { tg.BackButton.hide(); } catch(e){} }
-  mainEl.innerHTML = `
-    <div class="grid">
-      ${Object.entries(TOOLS).map(([k,t]) => `
-        <button class="card" data-tool="${k}">
-          <span class="ico">${t.icon}</span>
-          <span class="lbl">${esc(t.title)}</span>
-        </button>`).join('')}
-    </div>`;
-  mainEl.querySelectorAll('[data-tool]').forEach(b => {
-    b.addEventListener('click', () => openTool(b.dataset.tool));
+  resetMain();
+
+  mainEl.innerHTML = `<div class="catList">${
+    Object.entries(CATEGORIES).map(([k, c]) => `
+      <button class="cat" data-cat="${k}">
+        <span class="catIco">${c.icon}</span>
+        <span class="catInfo">
+          <div class="catTitle">${esc(c.title)}</div>
+          <div class="catSub">${esc(c.desc)}</div>
+        </span>
+        <span class="catCount">${c.tools.length} ›</span>
+      </button>`).join('')
+  }</div>`;
+
+  mainEl.querySelectorAll('[data-cat]').forEach(btn => {
+    btn.addEventListener('click', () => openCategory(btn.dataset.cat));
+  });
+  window.scrollTo(0, 0);
+}
+
+function openCategory(catKey){
+  const cat = CATEGORIES[catKey];
+  if (!cat){ renderHome(); return; }
+  cleanup();
+  _view = 'category';
+  _currentCat = catKey;
+  titleEl.textContent = cat.title;
+  backBtn.classList.remove('hidden');
+  if (tg && tg.BackButton) { try { tg.BackButton.show(); } catch(e){} }
+  resetMain();
+
+  mainEl.innerHTML = `<div class="grid">${
+    cat.tools.map(toolKey => {
+      const t = TOOLS[toolKey];
+      if (!t) return '';
+      return `<button class="card" data-tool="${toolKey}">
+        <span class="ico">${t.icon}</span>
+        <span class="lbl">${esc(t.title)}</span>
+      </button>`;
+    }).join('')
+  }</div>`;
+
+  mainEl.querySelectorAll('[data-tool]').forEach(btn => {
+    btn.addEventListener('click', () => openTool(btn.dataset.tool));
   });
   window.scrollTo(0, 0);
 }
 
 function openTool(key){
-  if (_currentCleanup) { try { _currentCleanup(); } catch(e){} _currentCleanup = null; }
   const t = TOOLS[key];
   if (!t) return;
+  cleanup();
+  _view = 'tool';
   titleEl.textContent = t.title;
   backBtn.classList.remove('hidden');
   if (tg && tg.BackButton) { try { tg.BackButton.show(); } catch(e){} }
-  if (tg && tg.MainButton) { try { tg.MainButton.hide(); } catch(e){} }
-  _mbGetter = null;
+  resetMain();
+
   mainEl.innerHTML = '';
   t.render(mainEl);
   window.scrollTo(0, 0);
 }
 
-/* ── Показать/скрыть пароль ─────────────────────────────── */
+function goBack(){
+  if (_view === 'tool'){
+    const cat = _currentCat || TOOL_CATEGORY[Object.keys(TOOLS).find(k => TOOLS[k] && TOOLS[k].title === titleEl.textContent)] || 'text';
+    openCategory(cat);
+  } else if (_view === 'category'){
+    renderHome();
+  }
+}
+
+backBtn.addEventListener('click', goBack);
+if (tg && tg.BackButton) {
+  tg.BackButton.onClick(() => goBack());
+}
+
+/* ── Показать/скрыть пароль ── */
 document.addEventListener('click', e => {
   const btn = e.target.closest('.pwd-toggle');
   if (!btn) return;
@@ -2841,8 +2725,8 @@ document.addEventListener('click', e => {
   try { input.setSelectionRange(pos, pos); } catch(_){}
 });
 
-backBtn.addEventListener('click', goHome);
-goHome();
+/* ── Старт ── */
+renderHome();
 </script>
 </body>
 </html>
