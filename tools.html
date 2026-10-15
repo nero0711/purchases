@@ -131,6 +131,22 @@
     font-weight:600;cursor:pointer;padding:2px 0;font-family:inherit;flex-shrink:0;
   }
 
+  /* ── Строка конвертера ── */
+  .convRow{
+    display:flex;align-items:center;gap:10px;
+    background:var(--sec);border-radius:10px;padding:11px 13px;margin-bottom:8px;
+    font-family:inherit;
+  }
+  .convRow .cn{
+    font-size:13px;color:var(--hint);flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .convRow .cv{
+    font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  .convRow .cu{font-size:12px;color:var(--hint);font-weight:500;margin-left:2px;}
+
   .letters{
     background:var(--sec);border-radius:12px;padding:12px;
     display:flex;flex-wrap:wrap;gap:6px;max-height:260px;overflow-y:auto;
@@ -171,13 +187,11 @@
     border:1px solid var(--sep);background:#3498db;
   }
 
-  /* ── Двухколоночный layout для textarea / diff ── */
   .twoCols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
   @media (max-width:520px){
     .twoCols{grid-template-columns:1fr;}
   }
 
-  /* ── Side-by-side diff ── */
   .diff2{
     margin-top:6px;background:var(--sec);border-radius:12px;padding:8px;
     display:grid;grid-template-columns:1fr 1fr;gap:2px 6px;
@@ -216,23 +230,6 @@
     width:100%;height:52px;border:0;border-radius:12px;
     background:var(--sec);padding:4px;cursor:pointer;
   }
-
-  .imgbox{
-    background:var(--sec);border-radius:14px;padding:8px;
-    display:flex;justify-content:center;overflow:hidden;
-  }
-  .imgbox canvas{max-width:100%;height:auto;border-radius:8px;display:block;}
-  .resultImg{
-    width:100%;max-width:100%;height:auto;border-radius:8px;display:block;
-  }
-  .drop{
-    background:var(--sec);border:2px dashed var(--sep);border-radius:14px;
-    padding:24px 16px;text-align:center;cursor:pointer;font-size:14px;
-    transition:border-color .2s, background .2s;
-  }
-  .drop:active{border-color:var(--btn);}
-  .drop .ic{font-size:30px;display:block;margin-bottom:4px;}
-  .drop .lbl{color:var(--hint);}
 
   .toast{
     position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
@@ -846,8 +843,6 @@ function diffLines(a, b){
   while (j>0){ res.unshift({t:'add', s:B[j-1]}); j--; }
   return res;
 }
-
-/* ── Построение пар строк для side-by-side ───────────────── */
 function buildSideBySide(diff){
   const rows = [];
   let i = 0;
@@ -856,7 +851,6 @@ function buildSideBySide(diff){
       rows.push({ left: diff[i].s, right: diff[i].s, same: true });
       i++;
     } else {
-      // Группируем блок изменений между строками "same"
       const dels = [], adds = [];
       while (i < diff.length && diff[i].t !== 'same'){
         if (diff[i].t === 'del') dels.push(diff[i].s);
@@ -1072,34 +1066,6 @@ function stringifyCSV(data){
 }
 
 /* ============================================================
-   Стеганография (текст)
-   ============================================================ */
-function stegEncode(cover, secret){
-  if (!secret) return cover;
-  let bits = '';
-  for (let i=0;i<secret.length;i++){
-    bits += secret.charCodeAt(i).toString(2).padStart(16,'0');
-  }
-  let zw = '\u2060';
-  for (const b of bits) zw += b === '0' ? '\u200B' : '\u200C';
-  zw += '\u2060';
-  return cover + zw;
-}
-function stegDecode(text){
-  const m = text.match(/\u2060([\u200B\u200C]*)\u2060/);
-  if (!m) return null;
-  const bits = m[1];
-  if (bits.length % 16 !== 0) return null;
-  let out = '';
-  for (let i=0;i<bits.length;i+=16){
-    let code = 0;
-    for (let j=0;j<16;j++) code = (code<<1) | (bits[i+j] === '\u200C' ? 1 : 0);
-    out += String.fromCharCode(code);
-  }
-  return out;
-}
-
-/* ============================================================
    Единицы
    ============================================================ */
 const UNITS = {
@@ -1129,7 +1095,7 @@ const UNITS = {
     TiB:{n:'Тебибайт (1024⁴)',f:1024**4}
   }},
   temp: { name: 'Температура', units: {
-    C:{n:'Цельсий °C'}, F:{n:'Фаренгейт °F'}, K:{n:'Кельвин K'}
+    C:{n:'Цельсий',f:0}, F:{n:'Фаренгейт',f:0}, K:{n:'Кельвин',f:0}
   }}
 };
 function convertUnit(value, cat, from, to){
@@ -1156,10 +1122,7 @@ const TOOLS = {
   translit:{ icon:'🔤', title:'Транслитерация',   render: renderTranslit },
   count:   { icon:'🔢', title:'Подсчёт символов', render: renderCount },
   diff:    { icon:'📊', title:'Diff двух текстов',render: renderDiff },
-  stegano: { icon:'🕵️', title:'Стеганография',    render: renderStegano },
-  stegimg: { icon:'🖼️', title:'Стеганография в фото', render: renderStegImage },
-  hash:    { icon:'#️⃣', title:'MD5 / SHA-256',   render: renderHash },
-  base64:  { icon:'🧬', title:'Base64',           render: renderBase64 },
+  hashb64: { icon:'#️⃣', title:'Хеши и Base64',   render: renderHashB64 },
   qr:      { icon:'📱', title:'QR-код',           render: renderQR },
   dataconv:{ icon:'🗂️', title:'JSON / YAML / CSV',render: renderDataConv },
   color:   { icon:'🎨', title:'Конвертер цветов', render: renderColor },
@@ -1490,565 +1453,99 @@ function renderDiff(el){
   setTimeout(() => A.focus(), 120);
 }
 
-/* ── 7. Стеганография (текст) ────────────────────────────── */
-function renderStegano(el){
-  let mode = 'enc';
-  el.innerHTML = `
-    <div class="panel">
-      <div class="seg" id="seg">
-        <button class="on" data-m="enc">Спрятать</button>
-        <button data-m="dec">Извлечь</button>
-      </div>
-      <div id="coverWrap">
-        <label class="fld">Текст-обложка (что увидят)</label>
-        <textarea id="cover" placeholder="Обычный текст, в котором будет спрятано сообщение…" autocomplete="off" spellcheck="false" style="min-height:80px"></textarea>
-      </div>
-      <label class="fld" id="lbl" style="margin-top:12px">Секретное сообщение</label>
-      <textarea id="inp" placeholder="Что спрятать…" autocomplete="off" spellcheck="false" style="min-height:80px"></textarea>
-      <div class="row">
-        <button class="btn" id="goBtn">Выполнить</button>
-        <button class="btn ghost" id="copyBtn">Копировать</button>
-      </div>
-      <label class="fld" style="margin-top:16px">Результат</label>
-      <div class="out" id="out"><span class="empty">—</span></div>
-      <div class="hintnote">Используются невидимые Unicode-символы (U+200B, U+200C, U+2060). Работает в Telegram и большинстве текстовых полей.</div>
-    </div>`;
-  const seg = el.querySelector('#seg');
-  const coverWrap = el.querySelector('#coverWrap');
-  const cover = el.querySelector('#cover');
-  const inp = el.querySelector('#inp');
-  const lbl = el.querySelector('#lbl');
-  const out = el.querySelector('#out');
-  const goBtn = el.querySelector('#goBtn');
-
-  let result = '';
-
-  const setMode = m => {
-    mode = m;
-    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.m === m));
-    if (m === 'enc'){
-      coverWrap.classList.remove('hidden');
-      lbl.textContent = 'Секретное сообщение';
-      inp.placeholder = 'Что спрятать…';
-      goBtn.textContent = 'Спрятать';
-    } else {
-      coverWrap.classList.add('hidden');
-      lbl.textContent = 'Текст со скрытым сообщением';
-      inp.placeholder = 'Вставьте текст сюда…';
-      goBtn.textContent = 'Извлечь';
-    }
-    out.innerHTML = '<span class="empty">—</span>';
-    result = '';
-    refreshMainButton();
-  };
-
-  seg.addEventListener('click', e => {
-    const b = e.target.closest('button[data-m]');
-    if (b) setMode(b.dataset.m);
-  });
-
-  goBtn.onclick = () => {
-    if (mode === 'enc'){
-      if (!inp.value){ toast('Введите секретное сообщение'); return; }
-      result = stegEncode(cover.value, inp.value);
-      out.textContent = result;
-      out.style.wordBreak = 'break-all';
-      toast('Готово — скопируйте и отправьте');
-    } else {
-      if (!inp.value){ toast('Вставьте текст'); return; }
-      const d = stegDecode(inp.value);
-      if (d === null){
-        out.innerHTML = '<span class="empty">Скрытое сообщение не найдено</span>';
-        result = '';
-      } else {
-        out.textContent = d;
-        result = d;
-      }
-    }
-    refreshMainButton();
-  };
-
-  el.querySelector('#copyBtn').onclick = () => copyText(result);
-  setMainButton(() => result);
-}
-
-/* ── 8. Стеганография в изображение ──────────────────────── */
-function renderStegImage(el){
-  let mode = 'enc';
-  let imgData = null;
-  let resultUrl = null;
-  let fileName = 'stego.png';
-
-  const MAGIC = [0x53, 0x54, 0x45, 0x47]; // "STEG"
-
-  el.innerHTML = `
-    <div class="panel">
-      <div class="seg" id="seg">
-        <button class="on" data-m="enc">Спрятать</button>
-        <button data-m="dec">Извлечь</button>
-      </div>
-
-      <label class="fld">Изображение</label>
-      <input type="file" id="file" accept="image/*" style="display:none">
-      <div class="drop" id="drop">
-        <span class="ic">🖼️</span>
-        <span class="lbl" id="dropText">Нажмите, чтобы выбрать изображение</span>
-      </div>
-
-      <div id="preview" class="hidden" style="margin-top:14px">
-        <div class="imgbox"><canvas id="cv"></canvas></div>
-        <div class="hintnote" id="info"></div>
-      </div>
-
-      <div id="encBlock">
-        <label class="fld" style="margin-top:14px">Секретное сообщение</label>
-        <textarea id="secret" placeholder="Что спрятать в изображении…"
-          style="min-height:80px" autocomplete="off" spellcheck="false"></textarea>
-        <label class="fld" style="margin-top:12px">Пароль <span style="font-weight:400;opacity:.7">— необязательно</span></label>
-        <div class="pwd-wrap">
-          <input type="password" id="encPwd" placeholder="Без пароля, если оставить пустым" autocomplete="new-password">
-          <button type="button" class="pwd-toggle" data-for="encPwd" aria-label="Показать пароль">👁</button>
-        </div>
-      </div>
-
-      <div id="decBlock" class="hidden">
-        <label class="fld" style="margin-top:14px">Пароль</label>
-        <div class="pwd-wrap">
-          <input type="password" id="decPwd" placeholder="Введите пароль от изображения" autocomplete="current-password">
-          <button type="button" class="pwd-toggle" data-for="decPwd" aria-label="Показать пароль">👁</button>
-        </div>
-        <div class="hintnote" style="margin-top:8px;text-align:left">Если пароль не задавали — оставьте поле пустым.</div>
-      </div>
-
-      <div class="row hidden" id="actions" style="margin-top:14px">
-        <button class="btn" id="goBtn">Спрятать</button>
-      </div>
-
-      <div id="resultBlock" class="hidden" style="margin-top:16px">
-        <label class="fld">Готовое изображение</label>
-        <div class="imgbox"><img id="resultImg" class="resultImg" alt="Результат"></div>
-        <div class="row" style="margin-top:12px">
-          <button class="btn" id="shareBtn">📤 Поделиться</button>
-        </div>
-        <div class="row">
-          <button class="btn ghost" id="openBtn">Открыть в браузере</button>
-          <button class="btn ghost" id="dlBtn">Скачать PNG</button>
-        </div>
-        <div class="row">
-          <button class="btn ghost" id="b64Btn">Скопировать Base64</button>
-        </div>
-        <div class="hintnote">На телефоне: нажмите «Поделиться» → «Сохранить в файлы», или удерживайте картинку и выберите «Сохранить изображение».</div>
-      </div>
-
-      <label class="fld" style="margin-top:16px" id="outLbl">Результат</label>
-      <div class="out" id="out"><span class="empty">—</span></div>
-      <div class="err hidden" id="err"></div>
-      <div class="hintnote">Только PNG без потерь. JPEG / WebP при пересохранении испортят LSB.</div>
-    </div>`;
-
-  const $ = id => el.querySelector('#' + id);
-  const seg = $('seg'), drop = $('drop'), dropText = $('dropText');
-  const previewBox = $('preview'), cv = $('cv');
-  const ctx = cv.getContext('2d', { willReadFrequently: true });
-  const encBlock = $('encBlock'), decBlock = $('decBlock');
-  const secret = $('secret'), encPwd = $('encPwd'), decPwd = $('decPwd');
-  const actions = $('actions'), goBtn = $('goBtn');
-  const resultBlock = $('resultBlock'), resultImg = $('resultImg');
-  const out = $('out'), err = $('err'), info = $('info'), outLbl = $('outLbl');
-
-  const showErr = msg => { err.textContent = msg; err.classList.remove('hidden'); };
-  const hideErr = () => err.classList.add('hidden');
-
-  /* ─────── Крипто ─────── */
-  function deriveKeyStream(password, length){
-    const key = new Uint8Array(length);
-    let offset = 0, counter = 0;
-    while (offset < length){
-      const hash = sha256(password + '|steg|' + counter);
-      for (let i = 0; i < 32 && offset < length; i++){
-        key[offset++] = parseInt(hash.substr(i * 2, 2), 16);
-      }
-      counter++;
-    }
-    return key;
-  }
-  function passwordCheckBytes(password){
-    const hash = sha256('check|' + password);
-    return [
-      parseInt(hash.substr(0, 2), 16),
-      parseInt(hash.substr(2, 2), 16),
-      parseInt(hash.substr(4, 2), 16),
-      parseInt(hash.substr(6, 2), 16)
-    ];
-  }
-
-  /* ─────── LSB ─────── */
-  function bitsFromImage(data){
-    const bits = [];
-    for (let i = 0; i < data.length; i++){
-      if (i % 4 === 3) continue;
-      bits.push(data[i] & 1);
-    }
-    return bits;
-  }
-
-  function encodeInto(dataImg, text, password){
-    const plaintext = enc.encode(text);
-    let body, flags = 0;
-
-    if (password){
-      const check = passwordCheckBytes(password);
-      const withCheck = new Uint8Array(4 + plaintext.length);
-      withCheck[0] = check[0]; withCheck[1] = check[1];
-      withCheck[2] = check[2]; withCheck[3] = check[3];
-      withCheck.set(plaintext, 4);
-      const ks = deriveKeyStream(password, withCheck.length);
-      body = new Uint8Array(withCheck.length);
-      for (let i = 0; i < withCheck.length; i++) body[i] = withCheck[i] ^ ks[i];
-      flags = 1;
-    } else {
-      body = plaintext;
-    }
-
-    const bits = [];
-    const put = (val, len) => { for (let i = len-1; i >= 0; i--) bits.push((val >>> i) & 1); };
-    put(MAGIC[0], 8); put(MAGIC[1], 8); put(MAGIC[2], 8); put(MAGIC[3], 8);
-    put(flags, 8);
-    put(body.length, 32);
-    for (const b of body) put(b, 8);
-
-    const data = dataImg.data;
-    let cap = 0;
-    for (let i = 0; i < data.length; i++) if (i % 4 !== 3) cap++;
-    if (bits.length > cap){
-      const need = Math.ceil(bits.length / 8);
-      const have = Math.floor(cap / 8);
-      throw new Error(`Мало места: нужно ${need.toLocaleString('ru-RU')} Б, доступно ${have.toLocaleString('ru-RU')} Б`);
-    }
-
-    let bitIdx = 0;
-    for (let i = 0; i < data.length && bitIdx < bits.length; i++){
-      if (i % 4 === 3) continue;
-      data[i] = (data[i] & 0xFE) | bits[bitIdx];
-      bitIdx++;
-    }
-    return dataImg;
-  }
-
-  function decodeFrom(dataImg, password){
-    const bits = bitsFromImage(dataImg.data);
-    if (bits.length < 72) throw new Error('Изображение слишком маленькое');
-
-    const readByte = off => {
-      let v = 0;
-      for (let i = 0; i < 8; i++) v = (v << 1) | bits[off + i];
-      return v;
-    };
-
-    for (let i = 0; i < 4; i++){
-      if (readByte(i * 8) !== MAGIC[i]) throw new Error('Скрытое сообщение не найдено');
-    }
-    const flags = readByte(32);
-    const pwdProtected = (flags & 1) === 1;
-
-    let len = 0;
-    for (let i = 0; i < 32; i++) len = (len << 1) | bits[40 + i];
-    if (len <= 0 || len > Math.floor((bits.length - 72) / 8)){
-      throw new Error('Повреждённое сообщение или неверный файл');
-    }
-
-    const bytes = new Uint8Array(len);
-    for (let b = 0; b < len; b++){
-      let v = 0;
-      for (let j = 0; j < 8; j++) v = (v << 1) | bits[72 + b * 8 + j];
-      bytes[b] = v;
-    }
-
-    if (pwdProtected){
-      if (!password) throw new Error('Изображение защищено паролем');
-      const ks = deriveKeyStream(password, len);
-      for (let i = 0; i < len; i++) bytes[i] ^= ks[i];
-      const check = passwordCheckBytes(password);
-      if (bytes[0] !== check[0] || bytes[1] !== check[1] ||
-          bytes[2] !== check[2] || bytes[3] !== check[3]){
-        throw new Error('Неверный пароль');
-      }
-      return dec.decode(bytes.subarray(4));
-    }
-    return dec.decode(bytes);
-  }
-
-  function setMode(m){
-    mode = m;
-    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.m === m));
-    if (m === 'enc'){
-      encBlock.classList.remove('hidden');
-      decBlock.classList.add('hidden');
-      outLbl.textContent = 'Статус';
-      goBtn.textContent = 'Спрятать';
-    } else {
-      encBlock.classList.add('hidden');
-      decBlock.classList.remove('hidden');
-      outLbl.textContent = 'Извлечённый текст';
-      goBtn.textContent = 'Извлечь';
-    }
-    resultBlock.classList.add('hidden');
-    out.innerHTML = '<span class="empty">—</span>';
-    resultUrl = null;
-    hideErr();
-    if (imgData && m === 'dec') setTimeout(runExtract, 30);
-  }
-
-  seg.addEventListener('click', e => {
-    const b = e.target.closest('button[data-m]');
-    if (b) setMode(b.dataset.m);
-  });
-
-  function loadFile(file){
-    if (!file) return;
-    hideErr();
-    if (!file.type.startsWith('image/')){ showErr('Это не изображение'); return; }
-    fileName = file.name.replace(/\.[^.]+$/, '') + '-stego.png';
-
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      let w = img.naturalWidth, h = img.naturalHeight;
-      const MAX = 2000;
-      if (Math.max(w, h) > MAX){
-        const k = MAX / Math.max(w, h);
-        w = Math.round(w * k); h = Math.round(h * k);
-      }
-      cv.width = w; cv.height = h;
-      ctx.drawImage(img, 0, 0, w, h);
-      imgData = ctx.getImageData(0, 0, w, h);
-
-      previewBox.classList.remove('hidden');
-      actions.classList.remove('hidden');
-      resultBlock.classList.add('hidden');
-      dropText.textContent = file.name;
-
-      const capBytes = Math.floor((w * h * 3) / 8) - 9;
-      info.textContent = `${w}×${h} px • доступно ~${capBytes.toLocaleString('ru-RU')} символов UTF-8`;
-
-      if (mode === 'dec') runExtract();
-      else out.innerHTML = '<span class="empty">Введите сообщение и нажмите «Спрятать»…</span>';
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); showErr('Не удалось открыть изображение'); };
-    img.src = url;
-  }
-
-  function runExtract(){
-    hideErr();
-    if (!imgData){ showErr('Сначала загрузите изображение'); return; }
-    try {
-      const pwd = decPwd.value;
-      const text = decodeFrom(imgData, pwd);
-      out.textContent = text;
-      toast('Сообщение извлечено');
-      if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
-    } catch(e){
-      out.innerHTML = '<span class="empty">—</span>';
-      showErr(e.message || 'Ошибка');
-    }
-  }
-
-  function runHide(){
-    hideErr();
-    if (!imgData){ showErr('Сначала загрузите изображение'); return; }
-    const text = secret.value;
-    if (!text){ showErr('Введите текст для сокрытия'); return; }
-    try {
-      const copy = new ImageData(
-        new Uint8ClampedArray(imgData.data),
-        imgData.width, imgData.height
-      );
-      encodeInto(copy, text, encPwd.value || '');
-      ctx.putImageData(copy, 0, 0);
-      resultUrl = cv.toDataURL('image/png');
-      resultImg.src = resultUrl;
-      resultBlock.classList.remove('hidden');
-      const pwdMsg = encPwd.value ? ' с паролем' : '';
-      out.textContent = `Готово! Сообщение длиной ${text.length} симв.${pwdMsg} спрятано.`;
-      toast('Сообщение спрятано');
-      if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
-      setTimeout(() => resultBlock.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-    } catch(e){
-      showErr(e.message || 'Ошибка');
-    }
-  }
-
-  goBtn.onclick = () => { mode === 'enc' ? runHide() : runExtract(); };
-
-  $('shareBtn').onclick = async () => {
-    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
-    const btn = $('shareBtn');
-    const oldText = btn.textContent;
-    btn.textContent = 'Открываем…';
-    btn.disabled = true;
-    try {
-      const ok = await shareImageFile(resultUrl, fileName);
-      if (!ok){
-        toast('Поделиться недоступно — открываем картинку');
-        try {
-          if (tg) tg.openLink(resultUrl);
-          else window.open(resultUrl, '_blank');
-        } catch(_){
-          toast('Нажмите «Скачать PNG» или удерживайте картинку');
-        }
-      }
-    } finally {
-      btn.textContent = oldText;
-      btn.disabled = false;
-    }
-  };
-
-  $('openBtn').onclick = () => {
-    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
-    try {
-      if (tg) tg.openLink(resultUrl);
-      else window.open(resultUrl, '_blank');
-    } catch(e){ toast('Не удалось открыть'); }
-  };
-
-  $('dlBtn').onclick = () => {
-    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
-    try {
-      const a = document.createElement('a');
-      a.download = fileName;
-      a.href = resultUrl;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      toast('Если файл не скачался — используйте «Поделиться»');
-    } catch(e){ toast('Используйте «Поделиться»'); }
-  };
-
-  $('b64Btn').onclick = () => {
-    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
-    const b64 = resultUrl.split(',')[1] || '';
-    copyText(b64);
-  };
-
-  drop.onclick = () => $('file').click();
-  $('file').addEventListener('change', e => loadFile(e.target.files[0]));
-
-  ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
-    e.preventDefault();
-    drop.style.borderColor = 'var(--btn)';
-  }));
-  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
-    e.preventDefault();
-    drop.style.borderColor = '';
-  }));
-  drop.addEventListener('drop', e => {
-    const f = e.dataTransfer.files && e.dataTransfer.files[0];
-    if (f) loadFile(f);
-  });
-
-  setMainButton(() => '');
-}
-
-/* ── 9. Хеши ─────────────────────────────────────────────── */
-function renderHash(el){
+/* ── 7. Хеши и Base64 (объединённый) ─────────────────────── */
+function renderHashB64(el){
   el.innerHTML = `
     <div class="panel">
       <label class="fld">Текст</label>
-      <textarea id="inp" placeholder="Введите текст для хеширования…" autocomplete="off" spellcheck="false"></textarea>
+      <textarea id="inp" placeholder="Введите текст — хеши и Base64 посчитаются автоматически…"
+        autocomplete="off" spellcheck="false"></textarea>
+
       <div class="hashrow">
         <div class="name">MD5</div>
-        <div class="val"><span id="md5">—</span><button class="mini" data-c="md5">Копировать</button></div>
+        <div class="val"><span id="md5">—</span><button class="mini" type="button" data-c="md5">Копировать</button></div>
       </div>
       <div class="hashrow">
         <div class="name">SHA-256</div>
-        <div class="val"><span id="sha">—</span><button class="mini" data-c="sha">Копировать</button></div>
+        <div class="val"><span id="sha">—</span><button class="mini" type="button" data-c="sha">Копировать</button></div>
       </div>
+      <div class="hashrow">
+        <div class="name">BASE64 — КОДИРОВАНИЕ</div>
+        <div class="val"><span id="b64e">—</span><button class="mini" type="button" data-c="b64e">Копировать</button></div>
+      </div>
+      <div class="hashrow">
+        <div class="name">BASE64 — ДЕКОДИРОВАНИЕ</div>
+        <div class="val"><span id="b64d">—</span><button class="mini" type="button" data-c="b64d">Копировать</button></div>
+      </div>
+      <div class="hintnote">Base64 — декодирование сработает, если введённая строка действительно похожа на Base64.</div>
     </div>`;
-  const inp = el.querySelector('#inp');
-  const m5 = el.querySelector('#md5'), sh = el.querySelector('#sha');
+  const $ = id => el.querySelector('#' + id);
+  const inp = $('inp'), m5 = $('md5'), sh = $('sha'), b64e = $('b64e'), b64d = $('b64d');
+
+  // Попытка декодировать строку как Base64. Возвращает '' если похоже на ошибку.
+  const tryDecode = s => {
+    if (!s) return '';
+    const clean = s.replace(/\s+/g,'');
+    if (clean.length < 4) return '';
+    if (!/^[A-Za-z0-9+/=_-]+$/.test(clean)) return '';
+    try {
+      const d = b64Decode(clean);
+      if (!d) return '';
+      // Отсеиваем случайный бинарный мусор: должно быть >= 70% печатных символов
+      let printable = 0;
+      for (const ch of d){
+        const code = ch.codePointAt(0);
+        if (code === 9 || code === 10 || code === 13 || (code >= 32 && code !== 127)) printable++;
+      }
+      if (printable / d.length < 0.7) return '';
+      return d;
+    } catch(e){ return ''; }
+  };
+
   let t = null;
   const upd = () => {
     clearTimeout(t);
     t = setTimeout(() => {
       const v = inp.value;
-      if (!v){ m5.textContent = '—'; sh.textContent = '—'; refreshMainButton(); return; }
+      if (!v){
+        m5.textContent = '—';
+        sh.textContent = '—';
+        b64e.textContent = '—';
+        b64d.textContent = '—';
+        refreshMainButton();
+        return;
+      }
       m5.textContent = md5(v);
       sh.textContent = sha256(v);
+      b64e.textContent = b64Encode(v);
+      const d = tryDecode(v);
+      b64d.textContent = d || '—';
+      b64d.style.color = d ? '' : 'var(--hint)';
       refreshMainButton();
     }, 60);
   };
   inp.addEventListener('input', upd);
+
   el.addEventListener('click', e => {
     const b = e.target.closest('button[data-c]');
     if (!b) return;
-    copyText(b.dataset.c === 'md5' ? m5.textContent : sh.textContent);
+    const map = { md5: m5, sha: sh, b64e: b64e, b64d: b64d };
+    const node = map[b.dataset.c];
+    if (!node) return;
+    const v = node.textContent;
+    if (!v || v === '—'){ toast('Пусто'); return; }
+    copyText(v);
   });
+
   setMainButton(() => {
-    if (!inp.value) return '';
-    return `MD5: ${m5.textContent}\nSHA-256: ${sh.textContent}`;
+    const v = inp.value;
+    if (!v.trim()) return '';
+    return `MD5: ${m5.textContent}\nSHA-256: ${sh.textContent}\nBase64: ${b64e.textContent}`;
   });
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 10. Base64 ──────────────────────────────────────────── */
-function renderBase64(el){
-  let mode = 'enc';
-  el.innerHTML = `
-    <div class="panel">
-      <div class="seg" id="seg">
-        <button class="on" data-m="enc">Кодировать</button>
-        <button data-m="dec">Декодировать</button>
-      </div>
-      <label class="fld" id="lbl">Исходный текст</label>
-      <textarea id="inp" placeholder="Введите текст…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
-      <div class="row">
-        <button class="btn" id="copyBtn">Копировать</button>
-        <button class="btn ghost" id="swapBtn">⇅</button>
-      </div>
-      <label class="fld" style="margin-top:16px">Результат</label>
-      <div class="out" id="out"><span class="empty">—</span></div>
-      <div class="err hidden" id="err"></div>
-    </div>`;
-  const inp = el.querySelector('#inp'), out = el.querySelector('#out');
-  const seg = el.querySelector('#seg'), lbl = el.querySelector('#lbl'), err = el.querySelector('#err');
-  let result = '';
-
-  const upd = () => {
-    const v = inp.value;
-    err.classList.add('hidden');
-    if (!v){ out.innerHTML = '<span class="empty">—</span>'; result = ''; refreshMainButton(); return; }
-    try {
-      result = mode === 'enc' ? b64Encode(v) : b64Decode(v);
-      out.textContent = result;
-    } catch(e){
-      out.innerHTML = '<span class="empty">—</span>';
-      err.textContent = 'Ошибка: некорректный Base64';
-      err.classList.remove('hidden');
-      result = '';
-    }
-    refreshMainButton();
-  };
-  const setMode = m => {
-    mode = m;
-    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.m === m));
-    lbl.textContent = m === 'enc' ? 'Исходный текст' : 'Base64 строка';
-    inp.placeholder = m === 'enc' ? 'Введите текст…' : 'Вставьте Base64…';
-    upd();
-  };
-  inp.addEventListener('input', upd);
-  seg.addEventListener('click', e => { const b = e.target.closest('button[data-m]'); if (b) setMode(b.dataset.m); });
-  el.querySelector('#copyBtn').onclick = () => copyText(result);
-  el.querySelector('#swapBtn').onclick = () => {
-    if (!result) return;
-    inp.value = result;
-    setMode(mode === 'enc' ? 'dec' : 'enc');
-  };
-  setMainButton(() => result);
-  setTimeout(() => inp.focus(), 120);
-}
-
-/* ── 11. QR ──────────────────────────────────────────────── */
+/* ── 8. QR ───────────────────────────────────────────────── */
 function renderQR(el){
   let ecl = 'M';
   el.innerHTML = `
@@ -2110,7 +1607,7 @@ function renderQR(el){
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 12. Конвертер форматов ──────────────────────────────── */
+/* ── 9. Конвертер форматов ───────────────────────────────── */
 function renderDataConv(el){
   el.innerHTML = `
     <div class="panel">
@@ -2183,7 +1680,7 @@ function renderDataConv(el){
   setTimeout(() => $('inp').focus(), 120);
 }
 
-/* ── 13. Цвет ────────────────────────────────────────────── */
+/* ── 10. Цвет ────────────────────────────────────────────── */
 function renderColor(el){
   el.innerHTML = `
     <div class="panel">
@@ -2238,72 +1735,91 @@ function renderColor(el){
   render({r: 52, g: 152, b: 219}, null);
 }
 
-/* ── 14. Единицы ─────────────────────────────────────────── */
+/* ── 11. Конвертер единиц (все варианты сразу) ───────────── */
 function renderUnits(el){
   el.innerHTML = `
     <div class="panel">
       <label class="fld">Категория</label>
-      <select class="sel" id="cat" style="margin-bottom:14px">
-        ${Object.entries(UNITS).map(([k,v]) => `<option value="${k}"${k==='length'?' selected':''}>${v.name}</option>`).join('')}
+      <select class="sel" id="cat">
+        ${Object.entries(UNITS).map(([k,v]) => `<option value="${k}">${v.name}</option>`).join('')}
       </select>
-      <label class="fld">Значение</label>
+
+      <label class="fld" style="margin-top:14px">Значение</label>
       <input type="text" id="val" value="1" inputmode="decimal" autocomplete="off">
-      <div style="display:flex;gap:8px;margin-top:14px">
-        <div style="flex:1">
-          <label class="fld">Из</label>
-          <select class="sel" id="from"></select>
-        </div>
-        <div style="flex:1">
-          <label class="fld">В</label>
-          <select class="sel" id="to"></select>
-        </div>
+
+      <label class="fld" style="margin-top:14px">Единица измерения</label>
+      <select class="sel" id="unit"></select>
+
+      <div class="hashrow" style="margin-top:20px">
+        <div class="name">ПЕРЕВОД ВО ВСЕ ОСТАЛЬНЫЕ ЕДИНИЦЫ</div>
+        <div id="results"></div>
       </div>
-      <div class="row"><button class="btn ghost" id="swapBtn">⇅ Поменять</button></div>
-      <label class="fld" style="margin-top:16px">Результат</label>
-      <div class="out" id="out" style="font-size:22px;font-weight:700;text-align:center"><span class="empty">—</span></div>
     </div>`;
   const $ = id => el.querySelector('#' + id);
-  let result = '';
+  const catEl = $('cat'), valEl = $('val'), unitEl = $('unit'), resultsEl = $('results');
+  let mainText = '';
 
   const fillUnits = () => {
-    const cat = $('cat').value;
+    const cat = catEl.value;
     const units = UNITS[cat].units;
     const keys = Object.keys(units);
-    const opts = keys.map(k => `<option value="${k}">${esc(units[k].n)} (${k})</option>`).join('');
-    $('from').innerHTML = opts;
-    $('to').innerHTML = opts;
-    $('from').value = keys[0];
-    $('to').value = keys[1] || keys[0];
+    unitEl.innerHTML = keys.map(k => `<option value="${k}">${esc(units[k].n)} (${k})</option>`).join('');
+    unitEl.value = keys[0];
     upd();
   };
 
   const upd = () => {
-    const cat = $('cat').value;
-    const v = parseFloat(String($('val').value).replace(',', '.'));
-    if (isNaN(v)){ $('out').innerHTML = '<span class="empty">—</span>'; result = ''; refreshMainButton(); return; }
-    const conv = convertUnit(v, cat, $('from').value, $('to').value);
-    result = String(conv);
-    $('out').textContent = `${v} ${$('from').value} = ${conv.toLocaleString('ru-RU', {maximumFractionDigits: 8})} ${$('to').value}`;
+    const cat = catEl.value;
+    const units = UNITS[cat].units;
+    const from = unitEl.value;
+    const v = parseFloat(String(valEl.value).replace(',', '.'));
+    if (isNaN(v)){
+      resultsEl.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите число</div>';
+      mainText = '';
+      refreshMainButton();
+      return;
+    }
+    const keys = Object.keys(units).filter(k => k !== from);
+    if (!keys.length){
+      resultsEl.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Единственная единица в категории</div>';
+      mainText = '';
+      refreshMainButton();
+      return;
+    }
+    const rows = keys.map(k => {
+      const conv = convertUnit(v, cat, from, k);
+      const display = conv.toLocaleString('ru-RU', { maximumFractionDigits: 8 });
+      return `<div class="convRow" data-v="${esc(String(conv))}">
+        <span class="cn">${esc(units[k].n)}</span>
+        <span class="cv">${esc(display)}<span class="cu">${esc(k)}</span></span>
+        <button class="mini" type="button">Копировать</button>
+      </div>`;
+    }).join('');
+    resultsEl.innerHTML = rows;
+
+    mainText = keys.map(k => {
+      const conv = convertUnit(v, cat, from, k);
+      return `${conv.toLocaleString('ru-RU',{maximumFractionDigits:8})} ${k}`;
+    }).join('\n');
     refreshMainButton();
   };
 
-  $('cat').addEventListener('change', fillUnits);
-  ['val','from','to'].forEach(id => {
-    el.querySelector('#'+id).addEventListener('input', upd);
-    el.querySelector('#'+id).addEventListener('change', upd);
+  catEl.addEventListener('change', fillUnits);
+  valEl.addEventListener('input', upd);
+  unitEl.addEventListener('change', upd);
+  resultsEl.addEventListener('click', e => {
+    const btn = e.target.closest('button.mini');
+    if (!btn) return;
+    const row = btn.closest('.convRow');
+    if (!row) return;
+    copyText(row.dataset.v);
   });
-  $('swapBtn').onclick = () => {
-    const a = $('from').value;
-    $('from').value = $('to').value;
-    $('to').value = a;
-    upd();
-  };
-  fillUnits();
 
-  setMainButton(() => result);
+  fillUnits();
+  setMainButton(() => mainText);
 }
 
-/* ── 15. Таймстамп ───────────────────────────────────────── */
+/* ── 12. Таймстамп ───────────────────────────────────────── */
 function renderTimestamp(el){
   el.innerHTML = `
     <div class="panel">
@@ -2382,7 +1898,7 @@ function renderTimestamp(el){
   });
 }
 
-/* ── 16. Сокращатель ─────────────────────────────────────── */
+/* ── 13. Сокращатель ─────────────────────────────────────── */
 async function fetchWithTimeout(url, opts = {}, ms = 12000){
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), ms);
@@ -2456,28 +1972,6 @@ function renderShort(el){
   el.querySelector('#copyBtn').onclick = () => copyText(result);
   setMainButton(() => result);
   setTimeout(() => inp.focus(), 120);
-}
-
-/* ============================================================
-   Поделиться картинкой (Web Share API)
-   ============================================================ */
-async function shareImageFile(dataUrl, fileName){
-  try {
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    const file = new File([blob], fileName, { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })){
-      await navigator.share({
-        files: [file],
-        title: 'Изображение со скрытым сообщением'
-      });
-      return true;
-    }
-  } catch(e){
-    if (e.name === 'AbortError') return true;
-    console.warn('share failed', e);
-  }
-  return false;
 }
 
 /* ============================================================
