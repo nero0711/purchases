@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Инструменты</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg: var(--tg-theme-bg-color, #ffffff);
+    --text: var(--tg-theme-text-color, #111111);
+    --hint: var(--tg-theme-hint-color, #8a8a8e);
+    --link: var(--tg-theme-link-color, #2481cc);
+    --btn: var(--tg-theme-button-color, #2481cc);
+    --btn-text: var(--tg-theme-button-text-color, #ffffff);
+    --sec: var(--tg-theme-secondary-bg-color, #f2f2f7);
+    --card: var(--tg-theme-section-bg-color, #ffffff);
+    --sep: rgba(128,128,128,.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text);
+    min-height:100vh; font-size:16px; line-height:1.4;
+    padding-bottom:env(safe-area-inset-bottom);
+    overscroll-behavior:none;
+  }
+  .app{max-width:640px;margin:0 auto;padding:10px 16px 40px;}
+
+  .topbar{display:flex;align-items:center;gap:10px;padding:10px 0 16px;min-height:52px;}
+  .topbar h1{font-size:22px;font-weight:700;margin:0;flex:1;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .back{
+    background:var(--sec);border:0;color:var(--text);
+    width:38px;height:38px;border-radius:50%;font-size:19px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;transition:transform .12s;
+  }
+  .back:active{transform:scale(.92);}
+  .hidden{display:none !important;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .card{
+    background:var(--sec);border:0;border-radius:16px;
+    padding:20px 14px;display:flex;flex-direction:column;
+    align-items:center;gap:10px;cursor:pointer;color:var(--text);
+    font-family:inherit;font-size:14px;font-weight:600;text-align:center;
+    transition:transform .12s, opacity .12s;min-height:108px;justify-content:center;
+  }
+  .card:active{transform:scale(.96);opacity:.8;}
+  .card .ico{font-size:30px;line-height:1;}
+
+  .panel{animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  label.fld{display:block;font-size:13px;color:var(--hint);margin:0 0 6px 2px;font-weight:500;}
+
+  textarea,input[type=text],input[type=password],input[type=datetime-local]{
+    width:100%;background:var(--sec);border:1.5px solid transparent;
+    border-radius:12px;padding:12px 14px;color:var(--text);
+    font-family:inherit;font-size:16px;line-height:1.45;resize:vertical;
+    outline:none;transition:border-color .15s;
+    -webkit-appearance:none;appearance:none;
+  }
+  textarea{min-height:110px;}
+  textarea:focus,input[type=text]:focus,input[type=password]:focus,input[type=datetime-local]:focus{border-color:var(--btn);}
+  textarea::placeholder,input::placeholder{color:var(--hint);}
+  input[type=password]::-ms-reveal,
+  input[type=password]::-ms-clear{display:none;}
+
+  /* Обёртка для поля с паролем + кнопка "глаз" */
+  .pwd-wrap{position:relative;display:block;}
+  .pwd-wrap input{padding-right:48px;}
+  .pwd-toggle{
+    position:absolute;right:5px;top:50%;transform:translateY(-50%);
+    background:transparent;border:0;color:var(--hint);
+    width:38px;height:38px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:18px;font-family:inherit;
+    transition:background .15s,color .15s,transform .12s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .pwd-toggle:active{transform:translateY(-50%) scale(.9);}
+  .pwd-toggle.on{color:var(--btn);}
+
+  .seg{display:flex;background:var(--sec);border-radius:12px;padding:3px;gap:3px;margin-bottom:14px;}
+  .seg button{
+    flex:1;border:0;background:transparent;color:var(--text);
+    padding:9px 6px;border-radius:9px;font-size:14px;font-weight:600;
+    font-family:inherit;cursor:pointer;transition:background .15s;
+  }
+  .seg button.on{background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.12);}
+
+  .row{display:flex;gap:10px;margin-top:12px;}
+  .btn{
+    flex:1;border:0;border-radius:12px;padding:13px 16px;
+    font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;
+    background:var(--btn);color:var(--btn-text);transition:transform .12s,opacity .12s;
+  }
+  .btn.ghost{background:var(--sec);color:var(--text);}
+  .btn:active{transform:scale(.97);opacity:.85;}
+  .btn:disabled{opacity:.45;}
+  .btn.sm{padding:8px 12px;font-size:13px;flex:0 1 auto;border-radius:10px;}
+
+  .out{
+    margin-top:14px;background:var(--sec);border-radius:12px;
+    padding:14px;font-size:15px;word-break:break-word;
+    white-space:pre-wrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    line-height:1.5;position:relative;min-height:52px;
+  }
+  .out.small{font-size:13.5px;}
+  .out .empty{color:var(--hint);font-family:inherit;font-weight:400;}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .stat{background:var(--sec);border-radius:12px;padding:12px 14px;}
+  .stat .v{font-size:22px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums;}
+  .stat .k{font-size:12px;color:var(--hint);margin-top:3px;}
+
+  .hashrow{margin-top:12px;}
+  .hashrow .name{font-size:12px;color:var(--hint);font-weight:600;letter-spacing:.4px;margin-bottom:5px;}
+  .hashrow .val{
+    background:var(--sec);border-radius:12px;padding:12px 14px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12.5px;word-break:break-all;line-height:1.5;
+    display:flex;align-items:flex-start;gap:8px;
+  }
+  .hashrow .val span{flex:1;}
+  .mini{
+    background:transparent;border:0;color:var(--link);font-size:12px;
+    font-weight:600;cursor:pointer;padding:2px 0;font-family:inherit;flex-shrink:0;
+  }
+
+  .letters{
+    background:var(--sec);border-radius:12px;padding:12px;
+    display:flex;flex-wrap:wrap;gap:6px;max-height:260px;overflow-y:auto;
+    min-height:52px;align-content:flex-start;
+  }
+  .ltr{
+    background:var(--bg);border-radius:8px;padding:5px 9px;
+    font-size:13px;display:inline-flex;align-items:center;gap:6px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  .ltr b{font-weight:700;}
+  .ltr .cnt{color:var(--hint);font-size:12px;font-weight:700;}
+
+  .qrbox{
+    margin-top:14px;background:#fff;border-radius:16px;padding:14px;
+    display:flex;justify-content:center;align-items:center;min-height:120px;
+  }
+  .qrbox canvas{width:100%;max-width:300px;height:auto;image-rendering:pixelated;display:block;}
+
+  .err{color:#e0453e;font-size:13px;margin-top:10px;font-weight:500;}
+  .hintnote{color:var(--hint);font-size:12px;margin-top:10px;text-align:center;}
+
+  .chk{display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 0;cursor:pointer;user-select:none;}
+  .chk input{width:18px;height:18px;accent-color:var(--btn);flex-shrink:0;}
+
+  input[type=range]{
+    width:100%;height:32px;accent-color:var(--btn);background:transparent;
+  }
+
+  .strength{height:8px;background:var(--sec);border-radius:6px;margin-top:12px;overflow:hidden;}
+  .strength .bar{height:100%;width:0;transition:width .3s,background .3s;border-radius:6px;}
+
+  .caseBtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+  .caseBtns .btn{padding:8px 12px;font-size:13px;flex:0 1 auto;border-radius:10px;}
+
+  .colorPreview{
+    height:96px;border-radius:14px;margin-bottom:16px;
+    border:1px solid var(--sep);background:#3498db;
+  }
+
+  .diff{background:var(--sec);border-radius:12px;padding:10px;max-height:400px;overflow-y:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.45;}
+  .diff .line{padding:1px 6px;white-space:pre-wrap;word-break:break-word;border-radius:4px;}
+  .diff .add{background:rgba(52,199,89,.18);color:#1c7c3f;}
+  .diff .del{background:rgba(255,59,48,.18);color:#b03a2e;}
+  .diff .same{color:var(--hint);}
+  .diff .hdr{color:var(--hint);font-size:11px;letter-spacing:.4px;margin:8px 6px 4px;font-weight:600;}
+  @media (prefers-color-scheme: dark){
+    .diff .add{color:#7ee2a8;}
+    .diff .del{color:#ff8a82;}
+  }
+
+  select.sel{
+    width:100%;background:var(--sec);border:1.5px solid transparent;
+    border-radius:12px;padding:11px 32px 11px 14px;color:var(--text);
+    font-family:inherit;font-size:15px;outline:none;appearance:none;
+    -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%23888' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 12px center;
+  }
+
+  input[type=color]{
+    width:100%;height:52px;border:0;border-radius:12px;
+    background:var(--sec);padding:4px;cursor:pointer;
+  }
+
+  .imgbox{
+    background:var(--sec);border-radius:14px;padding:8px;
+    display:flex;justify-content:center;overflow:hidden;
+  }
+  .imgbox canvas{max-width:100%;height:auto;border-radius:8px;display:block;}
+  .drop{
+    background:var(--sec);border:2px dashed var(--sep);border-radius:14px;
+    padding:24px 16px;text-align:center;cursor:pointer;font-size:14px;
+    transition:border-color .2s, background .2s;
+  }
+  .drop:active{border-color:var(--btn);}
+  .drop .ic{font-size:30px;display:block;margin-bottom:4px;}
+  .drop .lbl{color:var(--hint);}
+
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
+    background:rgba(0,0,0,.82);color:#fff;padding:10px 20px;border-radius:22px;
+    font-size:14px;font-weight:500;opacity:0;pointer-events:none;
+    transition:all .22s;z-index:99;backdrop-filter:blur(8px);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <button class="back hidden" id="backBtn">←</button>
+    <h1 id="title">Инструменты</h1>
+  </div>
+  <div id="main"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Telegram WebApp + MainButton
+   ============================================================ */
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) {
+  try { tg.ready(); tg.expand(); } catch(e){}
+  if (tg.BackButton) tg.BackButton.onClick(() => goHome());
+  if (tg.setHeaderColor) { try { tg.setHeaderColor('secondary_bg_color'); } catch(e){} }
+}
+
+let _mbGetter = null;
+
+function setMainButton(getter){
+  _mbGetter = getter;
+  refreshMainButton();
+}
+function refreshMainButton(){
+  if (!tg || !tg.MainButton) return;
+  if (!_mbGetter){ try { tg.MainButton.hide(); } catch(e){} return; }
+  let r = '';
+  try { r = _mbGetter() || ''; } catch(e){ r = ''; }
+  if (String(r).trim().length){
+    try {
+      tg.MainButton.setText('Отправить в чат');
+      tg.MainButton.show();
+    } catch(e){}
+  } else {
+    try { tg.MainButton.hide(); } catch(e){}
+  }
+}
+if (tg && tg.MainButton){
+  tg.MainButton.onClick(() => {
+    if (!_mbGetter) return;
+    let text = '';
+    try { text = String(_mbGetter() || ''); } catch(e){}
+    if (!text.trim()) return;
+    try {
+      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(text));
+    } catch(e){}
+  });
+}
+
+/* ============================================================
+   Утилиты
+   ============================================================ */
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+async function copyText(txt){
+  if (!txt) return;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(txt);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = txt;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    toast('Скопировано');
+    if (tg && tg.HapticFeedback) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
+  } catch(e) { toast('Не удалось скопировать'); }
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============================================================
+   MD5
+   ============================================================ */
+function md5(str){
+  const bytes = enc.encode(str);
+  const S = [7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,
+             5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,
+             4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,
+             6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+  const K = new Uint32Array(64);
+  for (let i=0;i<64;i++) K[i] = Math.floor(Math.abs(Math.sin(i+1)) * 4294967296);
+  const len = bytes.length, bitLen = len * 8;
+  const padLen = ((len + 8) >> 6 << 6) + 64;
+  const buf = new Uint8Array(padLen); buf.set(bytes); buf[len] = 0x80;
+  const dv = new DataView(buf.buffer);
+  dv.setUint32(padLen - 8, bitLen >>> 0, true);
+  dv.setUint32(padLen - 4, Math.floor(bitLen / 4294967296), true);
+  let a0=0x67452301,b0=0xefcdab89,c0=0x98badcfe,d0=0x10325476;
+  const M = new Uint32Array(16);
+  for (let off=0; off<padLen; off+=64){
+    for (let i=0;i<16;i++) M[i] = dv.getUint32(off + i*4, true);
+    let A=a0,B=b0,C=c0,D=d0;
+    for (let i=0;i<64;i++){
+      let F,g;
+      if (i<16){F=(B&C)|(~B&D);g=i;}
+      else if (i<32){F=(D&B)|(~D&C);g=(5*i+1)%16;}
+      else if (i<48){F=B^C^D;g=(3*i+5)%16;}
+      else{F=C^(B|~D);g=(7*i)%16;}
+      F=(F+A+K[i]+M[g])>>>0;
+      A=D;D=C;C=B;B=(B+(((F<<S[i])|(F>>>(32-S[i])))>>>0))>>>0;
+    }
+    a0=(a0+A)>>>0;b0=(b0+B)>>>0;c0=(c0+C)>>>0;d0=(d0+D)>>>0;
+  }
+  const out = new Uint8Array(16);
+  const odv = new DataView(out.buffer);
+  odv.setUint32(0,a0,true);odv.setUint32(4,b0,true);
+  odv.setUint32(8,c0,true);odv.setUint32(12,d0,true);
+  let hex='';
+  for (let i=0;i<16;i++) hex += out[i].toString(16).padStart(2,'0');
+  return hex;
+}
+
+/* ============================================================
+   SHA-256
+   ============================================================ */
+function sha256(str){
+  const bytes = enc.encode(str);
+  const K = new Uint32Array([
+    0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+    0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+    0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+    0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+    0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+    0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+  const H = new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+  const rotr = (x,n) => (x>>>n)|(x<<(32-n));
+  const len = bytes.length, bitLen = len*8;
+  const padLen = ((len+8)>>6<<6)+64;
+  const buf = new Uint8Array(padLen); buf.set(bytes); buf[len] = 0x80;
+  const dv = new DataView(buf.buffer);
+  dv.setUint32(padLen-8, Math.floor(bitLen/4294967296), false);
+  dv.setUint32(padLen-4, bitLen>>>0, false);
+  const w = new Uint32Array(64);
+  for (let off=0; off<padLen; off+=64){
+    for (let i=0;i<16;i++) w[i] = dv.getUint32(off+i*4,false);
+    for (let i=16;i<64;i++){
+      const s0 = rotr(w[i-15],7)^rotr(w[i-15],18)^(w[i-15]>>>3);
+      const s1 = rotr(w[i-2],17)^rotr(w[i-2],19)^(w[i-2]>>>10);
+      w[i] = (w[i-16]+s0+w[i-7]+s1)>>>0;
+    }
+    let a=H[0],b=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for (let i=0;i<64;i++){
+      const S1 = rotr(e,6)^rotr(e,11)^rotr(e,25);
+      const ch = (e&f)^(~e&g);
+      const t1 = (h+S1+ch+K[i]+w[i])>>>0;
+      const S0 = rotr(a,2)^rotr(a,13)^rotr(a,22);
+      const maj = (a&b)^(a&c)^(b&c);
+      const t2 = (S0+maj)>>>0;
+      h=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b;b=a;a=(t1+t2)>>>0;
+    }
+    H[0]=(H[0]+a)>>>0;H[1]=(H[1]+b)>>>0;H[2]=(H[2]+c)>>>0;H[3]=(H[3]+d)>>>0;
+    H[4]=(H[4]+e)>>>0;H[5]=(H[5]+f)>>>0;H[6]=(H[6]+g)>>>0;H[7]=(H[7]+h)>>>0;
+  }
+  let out='';
+  for (let i=0;i<8;i++) out += H[i].toString(16).padStart(8,'0');
+  return out;
+}
+
+/* ============================================================
+   Base64
+   ============================================================ */
+function b64Encode(str){
+  const bytes = enc.encode(str);
+  let bin='';
+  const CH = 0x8000;
+  for (let i=0;i<bytes.length;i+=CH) bin += String.fromCharCode.apply(null, bytes.subarray(i,i+CH));
+  return btoa(bin);
+}
+function b64Decode(b64){
+  const clean = b64.replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/');
+  const pad = clean.length % 4 ? '='.repeat(4 - clean.length % 4) : '';
+  const bin = atob(clean + pad);
+  const bytes = new Uint8Array(bin.length);
+  for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return dec.decode(bytes);
+}
+
+/* ============================================================
+   Раскладка RU ↔ EN
+   ============================================================ */
+const RU_TO_EN_CHARS = {
+  'й':'q','ц':'w','у':'e','к':'r','е':'t','н':'y','г':'u','ш':'i',
+  'щ':'o','з':'p','х':'[','ъ':']','ф':'a','ы':'s','в':'d','а':'f',
+  'п':'g','р':'h','о':'j','л':'k','д':'l','ж':';','э':"'",'я':'z',
+  'ч':'x','с':'c','м':'v','и':'b','т':'n','ь':'m','б':',','ю':'.',
+  'ё':'`',
+  'Й':'Q','Ц':'W','У':'E','К':'R','Е':'T','Н':'Y','Г':'U','Ш':'I',
+  'Щ':'O','З':'P','Х':'{','Ъ':'}','Ф':'A','Ы':'S','В':'D','А':'F',
+  'П':'G','Р':'H','О':'J','Л':'K','Д':'L','Ж':':','Э':'"','Я':'Z',
+  'Ч':'X','С':'C','М':'V','И':'B','Т':'N','Ь':'M','Б':'<','Ю':'>',
+  'Ё':'~'
+};
+const EN_TO_RU_CHARS = (() => { const o={}; for (const [k,v] of Object.entries(RU_TO_EN_CHARS)) o[v]=k; return o; })();
+
+function convertLayout(text, dir, convertPunct = false){
+  const map = dir === 'ru-en' ? RU_TO_EN_CHARS : EN_TO_RU_CHARS;
+  const RE_LETTER = /\p{L}/u;
+  let out = '';
+  for (const ch of text){
+    if (!convertPunct && !RE_LETTER.test(ch)){ out += ch; continue; }
+    out += (map[ch] !== undefined) ? map[ch] : ch;
+  }
+  return out;
+}
+
+/* ============================================================
+   Транслитерация
+   ============================================================ */
+const TRANSLIT_MAP = {
+  'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z',
+  'и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r',
+  'с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh',
+  'щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya',
+  'А':'A','Б':'B','В':'V','Г':'G','Д':'D','Е':'E','Ё':'E','Ж':'Zh','З':'Z',
+  'И':'I','Й':'Y','К':'K','Л':'L','М':'M','Н':'N','О':'O','П':'P','Р':'R',
+  'С':'S','Т':'T','У':'U','Ф':'F','Х':'Kh','Ц':'Ts','Ч':'Ch','Ш':'Sh',
+  'Щ':'Shch','Ъ':'','Ы':'Y','Ь':'','Э':'E','Ю':'Yu','Я':'Ya'
+};
+function translit(text, mode){
+  let out = '';
+  for (const ch of text) out += (TRANSLIT_MAP[ch] !== undefined) ? TRANSLIT_MAP[ch] : ch;
+  if (mode === 'url'){
+    out = out.toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\-_.~]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+  return out;
+}
+
+/* ============================================================
+   QR-код
+   ============================================================ */
+const QR = (function(){
+  const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+  (function(){
+    let x = 1;
+    for (let i=0;i<255;i++){ EXP[i]=x; LOG[x]=i; x<<=1; if (x&0x100) x^=0x11D; }
+    for (let i=255;i<512;i++) EXP[i] = EXP[i-255];
+  })();
+  const mul = (a,b) => (a===0||b===0) ? 0 : EXP[LOG[a]+LOG[b]];
+  function genPoly(n){
+    let poly = [1];
+    for (let i=0;i<n;i++){
+      const c = EXP[i];
+      const next = new Array(poly.length + 1).fill(0);
+      for (let j=0;j<poly.length;j++){ next[j]^=poly[j]; next[j+1]^=mul(poly[j],c); }
+      poly = next;
+    }
+    return poly;
+  }
+  function rsEncode(data, ecLen){
+    const gen = genPoly(ecLen);
+    const res = new Uint8Array(data.length + ecLen);
+    res.set(data);
+    for (let i=0;i<data.length;i++){
+      const coef = res[i];
+      if (coef !== 0) for (let j=0;j<gen.length;j++) res[i+j] ^= mul(gen[j], coef);
+    }
+    const out = [];
+    for (let i=data.length;i<res.length;i++) out.push(res[i]);
+    return out;
+  }
+  const INFO = [ null,
+    {align:[],         L:[19,7, [[1,19]]],          M:[16,10,[[1,16]]],           Q:[13,13,[[1,13]]],           H:[9,17, [[1,9]]]},
+    {align:[6,18],     L:[34,10,[[1,34]]],          M:[28,16,[[1,28]]],           Q:[22,22,[[1,22]]],           H:[16,28,[[1,16]]]},
+    {align:[6,22],     L:[55,15,[[1,55]]],          M:[44,26,[[1,44]]],           Q:[34,18,[[2,17]]],           H:[26,22,[[2,13]]]},
+    {align:[6,26],     L:[80,20,[[1,80]]],          M:[64,18,[[2,32]]],           Q:[48,26,[[2,24]]],           H:[36,16,[[4,9]]]},
+    {align:[6,30],     L:[108,26,[[1,108]]],        M:[86,24,[[2,43]]],           Q:[62,18,[[2,15],[2,16]]],    H:[46,22,[[2,11],[2,12]]]},
+    {align:[6,34],     L:[136,18,[[2,68]]],         M:[108,16,[[4,27]]],          Q:[76,24,[[4,19]]],           H:[60,28,[[4,15]]]},
+    {align:[6,22,38],  L:[156,20,[[2,78]]],         M:[124,18,[[4,31]]],          Q:[88,18,[[2,14],[4,15]]],    H:[66,26,[[4,13],[1,14]]]},
+    {align:[6,24,42],  L:[194,24,[[2,97]]],         M:[154,22,[[2,38],[2,39]]],   Q:[110,22,[[4,18],[2,19]]],   H:[86,26,[[4,14],[2,15]]]},
+    {align:[6,26,46],  L:[232,30,[[2,116]]],        M:[182,22,[[3,36],[2,37]]],   Q:[132,20,[[4,16],[4,17]]],   H:[100,24,[[4,12],[4,13]]]},
+    {align:[6,28,50],  L:[274,18,[[2,68],[2,69]]],  M:[216,26,[[4,43],[1,44]]],   Q:[154,24,[[6,19],[2,20]]],   H:[122,28,[[6,15],[2,16]]]}
+  ];
+  const EC_BITS = {L:1, M:0, Q:3, H:2};
+  const MASKS = [
+    (i,j)=>(i+j)%2===0,(i,j)=>i%2===0,(i,j)=>j%3===0,(i,j)=>(i+j)%3===0,
+    (i,j)=>(Math.floor(i/2)+Math.floor(j/3))%2===0,
+    (i,j)=>((i*j)%2)+((i*j)%3)===0,
+    (i,j)=>(((i*j)%2)+((i*j)%3))%2===0,
+    (i,j)=>(((i+j)%2)+((i*j)%3))%2===0];
+  const getBit = (x,i) => (x>>>i)&1;
+  function formatBits(ecl, mask){
+    const data = (EC_BITS[ecl]<<3)|mask;
+    let rem = data;
+    for (let i=0;i<10;i++) rem = (rem<<1) ^ ((rem>>>9)*0x537);
+    return ((data<<10)|(rem&0x3FF)) ^ 0x5412;
+  }
+  function versionBits(v){
+    let rem = v;
+    for (let i=0;i<12;i++) rem = (rem<<1) ^ ((rem>>>11)*0x1F25);
+    return (v<<12)|(rem&0xFFF);
+  }
+  function buildMatrix(version, ecl, codewords){
+    const size = version*4+17;
+    const m = Array.from({length:size},()=>new Array(size).fill(0));
+    const fn = Array.from({length:size},()=>new Array(size).fill(false));
+    function finder(r,c){
+      for (let dr=-1;dr<=7;dr++) for (let dc=-1;dc<=7;dc++){
+        const rr=r+dr, cc=c+dc;
+        if (rr<0||rr>=size||cc<0||cc>=size) continue;
+        const inside = dr>=0&&dr<=6&&dc>=0&&dc<=6;
+        let v = 0;
+        if (inside && (dr===0||dr===6||dc===0||dc===6)) v=1;
+        if (inside && dr>=2&&dr<=4&&dc>=2&&dc<=4) v=1;
+        m[rr][cc]=v; fn[rr][cc]=true;
+      }
+    }
+    finder(0,0);finder(0,size-7);finder(size-7,0);
+    const centers = INFO[version].align;
+    for (const r of centers) for (const c of centers){
+      if (fn[r][c]) continue;
+      for (let dr=-2;dr<=2;dr++) for (let dc=-2;dc<=2;dc++){
+        const v = Math.max(Math.abs(dr),Math.abs(dc)) !== 1 ? 1 : 0;
+        m[r+dr][c+dc]=v; fn[r+dr][c+dc]=true;
+      }
+    }
+    for (let i=8;i<=size-9;i++){
+      const v = i%2===0?1:0;
+      if (!fn[6][i]){m[6][i]=v;fn[6][i]=true;}
+      if (!fn[i][6]){m[i][6]=v;fn[i][6]=true;}
+    }
+    for (let i=0;i<=8;i++){
+      if (!fn[8][i]) fn[8][i]=true;
+      if (!fn[i][8]) fn[i][8]=true;
+    }
+    for (let i=0;i<8;i++){ fn[8][size-1-i]=true; fn[size-1-i][8]=true; }
+    m[size-8][8]=1; fn[size-8][8]=true;
+    if (version>=7){
+      for (let i=0;i<6;i++) for (let j=0;j<3;j++){
+        fn[size-11+j][i]=true; fn[i][size-11+j]=true;
+      }
+    }
+    const totalBits = codewords.length*8;
+    let bitIdx=0, upward=true;
+    for (let col=size-1; col>0; col-=2){
+      if (col===6) col=5;
+      for (let i=0;i<size;i++){
+        const row = upward ? size-1-i : i;
+        for (let k=0;k<2;k++){
+          const cc = col-k;
+          if (!fn[row][cc]){
+            m[row][cc] = bitIdx<totalBits ? (codewords[bitIdx>>3]>>(7-(bitIdx&7)))&1 : 0;
+            bitIdx++;
+          }
+        }
+      }
+      upward = !upward;
+    }
+    return {m, fn, size};
+  }
+  function placeFormat(m, size, ecl, mask){
+    const bits = formatBits(ecl, mask);
+    for (let i=0;i<=5;i++) m[8][i]=getBit(bits,i);
+    m[8][7]=getBit(bits,6); m[8][8]=getBit(bits,7); m[7][8]=getBit(bits,8);
+    for (let i=9;i<15;i++) m[14-i][8]=getBit(bits,i);
+    for (let i=0;i<8;i++) m[size-1-i][8]=getBit(bits,i);
+    for (let i=8;i<15;i++) m[8][size-15+i]=getBit(bits,i);
+    m[size-8][8]=1;
+  }
+  function placeVersion(m, size, v){
+    if (v<7) return;
+    const bits = versionBits(v);
+    for (let i=0;i<6;i++) for (let j=0;j<3;j++){
+      m[size-11+j][i]=getBit(bits,i*3+j);
+      m[i][size-11+j]=getBit(bits,i*3+j);
+    }
+  }
+  function penalty(m, size){
+    let p=0;
+    for (let i=0;i<size;i++){
+      let rc=-1, rl=0;
+      for (let j=0;j<size;j++){
+        if (m[i][j]===rc) rl++;
+        else { if (rl>=5) p+=3+(rl-5); rc=m[i][j]; rl=1; }
+      }
+      if (rl>=5) p+=3+(rl-5);
+    }
+    for (let j=0;j<size;j++){
+      let rc=-1, rl=0;
+      for (let i=0;i<size;i++){
+        if (m[i][j]===rc) rl++;
+        else { if (rl>=5) p+=3+(rl-5); rc=m[i][j]; rl=1; }
+      }
+      if (rl>=5) p+=3+(rl-5);
+    }
+    for (let i=0;i<size-1;i++) for (let j=0;j<size-1;j++){
+      const v=m[i][j];
+      if (v===m[i][j+1]&&v===m[i+1][j]&&v===m[i+1][j+1]) p+=3;
+    }
+    const P1=[1,0,1,1,1,0,1,0,0,0,0], P2=[0,0,0,0,1,0,1,1,1,0,1];
+    const match = (arr,off,pat) => { for (let k=0;k<11;k++) if (arr[off+k]!==pat[k]) return false; return true; };
+    for (let i=0;i<size;i++){
+      const row=m[i]; const col=new Array(size);
+      for (let j=0;j<size;j++) col[j]=m[j][i];
+      for (let j=0;j<=size-11;j++){
+        if (match(row,j,P1)) p+=40;
+        if (match(row,j,P2)) p+=40;
+        if (match(col,j,P1)) p+=40;
+        if (match(col,j,P2)) p+=40;
+      }
+    }
+    let dark=0;
+    for (let i=0;i<size;i++) for (let j=0;j<size;j++) if (m[i][j]) dark++;
+    p += Math.floor(Math.abs(dark*100/(size*size) - 50)/5)*10;
+    return p;
+  }
+  function encode(text, ecl){
+    const bytes = enc.encode(text);
+    let ver=0, spec=null;
+    for (let v=1;v<=10;v++){
+      const s = INFO[v][ecl];
+      const cbits = v<10?8:16;
+      if (4+cbits+bytes.length*8 <= s[0]*8){ ver=v; spec=s; break; }
+    }
+    if (!ver) throw new Error('Текст слишком длинный (макс. 274 байта)');
+    const totalData=spec[0], blocks=spec[2], ecLen=spec[1];
+    const bits = [];
+    const put = (val,len) => { for (let i=len-1;i>=0;i--) bits.push((val>>>i)&1); };
+    put(4,4); put(bytes.length, ver<10?8:16);
+    for (const b of bytes) put(b,8);
+    const cap = totalData*8;
+    for (let i=0;i<4 && bits.length<cap;i++) bits.push(0);
+    while (bits.length%8!==0) bits.push(0);
+    const dataCw = [];
+    for (let i=0;i<bits.length;i+=8){
+      let v=0; for (let j=0;j<8;j++) v=(v<<1)|bits[i+j];
+      dataCw.push(v);
+    }
+    let pad=0;
+    while (dataCw.length<totalData){ dataCw.push(pad%2===0?0xEC:0x11); pad++; }
+    const dataBlocks=[], ecBlocks=[];
+    let pos=0;
+    for (const [count,dLen] of blocks){
+      for (let i=0;i<count;i++){
+        const d = dataCw.slice(pos,pos+dLen); pos+=dLen;
+        dataBlocks.push(d); ecBlocks.push(rsEncode(d,ecLen));
+      }
+    }
+    const finalCw=[];
+    const maxD = Math.max(...dataBlocks.map(b=>b.length));
+    for (let i=0;i<maxD;i++) for (const b of dataBlocks) if (i<b.length) finalCw.push(b[i]);
+    for (let i=0;i<ecLen;i++) for (const b of ecBlocks) finalCw.push(b[i]);
+    const {m, fn, size} = buildMatrix(ver, ecl, finalCw);
+    let best=null;
+    for (let mask=0;mask<8;mask++){
+      const mm = m.map(r=>r.slice());
+      for (let i=0;i<size;i++) for (let j=0;j<size;j++){
+        if (!fn[i][j] && MASKS[mask](i,j)) mm[i][j]^=1;
+      }
+      placeFormat(mm,size,ecl,mask);
+      placeVersion(mm,size,ver);
+      const p = penalty(mm,size);
+      if (!best || p<best.p) best = {p, m:mm};
+    }
+    return {matrix: best.m, size, version: ver};
+  }
+  function draw(canvas, res, quiet){
+    quiet = quiet==null?4:quiet;
+    const {matrix, size} = res;
+    const total = size + quiet*2;
+    const scale = Math.max(2, Math.round(360/total));
+    const px = total*scale;
+    canvas.width = px; canvas.height = px;
+    canvas.style.width = '100%';
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,px,px);
+    ctx.fillStyle = '#000000';
+    for (let i=0;i<size;i++) for (let j=0;j<size;j++){
+      if (matrix[i][j]) ctx.fillRect((j+quiet)*scale,(i+quiet)*scale,scale,scale);
+    }
+  }
+  return {encode, draw};
+})();
+
+/* ============================================================
+   Пароли
+   ============================================================ */
+function genPassword(len, opts){
+  let alphabet = '';
+  if (opts.lower) alphabet += 'abcdefghijklmnopqrstuvwxyz';
+  if (opts.upper) alphabet += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if (opts.digits) alphabet += '0123456789';
+  if (opts.symbols) alphabet += '!@#$%^&*()-_=+[]{};:,.?/';
+  if (opts.noSimilar) alphabet = alphabet.replace(/[l1IO0o]/g, '');
+  if (!alphabet) return '';
+  const arr = new Uint32Array(len);
+  crypto.getRandomValues(arr);
+  let out = '';
+  for (let i=0;i<len;i++) out += alphabet[arr[i] % alphabet.length];
+  return out;
+}
+function passwordStrength(pw){
+  if (!pw) return {bits: 0, label: '—', color: 'var(--hint)', pct: 0};
+  const sets = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^a-zA-Z0-9]/].filter(r => r.test(pw)).length;
+  const size = sets >= 4 ? 95 : sets === 3 ? 62 : sets === 2 ? 52 : 26;
+  const bits = Math.round(pw.length * Math.log2(size));
+  let label, color, pct;
+  if (bits < 40){ label = 'Слабый'; color = '#e0453e'; pct = 25; }
+  else if (bits < 60){ label = 'Средний'; color = '#f5a623'; pct = 50; }
+  else if (bits < 80){ label = 'Хороший'; color = '#8bc34a'; pct = 75; }
+  else { label = 'Отличный'; color = '#34c759'; pct = 100; }
+  return {bits, label, color, pct};
+}
+
+/* ============================================================
+   Цвет
+   ============================================================ */
+function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+function hexToRgb(hex){
+  hex = String(hex).trim().replace(/^#/, '');
+  if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+  if (hex.length !== 6 && hex.length !== 8) return null;
+  const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+  if ([r,g,b].some(x => isNaN(x))) return null;
+  return {r,g,b};
+}
+function rgbToHex(r,g,b){
+  return '#' + [r,g,b].map(x => clamp(Math.round(x),0,255).toString(16).padStart(2,'0')).join('');
+}
+function rgbToHsl(r,g,b){
+  r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h, s, l=(max+min)/2;
+  if (max===min){ h=s=0; }
+  else {
+    const d = max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h = (g-b)/d + (g<b?6:0); break;
+      case g: h = (b-r)/d + 2; break;
+      case b: h = (r-g)/d + 4; break;
+    }
+    h /= 6;
+  }
+  return {h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100)};
+}
+function hslToRgb(h,s,l){
+  h/=360; s/=100; l/=100;
+  let r,g,b;
+  if (s===0){ r=g=b=l; }
+  else {
+    const hue2rgb = (p,q,t) => {
+      if (t<0) t+=1; if (t>1) t-=1;
+      if (t<1/6) return p+(q-p)*6*t;
+      if (t<1/2) return q;
+      if (t<2/3) return p+(q-p)*(2/3-t)*6;
+      return p;
+    };
+    const q = l<0.5 ? l*(1+s) : l+s-l*s;
+    const p = 2*l-q;
+    r = hue2rgb(p,q,h+1/3);
+    g = hue2rgb(p,q,h);
+    b = hue2rgb(p,q,h-1/3);
+  }
+  return {r: Math.round(r*255), g: Math.round(g*255), b: Math.round(b*255)};
+}
+
+/* ============================================================
+   Diff (LCS)
+   ============================================================ */
+function diffLines(a, b){
+  const A = a.split('\n'), B = b.split('\n');
+  const m = A.length, n = B.length;
+  const dp = Array.from({length: m+1}, () => new Uint16Array(n+1));
+  for (let i=1;i<=m;i++){
+    for (let j=1;j<=n;j++){
+      if (A[i-1] === B[j-1]) dp[i][j] = dp[i-1][j-1] + 1;
+      else dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+    }
+  }
+  const res = [];
+  let i=m, j=n;
+  while (i>0 && j>0){
+    if (A[i-1] === B[j-1]){ res.unshift({t:'same', s:A[i-1]}); i--; j--; }
+    else if (dp[i-1][j] >= dp[i][j-1]){ res.unshift({t:'del', s:A[i-1]}); i--; }
+    else { res.unshift({t:'add', s:B[j-1]}); j--; }
+  }
+  while (i>0){ res.unshift({t:'del', s:A[i-1]}); i--; }
+  while (j>0){ res.unshift({t:'add', s:B[j-1]}); j--; }
+  return res;
+}
+
+/* ============================================================
+   YAML / CSV
+   ============================================================ */
+function yamlScalarStr(s){
+  if (/^[a-zA-Z_][a-zA-Z0-9_\-./ ]*$/.test(s)) return s;
+  return JSON.stringify(s);
+}
+function yamlValue(v, indent){
+  const pad = '  '.repeat(indent);
+  if (v === null || v === undefined) return 'null';
+  if (typeof v === 'string') return yamlScalarStr(v);
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (Array.isArray(v)){
+    if (!v.length) return '[]';
+    return '\n' + v.map(item => {
+      const s = yamlValue(item, indent+1);
+      if (s.startsWith('\n')){
+        const lines = s.slice(1).split('\n');
+        return pad + '- ' + lines[0].trimStart() +
+          (lines.length > 1 ? '\n' + lines.slice(1).map(l => pad + '  ' + l.trimStart()).join('\n') : '');
+      }
+      return pad + '- ' + s;
+    }).join('\n');
+  }
+  if (typeof v === 'object'){
+    const keys = Object.keys(v);
+    if (!keys.length) return '{}';
+    return '\n' + keys.map(k => {
+      const s = yamlValue(v[k], indent+1);
+      if (s.startsWith('\n')) return pad + k + ':' + s;
+      return pad + k + ': ' + s;
+    }).join('\n');
+  }
+  return String(v);
+}
+function yamlStringify(obj){
+  const s = yamlValue(obj, 0);
+  return s.startsWith('\n') ? s.slice(1) : s;
+}
+function parseScalarValue(str){
+  str = String(str).trim();
+  if (str === '' || str === '~' || str === 'null') return null;
+  if (str === 'true' || str === 'yes' || str === 'on') return true;
+  if (str === 'false' || str === 'no' || str === 'off') return false;
+  if (/^-?\d+$/.test(str)) return parseInt(str,10);
+  if (/^-?\d+\.\d+$/.test(str)) return parseFloat(str);
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))){
+    return str.slice(1,-1);
+  }
+  if (str.startsWith('[') && str.endsWith(']')){
+    const inner = str.slice(1,-1).trim();
+    if (!inner) return [];
+    return inner.split(',').map(s => parseScalarValue(s));
+  }
+  if (str.startsWith('{') && str.endsWith('}')){
+    const inner = str.slice(1,-1).trim();
+    if (!inner) return {};
+    const obj = {};
+    for (const pair of inner.split(',')){
+      const idx = pair.indexOf(':');
+      if (idx < 0) continue;
+      const k = pair.slice(0,idx).trim();
+      const v = pair.slice(idx+1).trim();
+      obj[k] = parseScalarValue(v);
+    }
+    return obj;
+  }
+  return str;
+}
+function parseYAML(text){
+  const rawLines = text.split(/\r?\n/);
+  const lines = [];
+  for (const raw of rawLines){
+    if (raw.trim().startsWith('#')) continue;
+    if (raw.trim() === '') continue;
+    lines.push(raw);
+  }
+  let i = 0;
+  const getIndent = line => line.match(/^ */)[0].length;
+  function parseBlock(baseIndent){
+    if (i >= lines.length) return null;
+    const firstLine = lines[i];
+    if (getIndent(firstLine) < baseIndent) return null;
+    const isArray = firstLine.trimStart().startsWith('- ') || firstLine.trimStart() === '-';
+    if (isArray){
+      const arr = [];
+      while (i < lines.length){
+        const line = lines[i];
+        const ind = getIndent(line);
+        if (ind < baseIndent || ind > baseIndent) break;
+        const content = line.trimStart();
+        if (!content.startsWith('-')) break;
+        const rest = content === '-' ? '' : content.slice(1).trimStart();
+        i++;
+        if (rest === ''){
+          arr.push(parseBlock(baseIndent + 2));
+        } else if (/^[^:]+:\s?/.test(rest) && !rest.startsWith('[') && !rest.startsWith('{')){
+          const obj = {};
+          const m = rest.match(/^([^:]+):\s*(.*)$/);
+          const k = m[1].trim();
+          const v = m[2].trim();
+          obj[k] = v === '' ? parseBlock(baseIndent + 4) : parseScalarValue(v);
+          while (i < lines.length){
+            const l = lines[i];
+            const li = getIndent(l);
+            if (li !== baseIndent + 2) break;
+            const c = l.trimStart();
+            if (c.startsWith('-')) break;
+            const mm = c.match(/^([^:]+):\s*(.*)$/);
+            if (!mm) break;
+            i++;
+            const kk = mm[1].trim();
+            const vv = mm[2].trim();
+            obj[kk] = vv === '' ? parseBlock(baseIndent + 4) : parseScalarValue(vv);
+          }
+          arr.push(obj);
+        } else {
+          arr.push(parseScalarValue(rest));
+        }
+      }
+      return arr;
+    }
+    const obj = {};
+    while (i < lines.length){
+      const line = lines[i];
+      const ind = getIndent(line);
+      if (ind < baseIndent || ind > baseIndent) break;
+      const content = line.trimStart();
+      const m = content.match(/^([^:]+):\s*(.*)$/);
+      if (!m) break;
+      i++;
+      const k = m[1].trim();
+      const v = m[2].trim();
+      if (v === ''){
+        if (i < lines.length && getIndent(lines[i]) > baseIndent){
+          obj[k] = parseBlock(getIndent(lines[i]));
+        } else obj[k] = null;
+      } else {
+        obj[k] = parseScalarValue(v);
+      }
+    }
+    return obj;
+  }
+  return parseBlock(0);
+}
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i=0;i<text.length;i++){
+    const c = text[i];
+    if (inQuotes){
+      if (c === '"'){
+        if (text[i+1] === '"'){ field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ','){ row.push(field); field = ''; }
+      else if (c === '\n'){ row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r'){}
+      else field += c;
+    }
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  if (!rows.length) return [];
+  const header = rows[0];
+  return rows.slice(1).map(r => {
+    const o = {};
+    header.forEach((h,idx) => o[h] = r[idx] !== undefined ? r[idx] : '');
+    return o;
+  });
+}
+function csvCell(v){
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+function stringifyCSV(data){
+  if (!Array.isArray(data)){
+    if (typeof data === 'object' && data !== null) data = [data];
+    else return String(data);
+  }
+  if (!data.length) return '';
+  if (typeof data[0] !== 'object' || data[0] === null || Array.isArray(data[0])){
+    return data.map(r => Array.isArray(r) ? r.map(csvCell).join(',') : csvCell(r)).join('\n');
+  }
+  const headers = [...new Set(data.flatMap(o => Object.keys(o)))];
+  const lines = [headers.map(csvCell).join(',')];
+  for (const o of data){
+    lines.push(headers.map(h => csvCell(o[h])).join(','));
+  }
+  return lines.join('\n');
+}
+
+/* ============================================================
+   Стеганография (текст)
+   ============================================================ */
+function stegEncode(cover, secret){
+  if (!secret) return cover;
+  let bits = '';
+  for (let i=0;i<secret.length;i++){
+    bits += secret.charCodeAt(i).toString(2).padStart(16,'0');
+  }
+  let zw = '\u2060';
+  for (const b of bits) zw += b === '0' ? '\u200B' : '\u200C';
+  zw += '\u2060';
+  return cover + zw;
+}
+function stegDecode(text){
+  const m = text.match(/\u2060([\u200B\u200C]*)\u2060/);
+  if (!m) return null;
+  const bits = m[1];
+  if (bits.length % 16 !== 0) return null;
+  let out = '';
+  for (let i=0;i<bits.length;i+=16){
+    let code = 0;
+    for (let j=0;j<16;j++) code = (code<<1) | (bits[i+j] === '\u200C' ? 1 : 0);
+    out += String.fromCharCode(code);
+  }
+  return out;
+}
+
+/* ============================================================
+   Единицы
+   ============================================================ */
+const UNITS = {
+  length: { name: 'Длина', units: {
+    mm:{n:'Миллиметр',f:0.001}, cm:{n:'Сантиметр',f:0.01}, m:{n:'Метр',f:1},
+    km:{n:'Километр',f:1000}, in:{n:'Дюйм',f:0.0254}, ft:{n:'Фут',f:0.3048},
+    yd:{n:'Ярд',f:0.9144}, mi:{n:'Миля',f:1609.344}, nmi:{n:'Морская миля',f:1852}
+  }},
+  mass: { name: 'Масса', units: {
+    mg:{n:'Миллиграмм',f:1e-6}, g:{n:'Грамм',f:0.001}, kg:{n:'Килограмм',f:1},
+    t:{n:'Тонна',f:1000}, oz:{n:'Унция',f:0.028349523125},
+    lb:{n:'Фунт',f:0.45359237}, st:{n:'Стоун',f:6.35029318}
+  }},
+  volume: { name: 'Объём', units: {
+    ml:{n:'Миллилитр',f:0.001}, l:{n:'Литр',f:1}, m3:{n:'Кубометр',f:1000},
+    floz:{n:'Унция жидкости (US)',f:0.0295735295625},
+    pt:{n:'Пинта (US)',f:0.473176473},
+    qt:{n:'Кварта (US)',f:0.946352946},
+    gal:{n:'Галлон (US)',f:3.785411784}
+  }},
+  data: { name: 'Данные', units: {
+    B:{n:'Байт',f:1}, KB:{n:'Килобайт (1000)',f:1000},
+    MB:{n:'Мегабайт (1000²)',f:1e6}, GB:{n:'Гигабайт (1000³)',f:1e9},
+    TB:{n:'Терабайт',f:1e12}, KiB:{n:'Кибибайт (1024)',f:1024},
+    MiB:{n:'Мебибайт (1024²)',f:1024**2},
+    GiB:{n:'Гибибайт (1024³)',f:1024**3},
+    TiB:{n:'Тебибайт (1024⁴)',f:1024**4}
+  }},
+  temp: { name: 'Температура', units: {
+    C:{n:'Цельсий °C'}, F:{n:'Фаренгейт °F'}, K:{n:'Кельвин K'}
+  }}
+};
+function convertUnit(value, cat, from, to){
+  if (cat === 'temp'){
+    let c;
+    if (from === 'C') c = value;
+    else if (from === 'F') c = (value - 32) * 5/9;
+    else c = value - 273.15;
+    if (to === 'C') return c;
+    if (to === 'F') return c * 9/5 + 32;
+    return c + 273.15;
+  }
+  const u = UNITS[cat].units;
+  return value * u[from].f / u[to].f;
+}
+
+/* ============================================================
+   Список инструментов
+   ============================================================ */
+const TOOLS = {
+  password:{ icon:'🔐', title:'Генератор паролей', render: renderPassword },
+  case:    { icon:'Aa', title:'Регистр текста',   render: renderCase },
+  layout:  { icon:'⌨️', title:'Смена раскладки',  render: renderLayout },
+  translit:{ icon:'🔤', title:'Транслитерация',   render: renderTranslit },
+  count:   { icon:'🔢', title:'Подсчёт символов', render: renderCount },
+  diff:    { icon:'📊', title:'Diff двух текстов',render: renderDiff },
+  stegano: { icon:'🕵️', title:'Стеганография',    render: renderStegano },
+  stegimg: { icon:'🖼️', title:'Стеганография в фото', render: renderStegImage },
+  hash:    { icon:'#️⃣', title:'MD5 / SHA-256',   render: renderHash },
+  base64:  { icon:'🧬', title:'Base64',           render: renderBase64 },
+  qr:      { icon:'📱', title:'QR-код',           render: renderQR },
+  dataconv:{ icon:'🗂️', title:'JSON / YAML / CSV',render: renderDataConv },
+  color:   { icon:'🎨', title:'Конвертер цветов', render: renderColor },
+  units:   { icon:'📏', title:'Конвертер единиц', render: renderUnits },
+  time:    { icon:'⏱️', title:'Таймстамп ↔ дата', render: renderTimestamp },
+  short:   { icon:'🔗', title:'Сократить ссылку', render: renderShort }
+};
+
+/* ── 1. Пароль ───────────────────────────────────────────── */
+function renderPassword(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Длина: <span id="lenVal">16</span></label>
+      <input type="range" id="len" min="4" max="128" value="16">
+      <div style="margin-top:6px">
+        <label class="chk"><input type="checkbox" id="low" checked> Строчные <b style="font-family:monospace;font-weight:500">a-z</b></label>
+        <label class="chk"><input type="checkbox" id="up" checked> Прописные <b style="font-family:monospace;font-weight:500">A-Z</b></label>
+        <label class="chk"><input type="checkbox" id="dig" checked> Цифры <b style="font-family:monospace;font-weight:500">0-9</b></label>
+        <label class="chk"><input type="checkbox" id="sym" checked> Символы <b style="font-family:monospace;font-weight:500">!@#$%</b></label>
+        <label class="chk"><input type="checkbox" id="noSim"> Исключить похожие <b style="font-family:monospace;font-weight:500">l 1 I O 0 o</b></label>
+      </div>
+      <div class="row">
+        <button class="btn" id="genBtn">Сгенерировать</button>
+      </div>
+      <label class="fld" style="margin-top:16px">Пароль</label>
+      <div class="out" id="out" style="font-size:17px;letter-spacing:.5px;text-align:center"><span class="empty">Нажмите «Сгенерировать»…</span></div>
+      <div class="strength"><div class="bar" id="bar"></div></div>
+      <div class="hintnote" id="strNote">—</div>
+      <div class="row">
+        <button class="btn ghost" id="copyBtn">Копировать</button>
+      </div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  const lenEl = $('len'), outEl = $('out'), barEl = $('bar'), noteEl = $('strNote');
+  let current = '';
+
+  lenEl.addEventListener('input', () => $('lenVal').textContent = lenEl.value);
+
+  const doGen = () => {
+    const opts = {
+      lower: $('low').checked, upper: $('up').checked,
+      digits: $('dig').checked, symbols: $('sym').checked,
+      noSimilar: $('noSim').checked
+    };
+    if (!opts.lower && !opts.upper && !opts.digits && !opts.symbols){
+      toast('Выберите хотя бы один тип символов');
+      return;
+    }
+    current = genPassword(parseInt(lenEl.value,10), opts);
+    outEl.textContent = current;
+    const s = passwordStrength(current);
+    barEl.style.width = s.pct + '%';
+    barEl.style.background = s.color;
+    noteEl.textContent = `${s.label} • ~${s.bits} бит энтропии`;
+    refreshMainButton();
+  };
+  $('genBtn').onclick = doGen;
+  $('copyBtn').onclick = () => copyText(current);
+  ['low','up','dig','sym','noSim'].forEach(id => el.querySelector('#'+id).addEventListener('change', doGen));
+
+  setMainButton(() => current);
+}
+
+/* ── 2. Регистр ──────────────────────────────────────────── */
+function renderCase(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Текст</label>
+      <textarea id="inp" placeholder="Введите текст…" autocomplete="off" spellcheck="false"></textarea>
+      <div class="caseBtns" id="caseBtns">
+        <button class="btn ghost" data-c="upper">ВЕРХНИЙ</button>
+        <button class="btn ghost" data-c="lower">нижний</button>
+        <button class="btn ghost" data-c="title">Каждое Слово</button>
+        <button class="btn ghost" data-c="sentence">Предложения</button>
+        <button class="btn ghost" data-c="invert">иНВЕРТИРОВАТЬ</button>
+        <button class="btn ghost" data-c="alt">АлТеРнИрОвАтЬ</button>
+      </div>
+      <div class="caseBtns" id="cleanBtns">
+        <button class="btn ghost" data-x="trim">Убрать лишние пробелы</button>
+        <button class="btn ghost" data-x="nl">Убрать переносы</button>
+        <button class="btn ghost" data-x="trimlines">Обрезать строки</button>
+      </div>
+      <div class="row">
+        <button class="btn" id="copyBtn">Копировать результат</button>
+      </div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="out" id="out"><span class="empty">—</span></div>
+    </div>`;
+  const inp = el.querySelector('#inp');
+  const out = el.querySelector('#out');
+
+  const apply = (fn) => {
+    const v = inp.value;
+    if (!v){ toast('Введите текст'); return; }
+    out.textContent = fn(v);
+    refreshMainButton();
+  };
+
+  el.querySelector('#caseBtns').addEventListener('click', e => {
+    const b = e.target.closest('button[data-c]');
+    if (!b) return;
+    const c = b.dataset.c;
+    apply(v => {
+      if (c === 'upper') return v.toUpperCase();
+      if (c === 'lower') return v.toLowerCase();
+      if (c === 'title') return v.toLowerCase().replace(/(^|\s)(\S)/g, (_, a, b) => a + b.toUpperCase());
+      if (c === 'sentence') return v.toLowerCase().replace(/(^\s*|[.!?]\s+)(\S)/g, (_, a, b) => a + b.toUpperCase());
+      if (c === 'invert') return [...v].map(ch => ch === ch.toLowerCase() ? ch.toUpperCase() : ch.toLowerCase()).join('');
+      if (c === 'alt') return [...v].map((ch, i) => i % 2 ? ch.toUpperCase() : ch.toLowerCase()).join('');
+      return v;
+    });
+  });
+  el.querySelector('#cleanBtns').addEventListener('click', e => {
+    const b = e.target.closest('button[data-x]');
+    if (!b) return;
+    const x = b.dataset.x;
+    apply(v => {
+      if (x === 'trim') return v.replace(/[ \t]+/g, ' ').replace(/\s+$/gm, '');
+      if (x === 'nl') return v.replace(/[\r\n]+/g, ' ').replace(/[ \t]+/g, ' ').trim();
+      if (x === 'trimlines') return v.split('\n').map(l => l.trim()).join('\n');
+      return v;
+    });
+  });
+  el.querySelector('#copyBtn').onclick = () => copyText(out.textContent);
+
+  setMainButton(() => out.textContent && out.textContent !== '—' && !out.querySelector('.empty') ? out.textContent : '');
+  setTimeout(() => inp.focus(), 120);
+}
+
+/* ── 3. Раскладка ────────────────────────────────────────── */
+function renderLayout(el){
+  let dir = 'ru-en', convertPunct = false;
+  el.innerHTML = `
+    <div class="panel">
+      <div class="seg" id="seg">
+        <button class="on" data-d="ru-en">RU → EN</button>
+        <button data-d="en-ru">EN → RU</button>
+      </div>
+      <label class="fld">Исходный текст</label>
+      <textarea id="inp" placeholder="Введите или вставьте текст…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+      <label class="chk" style="margin-top:6px"><input type="checkbox" id="punctChk"> Конвертировать знаки препинания ( , . ; [ ] \` ' )</label>
+      <div class="row"><button class="btn" id="copyBtn">Копировать результат</button></div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="out" id="out"><span class="empty">Здесь появится результат…</span></div>
+    </div>`;
+  const inp = el.querySelector('#inp');
+  const out = el.querySelector('#out');
+  const seg = el.querySelector('#seg');
+  const chk = el.querySelector('#punctChk');
+
+  const upd = () => {
+    const v = inp.value;
+    if (!v){ out.innerHTML = '<span class="empty">Здесь появится результат…</span>'; refreshMainButton(); return; }
+    out.textContent = convertLayout(v, dir, convertPunct);
+    refreshMainButton();
+  };
+  inp.addEventListener('input', upd);
+  chk.addEventListener('change', () => { convertPunct = chk.checked; upd(); });
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-d]');
+    if (!b) return;
+    dir = b.dataset.d;
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    upd();
+  });
+  el.querySelector('#copyBtn').onclick = () => copyText(out.textContent);
+
+  setMainButton(() => out.textContent && !out.querySelector('.empty') ? out.textContent : '');
+  setTimeout(() => inp.focus(), 120);
+}
+
+/* ── 4. Транслитерация ───────────────────────────────────── */
+function renderTranslit(el){
+  let mode = 'gost';
+  el.innerHTML = `
+    <div class="panel">
+      <div class="seg" id="seg">
+        <button class="on" data-m="gost">Обычная</button>
+        <button data-m="url">URL-slug</button>
+      </div>
+      <label class="fld">Текст</label>
+      <textarea id="inp" placeholder="Введите текст на русском…" autocomplete="off" spellcheck="false"></textarea>
+      <div class="row"><button class="btn" id="copyBtn">Копировать</button></div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="out" id="out"><span class="empty">—</span></div>
+    </div>`;
+  const inp = el.querySelector('#inp'), out = el.querySelector('#out'), seg = el.querySelector('#seg');
+  const upd = () => {
+    const v = inp.value;
+    if (!v){ out.innerHTML = '<span class="empty">—</span>'; refreshMainButton(); return; }
+    out.textContent = translit(v, mode);
+    refreshMainButton();
+  };
+  inp.addEventListener('input', upd);
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (!b) return;
+    mode = b.dataset.m;
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    upd();
+  });
+  el.querySelector('#copyBtn').onclick = () => copyText(out.textContent);
+  setMainButton(() => out.textContent && !out.querySelector('.empty') ? out.textContent : '');
+  setTimeout(() => inp.focus(), 120);
+}
+
+/* ── 5. Подсчёт символов ─────────────────────────────────── */
+function renderCount(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Текст</label>
+      <textarea id="inp" placeholder="Введите или вставьте текст…" autocomplete="off" spellcheck="false"></textarea>
+      <div class="stats">
+        <div class="stat"><div class="v" id="s1">0</div><div class="k">Символов (с пробелами)</div></div>
+        <div class="stat"><div class="v" id="s2">0</div><div class="k">Символов без пробелов</div></div>
+        <div class="stat"><div class="v" id="s3">0</div><div class="k">Слов</div></div>
+        <div class="stat"><div class="v" id="s4">0</div><div class="k">Строк</div></div>
+        <div class="stat"><div class="v" id="s5">0</div><div class="k">Байт (UTF-8)</div></div>
+        <div class="stat"><div class="v" id="s6">0</div><div class="k">Уникальных символов</div></div>
+        <div class="stat"><div class="v" id="s7">0</div><div class="k">Спецсимволов</div></div>
+        <div class="stat"><div class="v" id="s8">0</div><div class="k">Пробелов</div></div>
+      </div>
+      <div class="hashrow" style="margin-top:16px">
+        <div class="name">БУКВЫ И ИХ КОЛИЧЕСТВО</div>
+        <div class="letters" id="letters"><span class="empty" style="color:var(--hint);font-size:13px">Пока пусто…</span></div>
+      </div>
+    </div>`;
+  const inp = el.querySelector('#inp');
+  const $ = id => el.querySelector('#' + id);
+  const lettersEl = $('letters');
+  const RE_LETTER = /\p{L}/u, RE_NUMBER = /\p{N}/u, RE_SPACE = /\s/;
+
+  const upd = () => {
+    const v = inp.value;
+    const chars = [...v];
+    $('s1').textContent = chars.length;
+    $('s2').textContent = chars.filter(c => !RE_SPACE.test(c)).length;
+    $('s3').textContent = v.trim() ? v.trim().split(/\s+/).length : 0;
+    $('s4').textContent = v === '' ? 0 : v.split(/\r\n|\r|\n/).length;
+    $('s5').textContent = enc.encode(v).length;
+    $('s6').textContent = new Set(chars).size;
+    let special = 0, spaces = 0;
+    for (const ch of chars){
+      if (RE_SPACE.test(ch)) spaces++;
+      if (!RE_LETTER.test(ch) && !RE_NUMBER.test(ch) && !RE_SPACE.test(ch)) special++;
+    }
+    $('s7').textContent = special;
+    $('s8').textContent = spaces;
+
+    const counts = {};
+    for (const ch of chars) if (RE_LETTER.test(ch)){
+      const k = ch.toLowerCase();
+      counts[k] = (counts[k] || 0) + 1;
+    }
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1] || a[0].localeCompare(b[0]));
+    lettersEl.innerHTML = sorted.length === 0
+      ? '<span class="empty" style="color:var(--hint);font-size:13px">Пока пусто…</span>'
+      : sorted.map(([ch,n]) => `<span class="ltr"><b>${esc(ch)}</b><span class="cnt">${n}</span></span>`).join('');
+    refreshMainButton();
+  };
+  inp.addEventListener('input', upd);
+
+  setMainButton(() => {
+    const v = inp.value;
+    if (!v.trim()) return '';
+    return `Символов: ${[...v].length}\nСлов: ${v.trim().split(/\s+/).length}\nСтрок: ${v.split(/\r\n|\r|\n/).length}\nБайт: ${enc.encode(v).length}`;
+  });
+  setTimeout(() => inp.focus(), 120);
+}
+
+/* ── 6. Diff ─────────────────────────────────────────────── */
+function renderDiff(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Текст A (старый)</label>
+      <textarea id="a" placeholder="Первый текст…" autocomplete="off" spellcheck="false" style="min-height:90px"></textarea>
+      <label class="fld" style="margin-top:12px">Текст B (новый)</label>
+      <textarea id="b" placeholder="Второй текст…" autocomplete="off" spellcheck="false" style="min-height:90px"></textarea>
+      <div class="row"><button class="btn" id="goBtn">Сравнить</button></div>
+      <label class="fld" style="margin-top:16px">Различия</label>
+      <div class="diff" id="out"><span class="empty" style="color:var(--hint);font-size:13px">Введите оба текста и нажмите «Сравнить»…</span></div>
+    </div>`;
+  const A = el.querySelector('#a'), B = el.querySelector('#b'), out = el.querySelector('#out');
+  let diffText = '';
+
+  const run = () => {
+    if (!A.value && !B.value){ toast('Введите тексты'); return; }
+    const d = diffLines(A.value, B.value);
+    let added = 0, removed = 0;
+    out.innerHTML = d.map(item => {
+      if (item.t === 'add'){ added++; return `<div class="line add">+ ${esc(item.s) || ' '}</div>`; }
+      if (item.t === 'del'){ removed++; return `<div class="line del">− ${esc(item.s) || ' '}</div>`; }
+      return `<div class="line same">  ${esc(item.s) || ' '}</div>`;
+    }).join('') + `<div class="hdr">+${added} добавлено, −${removed} удалено</div>`;
+    diffText = d.map(i => (i.t==='add'?'+ ':i.t==='del'?'- ':'  ') + i.s).join('\n');
+    refreshMainButton();
+  };
+  el.querySelector('#goBtn').onclick = run;
+  A.addEventListener('input', () => { if (B.value) run(); });
+  B.addEventListener('input', () => { if (A.value) run(); });
+
+  setMainButton(() => diffText);
+  setTimeout(() => A.focus(), 120);
+}
+
+/* ── 7. Стеганография (текст) ────────────────────────────── */
+function renderStegano(el){
+  let mode = 'enc';
+  el.innerHTML = `
+    <div class="panel">
+      <div class="seg" id="seg">
+        <button class="on" data-m="enc">Спрятать</button>
+        <button data-m="dec">Извлечь</button>
+      </div>
+      <div id="coverWrap">
+        <label class="fld">Текст-обложка (что увидят)</label>
+        <textarea id="cover" placeholder="Обычный текст, в котором будет спрятано сообщение…" autocomplete="off" spellcheck="false" style="min-height:80px"></textarea>
+      </div>
+      <label class="fld" id="lbl" style="margin-top:12px">Секретное сообщение</label>
+      <textarea id="inp" placeholder="Что спрятать…" autocomplete="off" spellcheck="false" style="min-height:80px"></textarea>
+      <div class="row">
+        <button class="btn" id="goBtn">Выполнить</button>
+        <button class="btn ghost" id="copyBtn">Копировать</button>
+      </div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="out" id="out"><span class="empty">—</span></div>
+      <div class="hintnote">Используются невидимые Unicode-символы (U+200B, U+200C, U+2060). Работает в Telegram и большинстве текстовых полей.</div>
+    </div>`;
+  const seg = el.querySelector('#seg');
+  const coverWrap = el.querySelector('#coverWrap');
+  const cover = el.querySelector('#cover');
+  const inp = el.querySelector('#inp');
+  const lbl = el.querySelector('#lbl');
+  const out = el.querySelector('#out');
+  const goBtn = el.querySelector('#goBtn');
+
+  let result = '';
+
+  const setMode = m => {
+    mode = m;
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.m === m));
+    if (m === 'enc'){
+      coverWrap.classList.remove('hidden');
+      lbl.textContent = 'Секретное сообщение';
+      inp.placeholder = 'Что спрятать…';
+      goBtn.textContent = 'Спрятать';
+    } else {
+      coverWrap.classList.add('hidden');
+      lbl.textContent = 'Текст со скрытым сообщением';
+      inp.placeholder = 'Вставьте текст сюда…';
+      goBtn.textContent = 'Извлечь';
+    }
+    out.innerHTML = '<span class="empty">—</span>';
+    result = '';
+    refreshMainButton();
+  };
+
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (b) setMode(b.dataset.m);
+  });
+
+  goBtn.onclick = () => {
+    if (mode === 'enc'){
+      if (!inp.value){ toast('Введите секретное сообщение'); return; }
+      result = stegEncode(cover.value, inp.value);
+      out.textContent = result;
+      out.style.wordBreak = 'break-all';
+      toast('Готово — скопируйте и отправьте');
+    } else {
+      if (!inp.value){ toast('Вставьте текст'); return; }
+      const d = stegDecode(inp.value);
+      if (d === null){
+        out.innerHTML = '<span class="empty">Скрытое сообщение не найдено</span>';
+        result = '';
+      } else {
+        out.textContent = d;
+        result = d;
+      }
+    }
+    refreshMainButton();
+  };
+
+  el.querySelector('#copyBtn').onclick = () => copyText(result);
+  setMainButton(() => result);
+}
+
+/* ── 8. Стеганография в изображение ──────────────────────── */
+function renderStegImage(el){
+  let mode = 'enc';
+  let imgData = null;
+  let resultUrl = null;
+  let fileName = 'stego.png';
+
+  const MAGIC = [0x53, 0x54, 0x45, 0x47]; // "STEG"
+
+  el.innerHTML = `
+    <div class="panel">
+      <div class="seg" id="seg">
+        <button class="on" data-m="enc">Спрятать</button>
+        <button data-m="dec">Извлечь</button>
+      </div>
+
+      <label class="fld">Изображение</label>
+      <input type="file" id="file" accept="image/*" style="display:none">
+      <div class="drop" id="drop">
+        <span class="ic">🖼️</span>
+        <span class="lbl" id="dropText">Нажмите, чтобы выбрать изображение</span>
+      </div>
+
+      <div id="preview" class="hidden" style="margin-top:14px">
+        <div class="imgbox"><canvas id="cv"></canvas></div>
+        <div class="hintnote" id="info"></div>
+      </div>
+
+      <div id="encBlock">
+        <label class="fld" style="margin-top:14px">Секретное сообщение</label>
+        <textarea id="secret" placeholder="Что спрятать в изображении…"
+          style="min-height:80px" autocomplete="off" spellcheck="false"></textarea>
+        <label class="fld" style="margin-top:12px">Пароль <span style="font-weight:400;opacity:.7">— необязательно</span></label>
+        <div class="pwd-wrap">
+          <input type="password" id="encPwd" placeholder="Без пароля, если оставить пустым" autocomplete="new-password">
+          <button type="button" class="pwd-toggle" data-for="encPwd" aria-label="Показать пароль">👁</button>
+        </div>
+      </div>
+
+      <div id="decBlock" class="hidden">
+        <label class="fld" style="margin-top:14px">Пароль</label>
+        <div class="pwd-wrap">
+          <input type="password" id="decPwd" placeholder="Введите пароль от изображения" autocomplete="current-password">
+          <button type="button" class="pwd-toggle" data-for="decPwd" aria-label="Показать пароль">👁</button>
+        </div>
+        <div class="hintnote" style="margin-top:8px;text-align:left">Если пароль не задавали — оставьте поле пустым.</div>
+      </div>
+
+      <div class="row hidden" id="actions" style="margin-top:14px">
+        <button class="btn" id="goBtn">Спрятать</button>
+        <button class="btn ghost hidden" id="dlBtn">Скачать PNG</button>
+      </div>
+
+      <label class="fld" style="margin-top:16px" id="outLbl">Результат</label>
+      <div class="out" id="out"><span class="empty">—</span></div>
+      <div class="err hidden" id="err"></div>
+      <div class="hintnote">Только PNG без потерь. JPEG / WebP при пересохранении испортят LSB.</div>
+    </div>`;
+
+  const $ = id => el.querySelector('#' + id);
+  const seg = $('seg'), drop = $('drop'), dropText = $('dropText');
+  const previewBox = $('preview'), cv = $('cv');
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  const encBlock = $('encBlock'), decBlock = $('decBlock');
+  const secret = $('secret'), encPwd = $('encPwd'), decPwd = $('decPwd');
+  const actions = $('actions'), goBtn = $('goBtn'), dlBtn = $('dlBtn');
+  const out = $('out'), err = $('err'), info = $('info'), outLbl = $('outLbl');
+
+  const showErr = msg => { err.textContent = msg; err.classList.remove('hidden'); };
+  const hideErr = () => err.classList.add('hidden');
+
+  /* ─────── Крипто ─────── */
+  function deriveKeyStream(password, length){
+    const key = new Uint8Array(length);
+    let offset = 0, counter = 0;
+    while (offset < length){
+      const hash = sha256(password + '|steg|' + counter);
+      for (let i = 0; i < 32 && offset < length; i++){
+        key[offset++] = parseInt(hash.substr(i * 2, 2), 16);
+      }
+      counter++;
+    }
+    return key;
+  }
+  function passwordCheckBytes(password){
+    const hash = sha256('check|' + password);
+    return [
+      parseInt(hash.substr(0, 2), 16),
+      parseInt(hash.substr(2, 2), 16),
+      parseInt(hash.substr(4, 2), 16),
+      parseInt(hash.substr(6, 2), 16)
+    ];
+  }
+
+  /* ─────── LSB ─────── */
+  function bitsFromImage(data){
+    const bits = [];
+    for (let i = 0; i < data.length; i++){
+      if (i % 4 === 3) continue;
+      bits.push(data[i] & 1);
+    }
+    return bits;
+  }
+
+  function encodeInto(dataImg, text, password){
+    const plaintext = enc.encode(text);
+    let body, flags = 0;
+
+    if (password){
+      const check = passwordCheckBytes(password);
+      const withCheck = new Uint8Array(4 + plaintext.length);
+      withCheck[0] = check[0]; withCheck[1] = check[1];
+      withCheck[2] = check[2]; withCheck[3] = check[3];
+      withCheck.set(plaintext, 4);
+      const ks = deriveKeyStream(password, withCheck.length);
+      body = new Uint8Array(withCheck.length);
+      for (let i = 0; i < withCheck.length; i++) body[i] = withCheck[i] ^ ks[i];
+      flags = 1;
+    } else {
+      body = plaintext;
+    }
+
+    const bits = [];
+    const put = (val, len) => { for (let i = len-1; i >= 0; i--) bits.push((val >>> i) & 1); };
+    put(MAGIC[0], 8); put(MAGIC[1], 8); put(MAGIC[2], 8); put(MAGIC[3], 8);
+    put(flags, 8);
+    put(body.length, 32);
+    for (const b of body) put(b, 8);
+
+    const data = dataImg.data;
+    let cap = 0;
+    for (let i = 0; i < data.length; i++) if (i % 4 !== 3) cap++;
+    if (bits.length > cap){
+      const need = Math.ceil(bits.length / 8);
+      const have = Math.floor(cap / 8);
+      throw new Error(`Мало места: нужно ${need.toLocaleString('ru-RU')} Б, доступно ${have.toLocaleString('ru-RU')} Б`);
+    }
+
+    let bitIdx = 0;
+    for (let i = 0; i < data.length && bitIdx < bits.length; i++){
+      if (i % 4 === 3) continue;
+      data[i] = (data[i] & 0xFE) | bits[bitIdx];
+      bitIdx++;
+    }
+    return dataImg;
+  }
+
+  function decodeFrom(dataImg, password){
+    const bits = bitsFromImage(dataImg.data);
+    if (bits.length < 72) throw new Error('Изображение слишком маленькое');
+
+    const readByte = off => {
+      let v = 0;
+      for (let i = 0; i < 8; i++) v = (v << 1) | bits[off + i];
+      return v;
+    };
+
+    for (let i = 0; i < 4; i++){
+      if (readByte(i * 8) !== MAGIC[i]) throw new Error('Скрытое сообщение не найдено');
+    }
+    const flags = readByte(32);
+    const pwdProtected = (flags & 1) === 1;
+
+    let len = 0;
+    for (let i = 0; i < 32; i++) len = (len << 1) | bits[40 + i];
+    if (len <= 0 || len > Math.floor((bits.length - 72) / 8)){
+      throw new Error('Повреждённое сообщение или неверный файл');
+    }
+
+    const bytes = new Uint8Array(len);
+    for (let b = 0; b < len; b++){
+      let v = 0;
+      for (let j = 0; j < 8; j++) v = (v << 1) | bits[72 + b * 8 + j];
+      bytes[b] = v;
+    }
+
+    if (pwdProtected){
+      if (!password) throw new Error('Изображение защищено паролем');
+      const ks = deriveKeyStream(password, len);
+      for (let i = 0; i < len; i++) bytes[i] ^= ks[i];
+      const check = passwordCheckBytes(password);
+      if (bytes[0] !== check[0] || bytes[1] !== check[1] ||
+          bytes[2] !== check[2] || bytes[3] !== check[3]){
+        throw new Error('Неверный пароль');
+      }
+      return dec.decode(bytes.subarray(4));
+    }
+    return dec.decode(bytes);
+  }
+
+  function setMode(m){
+    mode = m;
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.m === m));
+    if (m === 'enc'){
+      encBlock.classList.remove('hidden');
+      decBlock.classList.add('hidden');
+      outLbl.textContent = 'Статус';
+      goBtn.textContent = 'Спрятать';
+    } else {
+      encBlock.classList.add('hidden');
+      decBlock.classList.remove('hidden');
+      outLbl.textContent = 'Извлечённый текст';
+      goBtn.textContent = 'Извлечь';
+    }
+    dlBtn.classList.add('hidden');
+    out.innerHTML = '<span class="empty">—</span>';
+    resultUrl = null;
+    hideErr();
+    if (imgData && m === 'dec') setTimeout(runExtract, 30);
+  }
+
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (b) setMode(b.dataset.m);
+  });
+
+  function loadFile(file){
+    if (!file) return;
+    hideErr();
+    if (!file.type.startsWith('image/')){ showErr('Это не изображение'); return; }
+    fileName = file.name.replace(/\.[^.]+$/, '') + '-stego.png';
+
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const MAX = 2000;
+      if (Math.max(w, h) > MAX){
+        const k = MAX / Math.max(w, h);
+        w = Math.round(w * k); h = Math.round(h * k);
+      }
+      cv.width = w; cv.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      imgData = ctx.getImageData(0, 0, w, h);
+
+      previewBox.classList.remove('hidden');
+      actions.classList.remove('hidden');
+      dropText.textContent = file.name;
+
+      const capBytes = Math.floor((w * h * 3) / 8) - 9;
+      info.textContent = `${w}×${h} px • доступно ~${capBytes.toLocaleString('ru-RU')} символов UTF-8`;
+
+      if (mode === 'dec') runExtract();
+      else out.innerHTML = '<span class="empty">Введите сообщение и нажмите «Спрятать»…</span>';
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); showErr('Не удалось открыть изображение'); };
+    img.src = url;
+  }
+
+  function runExtract(){
+    hideErr();
+    if (!imgData){ showErr('Сначала загрузите изображение'); return; }
+    try {
+      const pwd = decPwd.value;
+      const text = decodeFrom(imgData, pwd);
+      out.textContent = text;
+      toast('Сообщение извлечено');
+      if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
+    } catch(e){
+      out.innerHTML = '<span class="empty">—</span>';
+      showErr(e.message || 'Ошибка');
+    }
+  }
+
+  function runHide(){
+    hideErr();
+    if (!imgData){ showErr('Сначала загрузите изображение'); return; }
+    const text = secret.value;
+    if (!text){ showErr('Введите текст для сокрытия'); return; }
+    try {
+      const copy = new ImageData(
+        new Uint8ClampedArray(imgData.data),
+        imgData.width, imgData.height
+      );
+      encodeInto(copy, text, encPwd.value || '');
+      ctx.putImageData(copy, 0, 0);
+      resultUrl = cv.toDataURL('image/png');
+      const pwdMsg = encPwd.value ? ' с паролем' : '';
+      out.textContent = `Готово! Сообщение длиной ${text.length} симв.${pwdMsg} спрятано.\nСкачайте PNG — при пересохранении в JPEG данные потеряются.`;
+      dlBtn.classList.remove('hidden');
+      toast('Сообщение спрятано');
+      if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
+    } catch(e){
+      showErr(e.message || 'Ошибка');
+    }
+  }
+
+  function downloadPNG(){
+    if (!resultUrl) resultUrl = cv.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.download = fileName;
+    a.href = resultUrl;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast('Сохранено');
+  }
+
+  goBtn.onclick = () => { mode === 'enc' ? runHide() : runExtract(); };
+  dlBtn.onclick = downloadPNG;
+
+  drop.onclick = () => $('file').click();
+  $('file').addEventListener('change', e => loadFile(e.target.files[0]));
+
+  ['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault();
+    drop.style.borderColor = 'var(--btn)';
+  }));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => {
+    e.preventDefault();
+    drop.style.borderColor = '';
+  }));
+  drop.addEventListener('drop', e => {
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) loadFile(f);
+  });
+
+  setMainButton(() => '');
+}
+
+/* ── 9. Хеши ─────────────────────────────────────────────── */
+function renderHash(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Текст</label>
+      <textarea id="inp" placeholder="Введите текст для хеширования…" autocomplete="off" spellcheck="false"></textarea>
+      <div class="hashrow">
+        <div class="name">MD5</div>
+        <div class="val"><span id="md5">—</span><button class="mini" data-c="md5">Копировать</button></div>
+      </div>
+      <div class="hashrow">
+        <div class="name">SHA-256</div>
+        <div class="val"><span id="sha">—</span><button class="mini" data-c="sha">Копировать</button></div>
+      </div>
+    </div>`;
+  const inp = el.querySelector('#inp');
+  const m5 = el.querySelector('#md5'), sh = el.querySelector('#sha');
+  let t = null;
+  const upd = () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const v = inp.value;
+      if (!v){ m5.textContent = '—'; sh.textContent = '—'; refreshMainButton(); return; }
+      m5.textContent = md5(v);
+      sh.textContent = sha256(v);
+      refreshMainButton();
+    }, 60);
+  };
+  inp.addEventListener('input', upd);
+  el.addEventListener('click', e => {
+    const b = e.target.closest('button[data-c]');
+    if (!b) return;
+    copyText(b.dataset.c === 'md5' ? m5.textContent : sh.textContent);
+  });
+  setMainButton(() => {
+    if (!inp.value) return '';
+    return `MD5: ${m5.textContent}\nSHA-256: ${sh.textContent}`;
+  });
+  setTimeout(() => inp.focus(), 120);
+}
+
+/* ── 10. Base64 ──────────────────────────────────────────── */
+function renderBase64(el){
+  let mode = 'enc';
+  el.innerHTML = `
+    <div class="panel">
+      <div class="seg" id="seg">
+        <button class="on" data-m="enc">Кодировать</button>
+        <button data-m="dec">Декодировать</button>
+      </div>
+      <label class="fld" id="lbl">Исходный текст</label>
+      <textarea id="inp" placeholder="Введите текст…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+      <div class="row">
+        <button class="btn" id="copyBtn">Копировать</button>
+        <button class="btn ghost" id="swapBtn">⇅</button>
+      </div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="out" id="out"><span class="empty">—</span></div>
+      <div class="err hidden" id="err"></div>
+    </div>`;
+  const inp = el.querySelector('#inp'), out = el.querySelector('#out');
+  const seg = el.querySelector('#seg'), lbl = el.querySelector('#lbl'), err = el.querySelector('#err');
+  let result = '';
+
+  const upd = () => {
+    const v = inp.value;
+    err.classList.add('hidden');
+    if (!v){ out.innerHTML = '<span class="empty">—</span>'; result = ''; refreshMainButton(); return; }
+    try {
+      result = mode === 'enc' ? b64Encode(v) : b64Decode(v);
+      out.textContent = result;
+    } catch(e){
+      out.innerHTML = '<span class="empty">—</span>';
+      err.textContent = 'Ошибка: некорректный Base64';
+      err.classList.remove('hidden');
+      result = '';
+    }
+    refreshMainButton();
+  };
+  const setMode = m => {
+    mode = m;
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.m === m));
+    lbl.textContent = m === 'enc' ? 'Исходный текст' : 'Base64 строка';
+    inp.placeholder = m === 'enc' ? 'Введите текст…' : 'Вставьте Base64…';
+    upd();
+  };
+  inp.addEventListener('input', upd);
+  seg.addEventListener('click', e => { const b = e.target.closest('button[data-m]'); if (b) setMode(b.dataset.m); });
+  el.querySelector('#copyBtn').onclick = () => copyText(result);
+  el.querySelector('#swapBtn').onclick = () => {
+    if (!result) return;
+    inp.value = result;
+    setMode(mode === 'enc' ? 'dec' : 'enc');
+  };
+  setMainButton(() => result);
+  setTimeout(() => inp.focus(), 120);
+}
+
+/* ── 11. QR ──────────────────────────────────────────────── */
+function renderQR(el){
+  let ecl = 'M';
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Текст или ссылка</label>
+      <textarea id="inp" placeholder="Введите текст, ссылку или контакты…" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+      <label class="fld" style="margin-top:14px">Уровень коррекции ошибок</label>
+      <div class="seg" id="seg">
+        <button data-e="L">L</button>
+        <button class="on" data-e="M">M</button>
+        <button data-e="Q">Q</button>
+        <button data-e="H">H</button>
+      </div>
+      <div class="qrbox"><canvas id="cv"></canvas></div>
+      <div class="err hidden" id="err"></div>
+      <div class="row"><button class="btn" id="dlBtn">Скачать PNG</button></div>
+    </div>`;
+  const inp = el.querySelector('#inp'), cv = el.querySelector('#cv');
+  const err = el.querySelector('#err'), seg = el.querySelector('#seg');
+  const ctx = cv.getContext('2d');
+  let t = null;
+  const upd = () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const v = inp.value;
+      err.classList.add('hidden');
+      if (!v){ cv.width = 0; cv.height = 0; cv.style.width = '100%'; refreshMainButton(); return; }
+      try {
+        const res = QR.encode(v, ecl);
+        QR.draw(cv, res, 4);
+      } catch(e){
+        ctx.clearRect(0,0,cv.width,cv.height);
+        cv.width = 0; cv.height = 0;
+        err.textContent = e.message || 'Ошибка';
+        err.classList.remove('hidden');
+      }
+      refreshMainButton();
+    }, 120);
+  };
+  inp.addEventListener('input', upd);
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-e]');
+    if (!b) return;
+    ecl = b.dataset.e;
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    upd();
+  });
+  el.querySelector('#dlBtn').onclick = () => {
+    if (!cv.width){ toast('Сначала введите текст'); return; }
+    try {
+      const a = document.createElement('a');
+      a.download = 'qrcode.png';
+      a.href = cv.toDataURL('image/png');
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      toast('Сохранено');
+    } catch(e){ toast('Ошибка'); }
+  };
+  setMainButton(() => inp.value.trim() ? inp.value : '');
+  setTimeout(() => inp.focus(), 120);
+}
+
+/* ── 12. Конвертер форматов ──────────────────────────────── */
+function renderDataConv(el){
+  el.innerHTML = `
+    <div class="panel">
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div style="flex:1">
+          <label class="fld">Из</label>
+          <select id="from" class="sel">
+            <option value="json" selected>JSON</option>
+            <option value="yaml">YAML</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label class="fld">В</label>
+          <select id="to" class="sel">
+            <option value="json">JSON</option>
+            <option value="yaml" selected>YAML</option>
+            <option value="csv">CSV</option>
+          </select>
+        </div>
+      </div>
+      <label class="fld">Вход</label>
+      <textarea id="inp" placeholder='{"name": "John", "tags": ["a","b"]}' autocomplete="off" spellcheck="false" style="font-family:ui-monospace,monospace;font-size:13.5px"></textarea>
+      <div class="row">
+        <button class="btn" id="goBtn">Конвертировать</button>
+        <button class="btn ghost" id="copyBtn">Копировать</button>
+      </div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="out small" id="out" style="font-family:ui-monospace,monospace"><span class="empty">—</span></div>
+      <div class="err hidden" id="err"></div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  const out = $('out'), err = $('err');
+  let result = '';
+
+  const run = () => {
+    err.classList.add('hidden');
+    const src = $('from').value, dst = $('to').value;
+    const text = $('inp').value;
+    if (!text.trim()){ out.innerHTML = '<span class="empty">—</span>'; result = ''; refreshMainButton(); return; }
+    try {
+      let parsed;
+      if (src === 'json') parsed = JSON.parse(text);
+      else if (src === 'yaml') parsed = parseYAML(text);
+      else if (src === 'csv') parsed = parseCSV(text);
+      if (parsed === undefined || parsed === null) throw new Error('Не удалось разобрать');
+
+      let outStr;
+      if (dst === 'json') outStr = JSON.stringify(parsed, null, 2);
+      else if (dst === 'yaml') outStr = yamlStringify(parsed);
+      else if (dst === 'csv') outStr = stringifyCSV(parsed);
+
+      result = outStr;
+      out.textContent = outStr;
+    } catch(e){
+      result = '';
+      out.innerHTML = '<span class="empty">—</span>';
+      err.textContent = 'Ошибка: ' + (e.message || 'неверный формат');
+      err.classList.remove('hidden');
+    }
+    refreshMainButton();
+  };
+  $('goBtn').onclick = run;
+  $('from').onchange = run;
+  $('to').onchange = run;
+  $('inp').addEventListener('input', () => { clearTimeout(run._t); run._t = setTimeout(run, 400); });
+  $('copyBtn').onclick = () => copyText(result);
+
+  setMainButton(() => result);
+  setTimeout(() => $('inp').focus(), 120);
+}
+
+/* ── 13. Цвет ────────────────────────────────────────────── */
+function renderColor(el){
+  el.innerHTML = `
+    <div class="panel">
+      <div class="colorPreview" id="prev"></div>
+      <label class="fld">HEX</label>
+      <input type="text" id="hex" value="#3498db" autocomplete="off" spellcheck="false">
+      <label class="fld" style="margin-top:12px">RGB</label>
+      <input type="text" id="rgb" value="52, 152, 219" autocomplete="off" spellcheck="false">
+      <label class="fld" style="margin-top:12px">HSL</label>
+      <input type="text" id="hsl" value="204, 70%, 53%" autocomplete="off" spellcheck="false">
+      <label class="fld" style="margin-top:14px">Или выберите</label>
+      <input type="color" id="picker" value="#3498db">
+      <div class="row">
+        <button class="btn" id="copyBtn">Копировать HEX</button>
+      </div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  let currentHex = '#3498db';
+
+  const render = (rgb, source) => {
+    if (!rgb) return;
+    const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    currentHex = hex;
+    $('prev').style.background = hex;
+    $('picker').value = hex;
+    if (source !== 'hex') $('hex').value = hex;
+    if (source !== 'rgb') $('rgb').value = `${rgb.r}, ${rgb.g}, ${rgb.b}`;
+    if (source !== 'hsl') $('hsl').value = `${hsl.h}, ${hsl.s}%, ${hsl.l}%`;
+    refreshMainButton();
+  };
+
+  $('hex').addEventListener('input', () => {
+    const rgb = hexToRgb($('hex').value);
+    if (rgb) render(rgb, 'hex');
+  });
+  $('rgb').addEventListener('input', () => {
+    const m = $('rgb').value.match(/(\d+)[^\d]+(\d+)[^\d]+(\d+)/);
+    if (m) render({r: +m[1], g: +m[2], b: +m[3]}, 'rgb');
+  });
+  $('hsl').addEventListener('input', () => {
+    const m = $('hsl').value.match(/(\d+)[^\d]+(\d+)[^\d]*[%]?[^\d]+(\d+)/);
+    if (m) render(hslToRgb(+m[1], +m[2], +m[3]), 'hsl');
+  });
+  $('picker').addEventListener('input', () => {
+    const rgb = hexToRgb($('picker').value);
+    if (rgb) render(rgb, null);
+  });
+  $('copyBtn').onclick = () => copyText(currentHex);
+
+  setMainButton(() => currentHex);
+  render({r: 52, g: 152, b: 219}, null);
+}
+
+/* ── 14. Единицы ─────────────────────────────────────────── */
+function renderUnits(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Категория</label>
+      <select class="sel" id="cat" style="margin-bottom:14px">
+        ${Object.entries(UNITS).map(([k,v]) => `<option value="${k}"${k==='length'?' selected':''}>${v.name}</option>`).join('')}
+      </select>
+      <label class="fld">Значение</label>
+      <input type="text" id="val" value="1" inputmode="decimal" autocomplete="off">
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <div style="flex:1">
+          <label class="fld">Из</label>
+          <select class="sel" id="from"></select>
+        </div>
+        <div style="flex:1">
+          <label class="fld">В</label>
+          <select class="sel" id="to"></select>
+        </div>
+      </div>
+      <div class="row"><button class="btn ghost" id="swapBtn">⇅ Поменять</button></div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="out" id="out" style="font-size:22px;font-weight:700;text-align:center"><span class="empty">—</span></div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  let result = '';
+
+  const fillUnits = () => {
+    const cat = $('cat').value;
+    const units = UNITS[cat].units;
+    const keys = Object.keys(units);
+    const opts = keys.map(k => `<option value="${k}">${esc(units[k].n)} (${k})</option>`).join('');
+    $('from').innerHTML = opts;
+    $('to').innerHTML = opts;
+    $('from').value = keys[0];
+    $('to').value = keys[1] || keys[0];
+    upd();
+  };
+
+  const upd = () => {
+    const cat = $('cat').value;
+    const v = parseFloat(String($('val').value).replace(',', '.'));
+    if (isNaN(v)){ $('out').innerHTML = '<span class="empty">—</span>'; result = ''; refreshMainButton(); return; }
+    const conv = convertUnit(v, cat, $('from').value, $('to').value);
+    result = String(conv);
+    $('out').textContent = `${v} ${$('from').value} = ${conv.toLocaleString('ru-RU', {maximumFractionDigits: 8})} ${$('to').value}`;
+    refreshMainButton();
+  };
+
+  $('cat').addEventListener('change', fillUnits);
+  ['val','from','to'].forEach(id => {
+    el.querySelector('#'+id).addEventListener('input', upd);
+    el.querySelector('#'+id).addEventListener('change', upd);
+  });
+  $('swapBtn').onclick = () => {
+    const a = $('from').value;
+    $('from').value = $('to').value;
+    $('to').value = a;
+    upd();
+  };
+  fillUnits();
+
+  setMainButton(() => result);
+}
+
+/* ── 15. Таймстамп ───────────────────────────────────────── */
+function renderTimestamp(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Unix-таймстамп (секунды или мс)</label>
+      <input type="text" id="ts" placeholder="1700000000" inputmode="numeric" autocomplete="off">
+      <div class="row"><button class="btn ghost" id="nowBtn">Сейчас</button></div>
+      <div class="stats" id="tsOut"></div>
+      <div class="hashrow" style="margin-top:20px">
+        <div class="name">ОБРАТНО: ДАТА → TIMESTAMP</div>
+      </div>
+      <input type="datetime-local" id="dt" step="1">
+      <div class="stats" id="dtOut"></div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+
+  const fmtRel = (ms) => {
+    const d = Date.now() - ms;
+    const abs = Math.abs(d);
+    const sec = Math.round(abs/1000), min = Math.round(abs/60000), hr = Math.round(abs/3600000);
+    const day = Math.round(abs/86400000), mo = Math.round(abs/2592000000), yr = Math.round(abs/31536000000);
+    let val;
+    if (sec < 60) val = `${sec} сек`;
+    else if (min < 60) val = `${min} мин`;
+    else if (hr < 24) val = `${hr} ч`;
+    else if (day < 30) val = `${day} дн`;
+    else if (mo < 12) val = `${mo} мес`;
+    else val = `${yr} г`;
+    return d >= 0 ? `${val} назад` : `через ${val}`;
+  };
+
+  const updTs = () => {
+    const raw = $('ts').value.trim();
+    if (!raw){ $('tsOut').innerHTML = ''; refreshMainButton(); return; }
+    let n = parseInt(raw.replace(/\D/g,''), 10);
+    if (!isFinite(n)){ $('tsOut').innerHTML = ''; refreshMainButton(); return; }
+    const ms = String(n).length > 10 ? n : n * 1000;
+    const d = new Date(ms);
+    if (isNaN(d.getTime())){ $('tsOut').innerHTML = ''; refreshMainButton(); return; }
+    $('tsOut').innerHTML = `
+      <div class="stat"><div class="v" style="font-size:14px">${d.toISOString()}</div><div class="k">ISO / UTC</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${d.toLocaleString('ru-RU')}</div><div class="k">Локальное время</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${Math.floor(ms/1000)}</div><div class="k">Секунды</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>
+      <div class="stat" style="grid-column:1/-1"><div class="v" style="font-size:14px">${fmtRel(ms)}</div><div class="k">Относительно</div></div>
+    `;
+    refreshMainButton();
+  };
+
+  const updDt = () => {
+    if (!$('dt').value){ $('dtOut').innerHTML = ''; return; }
+    const d = new Date($('dt').value);
+    if (isNaN(d.getTime())){ $('dtOut').innerHTML = ''; return; }
+    const ms = d.getTime(), sec = Math.floor(ms/1000);
+    $('dtOut').innerHTML = `
+      <div class="stat"><div class="v" style="font-size:14px">${sec}</div><div class="k">Секунды</div></div>
+      <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>
+    `;
+    refreshMainButton();
+  };
+
+  $('ts').addEventListener('input', updTs);
+  $('dt').addEventListener('input', updDt);
+  $('nowBtn').onclick = () => {
+    $('ts').value = String(Math.floor(Date.now()/1000));
+    updTs();
+  };
+
+  setMainButton(() => {
+    if ($('ts').value.trim()){
+      return `Timestamp: ${$('ts').value}\n${$('tsOut').textContent.slice(0,200)}`;
+    }
+    if ($('dt').value){
+      return `Дата: ${$('dt').value}\nСекунды: ${Math.floor(new Date($('dt').value).getTime()/1000)}`;
+    }
+    return '';
+  });
+}
+
+/* ── 16. Сокращатель ─────────────────────────────────────── */
+async function fetchWithTimeout(url, opts = {}, ms = 12000){
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+  try { return await fetch(url, { ...opts, signal: ctrl.signal }); }
+  finally { clearTimeout(id); }
+}
+async function shortenUrl(url){
+  const attempts = [
+    { name:'clck.ru',  run: () => fetchWithTimeout('https://clck.ru/--?url=' + encodeURIComponent(url)) },
+    { name:'tinyurl',  run: () => fetchWithTimeout('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(url)) },
+    { name:'is.gd',    run: () => fetchWithTimeout('https://is.gd/create.php?format=simple&url=' + encodeURIComponent(url)) }
+  ];
+  let lastErr = null;
+  for (const a of attempts){
+    try {
+      const r = await a.run();
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const text = (await r.text()).trim();
+      if (/^https?:\/\//i.test(text)) return { short: text, via: a.name };
+      throw new Error('Некорректный ответ');
+    } catch(e){ lastErr = e; }
+  }
+  throw lastErr || new Error('Не удалось сократить');
+}
+function renderShort(el){
+  el.innerHTML = `
+    <div class="panel">
+      <label class="fld">Длинная ссылка</label>
+      <textarea id="inp" placeholder="https://example.com/very/long/path?query=…" autocomplete="off" autocorrect="off" spellcheck="false" style="min-height:80px"></textarea>
+      <div class="row">
+        <button class="btn" id="goBtn">Сократить</button>
+        <button class="btn ghost" id="copyBtn">Копировать</button>
+      </div>
+      <label class="fld" style="margin-top:16px">Короткая ссылка</label>
+      <div class="out" id="out"><span class="empty">Введите ссылку и нажмите «Сократить»…</span></div>
+      <div class="err hidden" id="err"></div>
+      <div class="hintnote">Требуется интернет — используется публичный сервис</div>
+    </div>`;
+  const inp = el.querySelector('#inp'), out = el.querySelector('#out');
+  const err = el.querySelector('#err'), goBtn = el.querySelector('#goBtn');
+  let result = '';
+
+  const showErr = msg => { err.textContent = msg; err.classList.remove('hidden'); };
+  const normalize = s => { s = s.trim(); if (!/^https?:\/\//i.test(s)) s = 'https://' + s; return s; };
+
+  const run = async () => {
+    err.classList.add('hidden');
+    if (!inp.value.trim()){ showErr('Введите ссылку'); return; }
+    const url = normalize(inp.value);
+    try { new URL(url); } catch(e){ showErr('Некорректная ссылка'); return; }
+    goBtn.disabled = true;
+    const t = goBtn.textContent; goBtn.textContent = 'Сокращаем…';
+    out.innerHTML = '<span class="empty">Загрузка…</span>';
+    try {
+      const r = await shortenUrl(url);
+      result = r.short;
+      out.textContent = r.short;
+      refreshMainButton();
+      if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
+    } catch(e){
+      result = '';
+      out.innerHTML = '<span class="empty">—</span>';
+      showErr('Не удалось: ' + (e.message || 'сеть недоступна'));
+      refreshMainButton();
+    } finally {
+      goBtn.disabled = false; goBtn.textContent = t;
+    }
+  };
+  goBtn.onclick = run;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); run(); } });
+  el.querySelector('#copyBtn').onclick = () => copyText(result);
+  setMainButton(() => result);
+  setTimeout(() => inp.focus(), 120);
+}
+
+/* ============================================================
+   Навигация
+   ============================================================ */
+const mainEl  = document.getElementById('main');
+const titleEl = document.getElementById('title');
+const backBtn = document.getElementById('backBtn');
+
+function goHome(){
+  titleEl.textContent = 'Инструменты';
+  backBtn.classList.add('hidden');
+  _mbGetter = null;
+  if (tg && tg.MainButton) { try { tg.MainButton.hide(); } catch(e){} }
+  if (tg && tg.BackButton) { try { tg.BackButton.hide(); } catch(e){} }
+  mainEl.innerHTML = `
+    <div class="grid">
+      ${Object.entries(TOOLS).map(([k,t]) => `
+        <button class="card" data-tool="${k}">
+          <span class="ico">${t.icon}</span>
+          <span class="lbl">${esc(t.title)}</span>
+        </button>`).join('')}
+    </div>`;
+  mainEl.querySelectorAll('[data-tool]').forEach(b => {
+    b.addEventListener('click', () => openTool(b.dataset.tool));
+  });
+  window.scrollTo(0, 0);
+}
+
+function openTool(key){
+  const t = TOOLS[key];
+  if (!t) return;
+  titleEl.textContent = t.title;
+  backBtn.classList.remove('hidden');
+  if (tg && tg.BackButton) { try { tg.BackButton.show(); } catch(e){} }
+  if (tg && tg.MainButton) { try { tg.MainButton.hide(); } catch(e){} }
+  _mbGetter = null;
+  mainEl.innerHTML = '';
+  t.render(mainEl);
+  window.scrollTo(0, 0);
+}
+
+/* ── Показать/скрыть пароль ─────────────────────────────── */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.pwd-toggle');
+  if (!btn) return;
+  const input = document.getElementById(btn.dataset.for);
+  if (!input) return;
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+  btn.classList.toggle('on', show);
+  const pos = input.value.length;
+  input.focus();
+  try { input.setSelectionRange(pos, pos); } catch(_){}
+});
+
+backBtn.addEventListener('click', goHome);
+goHome();
+</script>
+</body>
+</html>
