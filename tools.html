@@ -69,6 +69,9 @@
   textarea::placeholder,input::placeholder{color:var(--hint);}
   input[type=password]::-ms-reveal,
   input[type=password]::-ms-clear{display:none;}
+  /* Скрываем системные иконки у input[type=date] / datetime-local */
+  input[type=date]::-webkit-calendar-picker-indicator,
+  input[type=datetime-local]::-webkit-calendar-picker-indicator{opacity:0;}
 
   .pwd-wrap{position:relative;display:block;}
   .pwd-wrap input{padding-right:48px;}
@@ -83,6 +86,25 @@
   }
   .pwd-toggle:active{transform:translateY(-50%) scale(.9);}
   .pwd-toggle.on{color:var(--btn);}
+
+  /* ── Поле даты с иконкой календаря ── */
+  .dateWrap{position:relative;display:block;}
+  .dateWrap .dateText{padding-right:48px;}
+  .dateWrap .dateNative{
+    position:absolute;left:0;top:0;width:1px;height:1px;
+    opacity:0;pointer-events:none;border:0;padding:0;
+    -webkit-appearance:none;appearance:none;
+  }
+  .dateWrap .dateBtn{
+    position:absolute;right:5px;top:50%;transform:translateY(-50%);
+    background:transparent;border:0;color:var(--hint);
+    width:38px;height:38px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:18px;font-family:inherit;
+    transition:background .15s,color .15s,transform .12s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .dateWrap .dateBtn:active{transform:translateY(-50%) scale(.9);}
 
   .seg{display:flex;background:var(--sec);border-radius:12px;padding:3px;gap:3px;margin-bottom:14px;}
   .seg button{
@@ -326,6 +348,169 @@ async function copyText(txt){
 }
 function esc(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ============================================================
+   Поля даты с иконкой календаря
+   ============================================================ */
+
+/**
+ * Понимает форматы:
+ *   dd.mm.yyyy / dd.mm.yy
+ *   dd/mm/yyyy / dd-mm-yyyy / dd/mm/yy
+ *   yyyy-mm-dd / yyyy.mm.dd / yyyy/mm/dd
+ *   ddmmyyyy (8 цифр) / ddmmyy (6 цифр)
+ *   с временем: "<дата> hh:mm" или "<дата> hh:mm:ss"
+ * Возвращает { date, hasTime } или null.
+ */
+function parseUserDate(str, withTime){
+  if (!str) return null;
+  str = String(str).trim();
+  if (!str) return null;
+
+  let time = { h: 0, m: 0, s: 0 };
+  let hasTime = false;
+
+  // Отделяем время в конце (hh:mm или hh:mm:ss)
+  const timeMatch = str.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*$/);
+  if (timeMatch){
+    const h = +timeMatch[1], m = +timeMatch[2], s = timeMatch[3] ? +timeMatch[3] : 0;
+    if (h > 23 || m > 59 || s > 59) return null;
+    time = { h, m, s };
+    hasTime = true;
+    str = str.slice(0, timeMatch.index).trim();
+    if (!str) return null;
+  }
+
+  let y, mo, d;
+
+  // yyyy-mm-dd
+  let m = str.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
+  if (m){
+    y = +m[1]; mo = +m[2]; d = +m[3];
+  } else {
+    // dd-mm-yyyy
+    m = str.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2,4})$/);
+    if (m){
+      d = +m[1]; mo = +m[2]; y = +m[3];
+      if (y < 100) y += y < 70 ? 2000 : 1900;
+    } else {
+      // только цифры
+      m = str.match(/^(\d{8})$/);
+      if (m){
+        const s = m[1];
+        const first4 = +s.slice(0,4);
+        // Если первые 4 цифры похожи на год — считаем yyyymmdd
+        if (first4 >= 1900 && first4 <= 2199){
+          y = first4; mo = +s.slice(4,6); d = +s.slice(6,8);
+        } else {
+          d = +s.slice(0,2); mo = +s.slice(2,4); y = +s.slice(4,8);
+        }
+      } else {
+        m = str.match(/^(\d{6})$/);
+        if (m){
+          const s = m[1];
+          d = +s.slice(0,2); mo = +s.slice(2,4); y = +s.slice(4,6);
+          y += y < 70 ? 2000 : 1900;
+        } else {
+          return null;
+        }
+      }
+    }
+  }
+
+  if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1900 || y > 2199) return null;
+  const dt = new Date(y, mo - 1, d, time.h, time.m, time.s);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+  return { date: dt, hasTime };
+}
+
+function formatUserDate(date, withTime){
+  const d = String(date.getDate()).padStart(2, '0');
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  let s = `${d}.${mo}.${y}`;
+  if (withTime){
+    const h = String(date.getHours()).padStart(2, '0');
+    const mi = String(date.getMinutes()).padStart(2, '0');
+    s += ` ${h}:${mi}`;
+  }
+  return s;
+}
+
+function toNativeValue(date, withTime){
+  const y = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  let s = `${y}-${mo}-${d}`;
+  if (withTime){
+    const h = String(date.getHours()).padStart(2, '0');
+    const mi = String(date.getMinutes()).padStart(2, '0');
+    s += `T${h}:${mi}`;
+  }
+  return s;
+}
+
+function dateFieldWrap(id, initialValue, withTime){
+  const placeholder = withTime ? 'дд.мм.гггг чч:мм' : 'дд.мм.гггг';
+  return `
+    <div class="dateWrap">
+      <input type="text" id="${id}" class="dateText"
+        placeholder="${placeholder}"
+        value="${esc(initialValue || '')}"
+        autocomplete="off" spellcheck="false">
+      <input type="${withTime ? 'datetime-local' : 'date'}" id="${id}__native" class="dateNative" tabindex="-1">
+      <button type="button" class="dateBtn" data-for="${id}" aria-label="Выбрать дату">📅</button>
+    </div>`;
+}
+
+function bindDateField(container, id, withTime, onChange){
+  const txt = container.querySelector('#' + id);
+  const native = container.querySelector('#' + id + '__native');
+  const btn = container.querySelector('.dateBtn[data-for="' + id + '"]');
+  if (!txt || !native || !btn) return;
+
+  const syncNative = () => {
+    const p = parseUserDate(txt.value, withTime);
+    if (p) native.value = toNativeValue(p.date, withTime);
+  };
+
+  txt.addEventListener('input', () => { syncNative(); onChange(); });
+  txt.addEventListener('blur', () => {
+    const p = parseUserDate(txt.value, withTime);
+    if (p){
+      txt.value = formatUserDate(p.date, withTime);
+      onChange();
+    }
+  });
+
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    syncNative();
+    try {
+      if (typeof native.showPicker === 'function') native.showPicker();
+      else native.click();
+    } catch(err){
+      try { native.click(); } catch(_){}
+    }
+  });
+
+  native.addEventListener('change', () => {
+    if (!native.value) return;
+    const parts = native.value.split('T');
+    const [y, mo, d] = parts[0].split('-').map(Number);
+    let hh = 0, mm = 0;
+    if (parts[1]){
+      const t = parts[1].split(':');
+      hh = +t[0]; mm = +t[1];
+    }
+    const dt = new Date(y, mo - 1, d, hh, mm);
+    txt.value = formatUserDate(dt, withTime);
+    onChange();
+  });
+
+  // Первичная синхронизация
+  syncNative();
 }
 
 /* ============================================================
@@ -1123,7 +1308,6 @@ function pluralRu(n, forms){
   if (n10 >= 2 && n10 <= 4) return forms[1];
   return forms[2];
 }
-
 function numberToWordsRu(num, gender){
   if (!isFinite(num)) return '';
   const neg = num < 0;
@@ -1169,7 +1353,6 @@ function numberToWordsRu(num, gender){
   if (neg) s = 'минус ' + s;
   return s;
 }
-
 function numberToWordsEn(num){
   if (!isFinite(num)) return '';
   const neg = num < 0;
@@ -1215,7 +1398,6 @@ function numberToWordsEn(num){
   if (neg) s = 'minus ' + s;
   return s;
 }
-
 function moneyToWordsRu(amount){
   const neg = amount < 0;
   const abs = Math.abs(amount);
@@ -1228,7 +1410,6 @@ function moneyToWordsRu(amount){
   if (neg) s = 'минус ' + s;
   return s;
 }
-
 function moneyToWordsEn(amount){
   const neg = amount < 0;
   const abs = Math.abs(amount);
@@ -1669,7 +1850,6 @@ function renderWords(el){
     } else {
       s = lang === 'ru' ? numberToWordsRu(n) : numberToWordsEn(n);
     }
-    // Обработка дробной части для обычного формата
     if (fmt === 'num' && raw.includes('.')){
       const [whole, frac] = raw.split('.');
       const wholeN = parseInt(whole, 10) || 0;
@@ -1784,15 +1964,17 @@ function renderPercent(el){
 
 /* ── 9. Калькулятор дат ──────────────────────────────────── */
 function renderDates(el){
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const todayStr = formatUserDate(today, false);
+
   el.innerHTML = `
     <div class="panel">
       <div class="hashrow">
         <div class="name">РАЗНИЦА МЕЖДУ ДАТАМИ</div>
       </div>
       <div class="twoCols">
-        <input type="date" id="d1">
-        <input type="date" id="d2">
+        ${dateFieldWrap('d1', todayStr, false)}
+        ${dateFieldWrap('d2', todayStr, false)}
       </div>
       <div class="stats" id="out1" style="margin-top:0"></div>
 
@@ -1800,7 +1982,7 @@ function renderDates(el){
         <div class="name">ДАТА + N ДНЕЙ</div>
       </div>
       <div class="twoCols">
-        <input type="date" id="b1" value="${today}">
+        ${dateFieldWrap('b1', todayStr, false)}
         <input type="number" id="b2" placeholder="+ дней" inputmode="numeric">
       </div>
       <div class="out" id="out2" style="margin-top:0;font-size:18px;font-weight:600;text-align:center"><span class="empty">—</span></div>
@@ -1808,41 +1990,33 @@ function renderDates(el){
       <div class="hashrow" style="margin-top:20px">
         <div class="name">ДЕНЬ НЕДЕЛИ И ВОЗРАСТ</div>
       </div>
-      <input type="date" id="c1">
+      ${dateFieldWrap('c1', todayStr, false)}
       <div class="stats" id="out3" style="margin-top:12px"></div>
     </div>`;
 
+  const $ = id => el.querySelector('#' + id);
   const fmtD = d => d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-  const fmtRel = ms => {
-    const d = Date.now() - ms;
-    const abs = Math.abs(d);
-    const sec = Math.round(abs/1000), min = Math.round(abs/60000), hr = Math.round(abs/3600000);
-    const day = Math.round(abs/86400000), mo = Math.round(abs/2592000000), yr = Math.round(abs/31536000000);
-    let v;
-    if (sec < 60) v = `${sec} сек`;
-    else if (min < 60) v = `${min} мин`;
-    else if (hr < 24) v = `${hr} ч`;
-    else if (day < 30) v = `${day} дн`;
-    else if (mo < 12) v = `${mo} мес`;
-    else v = `${yr} г`;
-    return d >= 0 ? `${v} назад` : `через ${v}`;
+
+  const getDate = id => {
+    const p = parseUserDate($(id).value, false);
+    return p ? p.date : null;
   };
 
-  // 1. Разница между датами
+  // 1. Разница
   const upd1 = () => {
-    const a = el.querySelector('#d1').value;
-    const b = el.querySelector('#d2').value;
-    const out = el.querySelector('#out1');
-    if (!a || !b){ out.innerHTML = ''; return; }
-    const dA = new Date(a), dB = new Date(b);
+    const dA = getDate('d1');
+    const dB = getDate('d2');
+    const out = $('out1');
+    if (!dA || !dB){
+      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите обе даты</div>';
+      return;
+    }
     const ms = Math.abs(dB - dA);
     const days = Math.floor(ms / 86400000);
     const weeks = Math.floor(days / 7);
     const hours = Math.floor(ms / 3600000);
-    // Годы/месяцы приблизительно
     const years = Math.floor(days / 365.25);
     const months = Math.floor(days / 30.4375);
-    // Точная разница в годах/месяцах/днях
     const earlier = dA < dB ? dA : dB;
     const later   = dA < dB ? dB : dA;
     let y = later.getFullYear() - earlier.getFullYear();
@@ -1850,8 +2024,7 @@ function renderDates(el){
     let d = later.getDate() - earlier.getDate();
     if (d < 0){
       m--;
-      const prevMonth = new Date(later.getFullYear(), later.getMonth(), 0).getDate();
-      d += prevMonth;
+      d += new Date(later.getFullYear(), later.getMonth(), 0).getDate();
     }
     if (m < 0){ y--; m += 12; }
     out.innerHTML = `
@@ -1865,24 +2038,24 @@ function renderDates(el){
 
   // 2. Дата + N дней
   const upd2 = () => {
-    const d = el.querySelector('#b1').value;
-    const n = parseInt(el.querySelector('#b2').value, 10);
-    const out = el.querySelector('#out2');
-    if (!d || isNaN(n)){ out.innerHTML = '<span class="empty">—</span>'; return; }
-    const base = new Date(d);
-    base.setDate(base.getDate() + n);
-    out.textContent = fmtD(base);
+    const base = getDate('b1');
+    const n = parseInt($('b2').value, 10);
+    const out = $('out2');
+    if (!base || isNaN(n)){ out.innerHTML = '<span class="empty">—</span>'; return; }
+    const r = new Date(base);
+    r.setDate(r.getDate() + n);
+    out.textContent = fmtD(r);
   };
 
   // 3. День недели + возраст
   const upd3 = () => {
-    const v = el.querySelector('#c1').value;
-    const out = el.querySelector('#out3');
-    if (!v){ out.innerHTML = ''; return; }
-    const d = new Date(v);
+    const d = getDate('c1');
+    const out = $('out3');
+    if (!d){
+      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>';
+      return;
+    }
     const weekday = d.toLocaleDateString('ru-RU', { weekday: 'long' });
-    const monthName = d.toLocaleDateString('ru-RU', { month: 'long' });
-    // Возраст
     const now = new Date();
     let years = now.getFullYear() - d.getFullYear();
     let months = now.getMonth() - d.getMonth();
@@ -1898,13 +2071,17 @@ function renderDates(el){
     `;
   };
 
-  el.querySelector('#d1').addEventListener('input', upd1);
-  el.querySelector('#d2').addEventListener('input', upd1);
-  el.querySelector('#b1').addEventListener('input', upd2);
-  el.querySelector('#b2').addEventListener('input', upd2);
-  el.querySelector('#c1').addEventListener('input', upd3);
+  bindDateField(el, 'd1', false, upd1);
+  bindDateField(el, 'd2', false, upd1);
+  bindDateField(el, 'b1', false, upd2);
+  bindDateField(el, 'c1', false, upd3);
+
+  $('b2').addEventListener('input', upd2);
 
   setMainButton(() => '');
+
+  upd1();
+  upd3();
 }
 
 /* ── 10. Diff (side-by-side) ─────────────────────────────── */
@@ -2331,16 +2508,20 @@ function renderUnits(el){
 
 /* ── 16. Таймстамп ───────────────────────────────────────── */
 function renderTimestamp(el){
+  const now = new Date();
+  const nowStr = formatUserDate(now, true);
+
   el.innerHTML = `
     <div class="panel">
       <label class="fld">Unix-таймстамп (секунды или мс)</label>
       <input type="text" id="ts" placeholder="1700000000" inputmode="numeric" autocomplete="off">
       <div class="row"><button class="btn ghost" id="nowBtn">Сейчас</button></div>
       <div class="stats" id="tsOut"></div>
+
       <div class="hashrow" style="margin-top:20px">
         <div class="name">ОБРАТНО: ДАТА → TIMESTAMP</div>
       </div>
-      <input type="datetime-local" id="dt" step="1">
+      ${dateFieldWrap('dt', nowStr, true)}
       <div class="stats" id="dtOut"></div>
     </div>`;
   const $ = id => el.querySelector('#' + id);
@@ -2379,10 +2560,9 @@ function renderTimestamp(el){
   };
 
   const updDt = () => {
-    if (!$('dt').value){ $('dtOut').innerHTML = ''; return; }
-    const d = new Date($('dt').value);
-    if (isNaN(d.getTime())){ $('dtOut').innerHTML = ''; return; }
-    const ms = d.getTime(), sec = Math.floor(ms/1000);
+    const p = parseUserDate($('dt').value, true);
+    if (!p){ $('dtOut').innerHTML = ''; refreshMainButton(); return; }
+    const ms = p.date.getTime(), sec = Math.floor(ms/1000);
     $('dtOut').innerHTML = `
       <div class="stat"><div class="v" style="font-size:14px">${sec}</div><div class="k">Секунды</div></div>
       <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>
@@ -2391,21 +2571,25 @@ function renderTimestamp(el){
   };
 
   $('ts').addEventListener('input', updTs);
-  $('dt').addEventListener('input', updDt);
   $('nowBtn').onclick = () => {
     $('ts').value = String(Math.floor(Date.now()/1000));
     updTs();
   };
 
+  bindDateField(el, 'dt', true, updDt);
+
   setMainButton(() => {
     if ($('ts').value.trim()){
       return `Timestamp: ${$('ts').value}\n${$('tsOut').textContent.slice(0,200)}`;
     }
-    if ($('dt').value){
-      return `Дата: ${$('dt').value}\nСекунды: ${Math.floor(new Date($('dt').value).getTime()/1000)}`;
+    const p = parseUserDate($('dt').value, true);
+    if (p){
+      return `Дата: ${formatUserDate(p.date, true)}\nСекунды: ${Math.floor(p.date.getTime()/1000)}`;
     }
     return '';
   });
+
+  updDt();
 }
 
 /* ── 17. Сокращатель ─────────────────────────────────────── */
