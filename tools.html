@@ -209,8 +209,9 @@
     border:1px solid var(--sep);background:#3498db;
   }
 
+  /* двухколоночный layout: только если широкая или landscape */
   .twoCols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-  @media (max-width:520px){
+  @media (max-width:520px) and (orientation:portrait){
     .twoCols{grid-template-columns:1fr;}
   }
   .twoCols.stacked{grid-template-columns:1fr !important;}
@@ -302,6 +303,7 @@ if (tg) {
 }
 
 let _mbGetter = null;
+let _currentCleanup = null;
 
 function setMainButton(getter){
   _mbGetter = getter;
@@ -2095,8 +2097,10 @@ function renderDates(el){
 
 /* ── 10. Diff (side-by-side / unified) ───────────────────── */
 function renderDiff(el){
-  const isNarrow = window.matchMedia('(max-width: 520px)').matches;
-  let inLayout = isNarrow ? 'v' : 'h';
+  const getAutoLayout = () =>
+    window.matchMedia('(max-width: 520px) and (orientation: portrait)').matches ? 'v' : 'h';
+  let inLayout = getAutoLayout();
+  let userLocked = false;
   let outLayout = 'split';
   let lastDiff = null;
 
@@ -2201,14 +2205,41 @@ function renderDiff(el){
     renderOut();
   };
 
+  const applyLayout = () => {
+    inputWrap.classList.toggle('stacked', inLayout === 'v');
+    inputWrap.classList.toggle('force-horizontal', inLayout === 'h');
+    inSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.l === inLayout));
+  };
+
   inSeg.addEventListener('click', e => {
     const b = e.target.closest('button[data-l]');
     if (!b) return;
-    inLayout = b.dataset.l;
-    inSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-    inputWrap.classList.toggle('stacked', inLayout === 'v');
-    inputWrap.classList.toggle('force-horizontal', inLayout === 'h');
+    const chosen = b.dataset.l;
+    if (userLocked && chosen === inLayout){
+      userLocked = false;
+      inLayout = getAutoLayout();
+    } else {
+      userLocked = true;
+      inLayout = chosen;
+    }
+    applyLayout();
   });
+
+  const onResize = () => {
+    if (userLocked) return;
+    const auto = getAutoLayout();
+    if (auto !== inLayout){
+      inLayout = auto;
+      applyLayout();
+    }
+  };
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+
+  _currentCleanup = () => {
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('orientationchange', onResize);
+  };
 
   outSeg.addEventListener('click', e => {
     const b = e.target.closest('button[data-o]');
@@ -2225,6 +2256,7 @@ function renderDiff(el){
   setMainButton(() => diffText);
   setTimeout(() => A.focus(), 120);
 
+  applyLayout();
   renderOut();
 }
 
@@ -2760,6 +2792,7 @@ const titleEl = document.getElementById('title');
 const backBtn = document.getElementById('backBtn');
 
 function goHome(){
+  if (_currentCleanup) { try { _currentCleanup(); } catch(e){} _currentCleanup = null; }
   titleEl.textContent = 'Инструменты';
   backBtn.classList.add('hidden');
   _mbGetter = null;
@@ -2780,6 +2813,7 @@ function goHome(){
 }
 
 function openTool(key){
+  if (_currentCleanup) { try { _currentCleanup(); } catch(e){} _currentCleanup = null; }
   const t = TOOLS[key];
   if (!t) return;
   titleEl.textContent = t.title;
