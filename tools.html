@@ -203,6 +203,9 @@
     display:flex;justify-content:center;overflow:hidden;
   }
   .imgbox canvas{max-width:100%;height:auto;border-radius:8px;display:block;}
+  .resultImg{
+    width:100%;max-width:100%;height:auto;border-radius:8px;display:block;
+  }
   .drop{
     background:var(--sec);border:2px dashed var(--sep);border-radius:14px;
     padding:24px 16px;text-align:center;cursor:pointer;font-size:14px;
@@ -285,7 +288,7 @@ function toast(msg){
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._tm);
-  t._tm = setTimeout(()=>t.classList.remove('show'), 1600);
+  t._tm = setTimeout(()=>t.classList.remove('show'), 1800);
 }
 async function copyText(txt){
   if (!txt) return;
@@ -1546,7 +1549,22 @@ function renderStegImage(el){
 
       <div class="row hidden" id="actions" style="margin-top:14px">
         <button class="btn" id="goBtn">Спрятать</button>
-        <button class="btn ghost hidden" id="dlBtn">Скачать PNG</button>
+      </div>
+
+      <div id="resultBlock" class="hidden" style="margin-top:16px">
+        <label class="fld">Готовое изображение</label>
+        <div class="imgbox"><img id="resultImg" class="resultImg" alt="Результат"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="shareBtn">📤 Поделиться</button>
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="openBtn">Открыть в браузере</button>
+          <button class="btn ghost" id="dlBtn">Скачать PNG</button>
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="b64Btn">Скопировать Base64</button>
+        </div>
+        <div class="hintnote">На телефоне: нажмите «Поделиться» → «Сохранить в файлы», или удерживайте картинку и выберите «Сохранить изображение».</div>
       </div>
 
       <label class="fld" style="margin-top:16px" id="outLbl">Результат</label>
@@ -1561,7 +1579,8 @@ function renderStegImage(el){
   const ctx = cv.getContext('2d', { willReadFrequently: true });
   const encBlock = $('encBlock'), decBlock = $('decBlock');
   const secret = $('secret'), encPwd = $('encPwd'), decPwd = $('decPwd');
-  const actions = $('actions'), goBtn = $('goBtn'), dlBtn = $('dlBtn');
+  const actions = $('actions'), goBtn = $('goBtn');
+  const resultBlock = $('resultBlock'), resultImg = $('resultImg');
   const out = $('out'), err = $('err'), info = $('info'), outLbl = $('outLbl');
 
   const showErr = msg => { err.textContent = msg; err.classList.remove('hidden'); };
@@ -1700,7 +1719,7 @@ function renderStegImage(el){
       outLbl.textContent = 'Извлечённый текст';
       goBtn.textContent = 'Извлечь';
     }
-    dlBtn.classList.add('hidden');
+    resultBlock.classList.add('hidden');
     out.innerHTML = '<span class="empty">—</span>';
     resultUrl = null;
     hideErr();
@@ -1734,6 +1753,7 @@ function renderStegImage(el){
 
       previewBox.classList.remove('hidden');
       actions.classList.remove('hidden');
+      resultBlock.classList.add('hidden');
       dropText.textContent = file.name;
 
       const capBytes = Math.floor((w * h * 3) / 8) - 9;
@@ -1774,29 +1794,75 @@ function renderStegImage(el){
       encodeInto(copy, text, encPwd.value || '');
       ctx.putImageData(copy, 0, 0);
       resultUrl = cv.toDataURL('image/png');
+      resultImg.src = resultUrl;
+      resultBlock.classList.remove('hidden');
       const pwdMsg = encPwd.value ? ' с паролем' : '';
-      out.textContent = `Готово! Сообщение длиной ${text.length} симв.${pwdMsg} спрятано.\nСкачайте PNG — при пересохранении в JPEG данные потеряются.`;
-      dlBtn.classList.remove('hidden');
+      out.textContent = `Готово! Сообщение длиной ${text.length} симв.${pwdMsg} спрятано.`;
       toast('Сообщение спрятано');
       if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
+      setTimeout(() => resultBlock.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch(e){
       showErr(e.message || 'Ошибка');
     }
   }
 
-  function downloadPNG(){
-    if (!resultUrl) resultUrl = cv.toDataURL('image/png');
-    const a = document.createElement('a');
-    a.download = fileName;
-    a.href = resultUrl;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast('Сохранено');
-  }
-
   goBtn.onclick = () => { mode === 'enc' ? runHide() : runExtract(); };
-  dlBtn.onclick = downloadPNG;
+
+  // ── Поделиться ────────────────────────────────────────
+  $('shareBtn').onclick = async () => {
+    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
+    const btn = $('shareBtn');
+    const oldText = btn.textContent;
+    btn.textContent = 'Открываем…';
+    btn.disabled = true;
+    try {
+      const ok = await shareImageFile(resultUrl, fileName);
+      if (!ok){
+        toast('Поделиться недоступно — открываем картинку');
+        try {
+          if (tg) tg.openLink(resultUrl);
+          else window.open(resultUrl, '_blank');
+        } catch(_){
+          toast('Нажмите «Скачать PNG» или удерживайте картинку');
+        }
+      }
+    } finally {
+      btn.textContent = oldText;
+      btn.disabled = false;
+    }
+  };
+
+  // ── Открыть в браузере ────────────────────────────────
+  $('openBtn').onclick = () => {
+    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
+    try {
+      if (tg) tg.openLink(resultUrl);
+      else window.open(resultUrl, '_blank');
+    } catch(e){
+      toast('Не удалось открыть');
+    }
+  };
+
+  // ── Скачать PNG ───────────────────────────────────────
+  $('dlBtn').onclick = () => {
+    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
+    try {
+      const a = document.createElement('a');
+      a.download = fileName;
+      a.href = resultUrl;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast('Если файл не скачался — используйте «Поделиться»');
+    } catch(e){ toast('Используйте «Поделиться»'); }
+  };
+
+  // ── Скопировать Base64 ────────────────────────────────
+  $('b64Btn').onclick = () => {
+    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
+    const b64 = resultUrl.split(',')[1] || '';
+    copyText(b64);
+  };
 
   drop.onclick = () => $('file').click();
   $('file').addEventListener('change', e => loadFile(e.target.files[0]));
@@ -2323,6 +2389,28 @@ function renderShort(el){
   el.querySelector('#copyBtn').onclick = () => copyText(result);
   setMainButton(() => result);
   setTimeout(() => inp.focus(), 120);
+}
+
+/* ============================================================
+   Поделиться картинкой (Web Share API)
+   ============================================================ */
+async function shareImageFile(dataUrl, fileName){
+  try {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], fileName, { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: 'Изображение со скрытым сообщением'
+      });
+      return true;
+    }
+  } catch(e){
+    if (e.name === 'AbortError') return true;
+    console.warn('share failed', e);
+  }
+  return false;
 }
 
 /* ============================================================
