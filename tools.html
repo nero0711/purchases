@@ -69,7 +69,6 @@
   textarea::placeholder,input::placeholder{color:var(--hint);}
   input[type=password]::-ms-reveal,
   input[type=password]::-ms-clear{display:none;}
-  /* Скрываем системные иконки у input[type=date] / datetime-local */
   input[type=date]::-webkit-calendar-picker-indicator,
   input[type=datetime-local]::-webkit-calendar-picker-indicator{opacity:0;}
 
@@ -87,7 +86,6 @@
   .pwd-toggle:active{transform:translateY(-50%) scale(.9);}
   .pwd-toggle.on{color:var(--btn);}
 
-  /* ── Поле даты с иконкой календаря ── */
   .dateWrap{position:relative;display:block;}
   .dateWrap .dateText{padding-right:48px;}
   .dateWrap .dateNative{
@@ -113,6 +111,7 @@
     font-family:inherit;cursor:pointer;transition:background .15s;
   }
   .seg button.on{background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.12);}
+  .seg.sm button{padding:7px 4px;font-size:13px;}
 
   .row{display:flex;gap:10px;margin-top:12px;}
   .btn{
@@ -214,13 +213,24 @@
   @media (max-width:520px){
     .twoCols{grid-template-columns:1fr;}
   }
+  .twoCols.stacked{grid-template-columns:1fr !important;}
+  .twoCols.force-horizontal{grid-template-columns:1fr 1fr !important;}
 
+  /* ── Diff grid ── */
   .diff2{
     margin-top:6px;background:var(--sec);border-radius:12px;padding:8px;
-    display:grid;grid-template-columns:1fr 1fr;gap:2px 6px;
+    display:grid;gap:2px 6px;
     max-height:520px;overflow-y:auto;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
     font-size:12.5px;line-height:1.5;
+  }
+  .diff2.split{grid-template-columns:auto 1fr auto 1fr;column-gap:16px;}
+  .diff2.unified{grid-template-columns:auto 1fr;column-gap:8px;}
+  .diff2 .lno{
+    color:var(--hint);font-size:11px;text-align:right;
+    padding:1px 2px;user-select:none;
+    font-variant-numeric:tabular-nums;
+    min-width:22px;
   }
   .diff2 .cell{
     padding:1px 8px;white-space:pre-wrap;word-break:break-word;
@@ -235,8 +245,15 @@
     .diff2 .cell.del{color:#ff8a82;}
   }
   .diff2 .hdr{
-    grid-column:1 / -1;color:var(--hint);font-size:11px;
+    color:var(--hint);font-size:11px;
     letter-spacing:.4px;margin:6px 4px 2px;font-weight:600;
+    text-align:center;
+  }
+  .diff2 .hdr.span2{grid-column:span 2;}
+  .diff2 .summary{
+    grid-column:1/-1;color:var(--hint);font-size:11px;
+    letter-spacing:.4px;margin:8px 4px 2px;font-weight:600;
+    text-align:center;
   }
 
   select.sel{
@@ -353,16 +370,6 @@ function esc(s){
 /* ============================================================
    Поля даты с иконкой календаря
    ============================================================ */
-
-/**
- * Понимает форматы:
- *   dd.mm.yyyy / dd.mm.yy
- *   dd/mm/yyyy / dd-mm-yyyy / dd/mm/yy
- *   yyyy-mm-dd / yyyy.mm.dd / yyyy/mm/dd
- *   ddmmyyyy (8 цифр) / ddmmyy (6 цифр)
- *   с временем: "<дата> hh:mm" или "<дата> hh:mm:ss"
- * Возвращает { date, hasTime } или null.
- */
 function parseUserDate(str, withTime){
   if (!str) return null;
   str = String(str).trim();
@@ -371,7 +378,6 @@ function parseUserDate(str, withTime){
   let time = { h: 0, m: 0, s: 0 };
   let hasTime = false;
 
-  // Отделяем время в конце (hh:mm или hh:mm:ss)
   const timeMatch = str.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*$/);
   if (timeMatch){
     const h = +timeMatch[1], m = +timeMatch[2], s = timeMatch[3] ? +timeMatch[3] : 0;
@@ -384,23 +390,19 @@ function parseUserDate(str, withTime){
 
   let y, mo, d;
 
-  // yyyy-mm-dd
   let m = str.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
   if (m){
     y = +m[1]; mo = +m[2]; d = +m[3];
   } else {
-    // dd-mm-yyyy
     m = str.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2,4})$/);
     if (m){
       d = +m[1]; mo = +m[2]; y = +m[3];
       if (y < 100) y += y < 70 ? 2000 : 1900;
     } else {
-      // только цифры
       m = str.match(/^(\d{8})$/);
       if (m){
         const s = m[1];
         const first4 = +s.slice(0,4);
-        // Если первые 4 цифры похожи на год — считаем yyyymmdd
         if (first4 >= 1900 && first4 <= 2199){
           y = first4; mo = +s.slice(4,6); d = +s.slice(6,8);
         } else {
@@ -490,7 +492,7 @@ function bindDateField(container, id, withTime, onChange){
     try {
       if (typeof native.showPicker === 'function') native.showPicker();
       else native.click();
-    } catch(err){
+    } catch(err) {
       try { native.click(); } catch(_){}
     }
   });
@@ -509,7 +511,6 @@ function bindDateField(container, id, withTime, onChange){
     onChange();
   });
 
-  // Первичная синхронизация
   syncNative();
 }
 
@@ -1032,15 +1033,24 @@ function diffLines(a, b){
 function buildSideBySide(diff){
   const rows = [];
   let i = 0;
+  let lnLeft = 1, lnRight = 1;
   while (i < diff.length){
     if (diff[i].t === 'same'){
-      rows.push({ left: diff[i].s, right: diff[i].s, same: true });
+      rows.push({ left: diff[i].s, right: diff[i].s, same: true,
+                  leftNum: lnLeft, rightNum: lnRight });
+      lnLeft++; lnRight++;
       i++;
     } else {
       const dels = [], adds = [];
+      const delNums = [], addNums = [];
       while (i < diff.length && diff[i].t !== 'same'){
-        if (diff[i].t === 'del') dels.push(diff[i].s);
-        else adds.push(diff[i].s);
+        if (diff[i].t === 'del'){
+          dels.push(diff[i].s);
+          delNums.push(lnLeft++);
+        } else {
+          adds.push(diff[i].s);
+          addNums.push(lnRight++);
+        }
         i++;
       }
       const n = Math.max(dels.length, adds.length);
@@ -1048,6 +1058,8 @@ function buildSideBySide(diff){
         rows.push({
           left:  j < dels.length ? dels[j] : null,
           right: j < adds.length ? adds[j] : null,
+          leftNum:  j < delNums.length ? delNums[j] : null,
+          rightNum: j < addNums.length ? addNums[j] : null,
           same: false
         });
       }
@@ -2002,7 +2014,6 @@ function renderDates(el){
     return p ? p.date : null;
   };
 
-  // 1. Разница
   const upd1 = () => {
     const dA = getDate('d1');
     const dB = getDate('d2');
@@ -2036,7 +2047,6 @@ function renderDates(el){
     `;
   };
 
-  // 2. Дата + N дней
   const upd2 = () => {
     const base = getDate('b1');
     const n = parseInt($('b2').value, 10);
@@ -2047,7 +2057,6 @@ function renderDates(el){
     out.textContent = fmtD(r);
   };
 
-  // 3. День недели + возраст
   const upd3 = () => {
     const d = getDate('c1');
     const out = $('out3');
@@ -2084,11 +2093,20 @@ function renderDates(el){
   upd3();
 }
 
-/* ── 10. Diff (side-by-side) ─────────────────────────────── */
+/* ── 10. Diff (side-by-side / unified) ───────────────────── */
 function renderDiff(el){
+  const isNarrow = window.matchMedia('(max-width: 520px)').matches;
+  let inLayout = isNarrow ? 'v' : 'h';
+  let outLayout = 'split';
+  let lastDiff = null;
+
   el.innerHTML = `
     <div class="panel">
-      <div class="twoCols">
+      <div class="seg sm" id="inSeg">
+        <button class="${inLayout==='h'?'on':''}" data-l="h">⇄ Рядом</button>
+        <button class="${inLayout==='v'?'on':''}" data-l="v">⇅ Стеком</button>
+      </div>
+      <div class="twoCols ${inLayout==='v'?'stacked':'force-horizontal'}" id="inputWrap">
         <div>
           <label class="fld">Текст A (старый)</label>
           <textarea id="a" placeholder="Первый текст…" autocomplete="off" spellcheck="false" style="min-height:120px"></textarea>
@@ -2099,49 +2117,115 @@ function renderDiff(el){
         </div>
       </div>
       <div class="row"><button class="btn" id="goBtn">Сравнить</button></div>
+
       <label class="fld" style="margin-top:16px">Различия</label>
-      <div class="diff2" id="out">
-        <div class="hdr">A (старый)</div>
-        <div class="hdr">B (новый)</div>
+      <div class="seg sm" id="outSeg">
+        <button class="on" data-o="split">⇄ Параллельно</button>
+        <button data-o="unified">⇅ Построчно</button>
       </div>
+      <div class="diff2 split" id="out"></div>
     </div>`;
-  const A = el.querySelector('#a'), B = el.querySelector('#b'), out = el.querySelector('#out');
+
+  const A = el.querySelector('#a'), B = el.querySelector('#b');
+  const out = el.querySelector('#out');
+  const inSeg = el.querySelector('#inSeg');
+  const outSeg = el.querySelector('#outSeg');
+  const inputWrap = el.querySelector('#inputWrap');
   let diffText = '';
 
-  const run = () => {
-    if (!A.value && !B.value){ toast('Введите тексты'); return; }
-    const d = diffLines(A.value, B.value);
-    const rows = buildSideBySide(d);
+  const renderOut = () => {
+    if (!lastDiff){
+      out.className = 'diff2 ' + outLayout;
+      out.innerHTML = '<div class="summary">Введите оба текста и нажмите «Сравнить»</div>';
+      return;
+    }
+    const rows = buildSideBySide(lastDiff);
     let added = 0, removed = 0;
     for (const r of rows){
       if (r.same) continue;
       if (r.left !== null) removed++;
       if (r.right !== null) added++;
     }
-    const parts = ['<div class="hdr">A (старый)</div><div class="hdr">B (новый)</div>'];
-    for (const r of rows){
-      if (r.same){
-        parts.push(`<div class="cell same">${esc(r.left)}</div>`);
-        parts.push(`<div class="cell same">${esc(r.right)}</div>`);
-      } else {
-        const leftCls = r.left === null ? 'empty' : 'del';
-        const rightCls = r.right === null ? 'empty' : 'add';
-        parts.push(`<div class="cell ${leftCls}">${r.left === null ? '' : esc(r.left)}</div>`);
-        parts.push(`<div class="cell ${rightCls}">${r.right === null ? '' : esc(r.right)}</div>`);
+
+    out.className = 'diff2 ' + outLayout;
+    const parts = [];
+
+    if (outLayout === 'split'){
+      parts.push('<div class="hdr span2">A (старый)</div>');
+      parts.push('<div class="hdr span2">B (новый)</div>');
+      for (const r of rows){
+        const lno = r.leftNum != null ? String(r.leftNum) : '';
+        const rno = r.rightNum != null ? String(r.rightNum) : '';
+        if (r.same){
+          parts.push(`<div class="lno">${lno}</div>`);
+          parts.push(`<div class="cell same">${esc(r.left)}</div>`);
+          parts.push(`<div class="lno">${rno}</div>`);
+          parts.push(`<div class="cell same">${esc(r.right)}</div>`);
+        } else {
+          const leftCls = r.left === null ? 'empty' : 'del';
+          const rightCls = r.right === null ? 'empty' : 'add';
+          parts.push(`<div class="lno">${lno}</div>`);
+          parts.push(`<div class="cell ${leftCls}">${r.left === null ? '' : esc(r.left)}</div>`);
+          parts.push(`<div class="lno">${rno}</div>`);
+          parts.push(`<div class="cell ${rightCls}">${r.right === null ? '' : esc(r.right)}</div>`);
+        }
+      }
+    } else {
+      for (const r of rows){
+        if (r.same){
+          parts.push(`<div class="lno">${r.leftNum}</div>`);
+          parts.push(`<div class="cell same">  ${esc(r.left)}</div>`);
+        } else {
+          if (r.left !== null){
+            parts.push(`<div class="lno">${r.leftNum}</div>`);
+            parts.push(`<div class="cell del">− ${esc(r.left)}</div>`);
+          }
+          if (r.right !== null){
+            parts.push(`<div class="lno">${r.rightNum}</div>`);
+            parts.push(`<div class="cell add">+ ${esc(r.right)}</div>`);
+          }
+        }
       }
     }
-    parts.push(`<div class="hdr" style="grid-column:1/-1">+${added} добавлено, −${removed} удалено</div>`);
+
+    parts.push(`<div class="summary">+${added} добавлено, −${removed} удалено</div>`);
     out.innerHTML = parts.join('');
 
-    diffText = d.map(i => (i.t==='add'?'+ ':i.t==='del'?'- ':'  ') + i.s).join('\n');
+    diffText = lastDiff.map(i => (i.t==='add'?'+ ':i.t==='del'?'- ':'  ') + i.s).join('\n');
     refreshMainButton();
   };
+
+  const run = () => {
+    if (!A.value && !B.value){ toast('Введите тексты'); return; }
+    lastDiff = diffLines(A.value, B.value);
+    renderOut();
+  };
+
+  inSeg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-l]');
+    if (!b) return;
+    inLayout = b.dataset.l;
+    inSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    inputWrap.classList.toggle('stacked', inLayout === 'v');
+    inputWrap.classList.toggle('force-horizontal', inLayout === 'h');
+  });
+
+  outSeg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-o]');
+    if (!b) return;
+    outLayout = b.dataset.o;
+    outSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderOut();
+  });
+
   el.querySelector('#goBtn').onclick = run;
   A.addEventListener('input', () => { if (B.value) run(); });
   B.addEventListener('input', () => { if (A.value) run(); });
 
   setMainButton(() => diffText);
   setTimeout(() => A.focus(), 120);
+
+  renderOut();
 }
 
 /* ── 11. Хеши и Base64 ───────────────────────────────────── */
