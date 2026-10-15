@@ -171,15 +171,35 @@
     border:1px solid var(--sep);background:#3498db;
   }
 
-  .diff{background:var(--sec);border-radius:12px;padding:10px;max-height:400px;overflow-y:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;line-height:1.45;}
-  .diff .line{padding:1px 6px;white-space:pre-wrap;word-break:break-word;border-radius:4px;}
-  .diff .add{background:rgba(52,199,89,.18);color:#1c7c3f;}
-  .diff .del{background:rgba(255,59,48,.18);color:#b03a2e;}
-  .diff .same{color:var(--hint);}
-  .diff .hdr{color:var(--hint);font-size:11px;letter-spacing:.4px;margin:8px 6px 4px;font-weight:600;}
+  /* ── Двухколоночный layout для textarea / diff ── */
+  .twoCols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  @media (max-width:520px){
+    .twoCols{grid-template-columns:1fr;}
+  }
+
+  /* ── Side-by-side diff ── */
+  .diff2{
+    margin-top:6px;background:var(--sec);border-radius:12px;padding:8px;
+    display:grid;grid-template-columns:1fr 1fr;gap:2px 6px;
+    max-height:520px;overflow-y:auto;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12.5px;line-height:1.5;
+  }
+  .diff2 .cell{
+    padding:1px 8px;white-space:pre-wrap;word-break:break-word;
+    border-radius:3px;min-height:18px;
+  }
+  .diff2 .cell.add{background:rgba(52,199,89,.18);color:#1c7c3f;}
+  .diff2 .cell.del{background:rgba(255,59,48,.18);color:#b03a2e;}
+  .diff2 .cell.same{color:var(--hint);}
+  .diff2 .cell.empty{background:rgba(128,128,128,.06);}
   @media (prefers-color-scheme: dark){
-    .diff .add{color:#7ee2a8;}
-    .diff .del{color:#ff8a82;}
+    .diff2 .cell.add{color:#7ee2a8;}
+    .diff2 .cell.del{color:#ff8a82;}
+  }
+  .diff2 .hdr{
+    grid-column:1 / -1;color:var(--hint);font-size:11px;
+    letter-spacing:.4px;margin:6px 4px 2px;font-weight:600;
   }
 
   select.sel{
@@ -213,17 +233,6 @@
   .drop:active{border-color:var(--btn);}
   .drop .ic{font-size:30px;display:block;margin-bottom:4px;}
   .drop .lbl{color:var(--hint);}
-
-  .previewMini{
-    display:flex;gap:12px;align-items:center;
-    background:var(--sec);border-radius:12px;padding:10px;margin-top:12px;
-  }
-  .previewMini img{
-    width:72px;height:72px;image-rendering:pixelated;
-    border-radius:8px;flex-shrink:0;background:#fff;
-  }
-  .previewMini .meta{font-size:12px;color:var(--hint);line-height:1.4;}
-  .previewMini .meta b{color:var(--text);font-weight:600;font-size:13px;}
 
   .toast{
     position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
@@ -838,6 +847,35 @@ function diffLines(a, b){
   return res;
 }
 
+/* ── Построение пар строк для side-by-side ───────────────── */
+function buildSideBySide(diff){
+  const rows = [];
+  let i = 0;
+  while (i < diff.length){
+    if (diff[i].t === 'same'){
+      rows.push({ left: diff[i].s, right: diff[i].s, same: true });
+      i++;
+    } else {
+      // Группируем блок изменений между строками "same"
+      const dels = [], adds = [];
+      while (i < diff.length && diff[i].t !== 'same'){
+        if (diff[i].t === 'del') dels.push(diff[i].s);
+        else adds.push(diff[i].s);
+        i++;
+      }
+      const n = Math.max(dels.length, adds.length);
+      for (let j = 0; j < n; j++){
+        rows.push({
+          left:  j < dels.length ? dels[j] : null,
+          right: j < adds.length ? adds[j] : null,
+          same: false
+        });
+      }
+    }
+  }
+  return rows;
+}
+
 /* ============================================================
    YAML / CSV
    ============================================================ */
@@ -1392,17 +1430,26 @@ function renderCount(el){
   setTimeout(() => inp.focus(), 120);
 }
 
-/* ── 6. Diff ─────────────────────────────────────────────── */
+/* ── 6. Diff (side-by-side) ──────────────────────────────── */
 function renderDiff(el){
   el.innerHTML = `
     <div class="panel">
-      <label class="fld">Текст A (старый)</label>
-      <textarea id="a" placeholder="Первый текст…" autocomplete="off" spellcheck="false" style="min-height:90px"></textarea>
-      <label class="fld" style="margin-top:12px">Текст B (новый)</label>
-      <textarea id="b" placeholder="Второй текст…" autocomplete="off" spellcheck="false" style="min-height:90px"></textarea>
+      <div class="twoCols">
+        <div>
+          <label class="fld">Текст A (старый)</label>
+          <textarea id="a" placeholder="Первый текст…" autocomplete="off" spellcheck="false" style="min-height:120px"></textarea>
+        </div>
+        <div>
+          <label class="fld">Текст B (новый)</label>
+          <textarea id="b" placeholder="Второй текст…" autocomplete="off" spellcheck="false" style="min-height:120px"></textarea>
+        </div>
+      </div>
       <div class="row"><button class="btn" id="goBtn">Сравнить</button></div>
       <label class="fld" style="margin-top:16px">Различия</label>
-      <div class="diff" id="out"><span class="empty" style="color:var(--hint);font-size:13px">Введите оба текста и нажмите «Сравнить»…</span></div>
+      <div class="diff2" id="out">
+        <div class="hdr">A (старый)</div>
+        <div class="hdr">B (новый)</div>
+      </div>
     </div>`;
   const A = el.querySelector('#a'), B = el.querySelector('#b'), out = el.querySelector('#out');
   let diffText = '';
@@ -1410,12 +1457,28 @@ function renderDiff(el){
   const run = () => {
     if (!A.value && !B.value){ toast('Введите тексты'); return; }
     const d = diffLines(A.value, B.value);
+    const rows = buildSideBySide(d);
     let added = 0, removed = 0;
-    out.innerHTML = d.map(item => {
-      if (item.t === 'add'){ added++; return `<div class="line add">+ ${esc(item.s) || ' '}</div>`; }
-      if (item.t === 'del'){ removed++; return `<div class="line del">− ${esc(item.s) || ' '}</div>`; }
-      return `<div class="line same">  ${esc(item.s) || ' '}</div>`;
-    }).join('') + `<div class="hdr">+${added} добавлено, −${removed} удалено</div>`;
+    for (const r of rows){
+      if (r.same) continue;
+      if (r.left !== null) removed++;
+      if (r.right !== null) added++;
+    }
+    const parts = ['<div class="hdr">A (старый)</div><div class="hdr">B (новый)</div>'];
+    for (const r of rows){
+      if (r.same){
+        parts.push(`<div class="cell same">${esc(r.left)}</div>`);
+        parts.push(`<div class="cell same">${esc(r.right)}</div>`);
+      } else {
+        const leftCls = r.left === null ? 'empty' : 'del';
+        const rightCls = r.right === null ? 'empty' : 'add';
+        parts.push(`<div class="cell ${leftCls}">${r.left === null ? '' : esc(r.left)}</div>`);
+        parts.push(`<div class="cell ${rightCls}">${r.right === null ? '' : esc(r.right)}</div>`);
+      }
+    }
+    parts.push(`<div class="hdr" style="grid-column:1/-1">+${added} добавлено, −${removed} удалено</div>`);
+    out.innerHTML = parts.join('');
+
     diffText = d.map(i => (i.t==='add'?'+ ':i.t==='del'?'- ':'  ') + i.s).join('\n');
     refreshMainButton();
   };
@@ -1430,8 +1493,6 @@ function renderDiff(el){
 /* ── 7. Стеганография (текст) ────────────────────────────── */
 function renderStegano(el){
   let mode = 'enc';
-  const isTelegram = tg && tg.platform && tg.platform !== 'unknown';
-
   el.innerHTML = `
     <div class="panel">
       <div class="seg" id="seg">
@@ -1448,19 +1509,17 @@ function renderStegano(el){
         <button class="btn" id="goBtn">Выполнить</button>
         <button class="btn ghost" id="copyBtn">Копировать</button>
       </div>
-      <div class="row hidden" id="botRow">
-        <button class="btn" id="botBtn">📨 Отправить боту</button>
-      </div>
       <label class="fld" style="margin-top:16px">Результат</label>
       <div class="out" id="out"><span class="empty">—</span></div>
-      <div class="err hidden" id="err"></div>
-      <div class="hintnote">Используются невидимые Unicode-символы (U+200B, U+200C, U+2060). Работает в Telegram.</div>
+      <div class="hintnote">Используются невидимые Unicode-символы (U+200B, U+200C, U+2060). Работает в Telegram и большинстве текстовых полей.</div>
     </div>`;
-
-  const $ = id => el.querySelector('#' + id);
-  const seg = $('seg'), coverWrap = $('coverWrap'), cover = $('cover');
-  const inp = $('inp'), lbl = $('lbl'), out = $('out'), goBtn = $('goBtn');
-  const botRow = $('botRow'), botBtn = $('botBtn'), err = $('err');
+  const seg = el.querySelector('#seg');
+  const coverWrap = el.querySelector('#coverWrap');
+  const cover = el.querySelector('#cover');
+  const inp = el.querySelector('#inp');
+  const lbl = el.querySelector('#lbl');
+  const out = el.querySelector('#out');
+  const goBtn = el.querySelector('#goBtn');
 
   let result = '';
 
@@ -1472,16 +1531,13 @@ function renderStegano(el){
       lbl.textContent = 'Секретное сообщение';
       inp.placeholder = 'Что спрятать…';
       goBtn.textContent = 'Спрятать';
-      botRow.classList.add('hidden');
     } else {
       coverWrap.classList.add('hidden');
       lbl.textContent = 'Текст со скрытым сообщением';
       inp.placeholder = 'Вставьте текст сюда…';
       goBtn.textContent = 'Извлечь';
-      botRow.classList.add('hidden');
     }
     out.innerHTML = '<span class="empty">—</span>';
-    err.classList.add('hidden');
     result = '';
     refreshMainButton();
   };
@@ -1492,24 +1548,12 @@ function renderStegano(el){
   });
 
   goBtn.onclick = () => {
-    err.classList.add('hidden');
     if (mode === 'enc'){
       if (!inp.value){ toast('Введите секретное сообщение'); return; }
       result = stegEncode(cover.value, inp.value);
       out.textContent = result;
       out.style.wordBreak = 'break-all';
       toast('Готово — скопируйте и отправьте');
-
-      if (isTelegram){
-        const bytes = enc.encode(result).length;
-        if (bytes <= 4096){
-          botRow.classList.remove('hidden');
-        } else {
-          botRow.classList.add('hidden');
-          err.textContent = `Текст ${bytes} Б — не влезет в sendData (лимит 4096). Скопируйте вручную.`;
-          err.classList.remove('hidden');
-        }
-      }
     } else {
       if (!inp.value){ toast('Вставьте текст'); return; }
       const d = stegDecode(inp.value);
@@ -1519,43 +1563,23 @@ function renderStegano(el){
       } else {
         out.textContent = d;
         result = d;
-        botRow.classList.add('hidden');
       }
     }
     refreshMainButton();
   };
 
-  botBtn.onclick = () => {
-    if (!result){ toast('Сначала спрячьте сообщение'); return; }
-    try {
-      tg.sendData(result);
-      tg.HapticFeedback?.notificationOccurred?.('success');
-      toast('Отправлено боту');
-      setTimeout(() => { try { tg.close(); } catch(_){} }, 700);
-    } catch(e){
-      err.textContent = 'Не удалось отправить. Возможно, приложение открыто не через кнопку бота.';
-      err.classList.remove('hidden');
-    }
-  };
-
   el.querySelector('#copyBtn').onclick = () => copyText(result);
   setMainButton(() => result);
-  setMode('enc');
 }
 
 /* ── 8. Стеганография в изображение ──────────────────────── */
 function renderStegImage(el){
   let mode = 'enc';
-  let originalImgData = null;      // исходный ImageData без стегано (текущего размера)
-  let originalCanvas = null;       // canvas с оригиналом (для ресайза)
-  let imgData = null;              // ImageData текущего canvas
-  let resultUrl = null;            // большой PNG (для скачивания)
-  let lastSecretText = '';         // последний введённый текст
-  let lastSecretPwd = '';          // последний пароль
+  let imgData = null;
+  let resultUrl = null;
   let fileName = 'stego.png';
 
   const MAGIC = [0x53, 0x54, 0x45, 0x47]; // "STEG"
-  const TELEGRAM_DATA_LIMIT = 4096;        // лимит sendData
 
   el.innerHTML = `
     <div class="panel">
@@ -1603,28 +1627,17 @@ function renderStegImage(el){
       <div id="resultBlock" class="hidden" style="margin-top:16px">
         <label class="fld">Готовое изображение</label>
         <div class="imgbox"><img id="resultImg" class="resultImg" alt="Результат"></div>
-
         <div class="row" style="margin-top:12px">
-          <button class="btn" id="botBtn">📨 Отправить боту</button>
+          <button class="btn" id="shareBtn">📤 Поделиться</button>
         </div>
         <div class="row">
-          <button class="btn ghost" id="shareBtn">📤 Поделиться</button>
+          <button class="btn ghost" id="openBtn">Открыть в браузере</button>
           <button class="btn ghost" id="dlBtn">Скачать PNG</button>
         </div>
         <div class="row">
-          <button class="btn ghost" id="openBtn">Открыть</button>
-          <button class="btn ghost" id="b64Btn">Копировать Base64</button>
+          <button class="btn ghost" id="b64Btn">Скопировать Base64</button>
         </div>
-
-        <div id="botPreview" class="previewMini hidden">
-          <img id="botPreviewImg" alt="Превью для бота">
-          <div class="meta">
-            <b>Версия для бота</b><br>
-            <span id="botPreviewMeta"></span>
-          </div>
-        </div>
-
-        <div class="hintnote">Telegram-метод передаёт сжатое изображение (лимит 4 КБ). Для полного — «Поделиться» или «Скачать PNG».</div>
+        <div class="hintnote">На телефоне: нажмите «Поделиться» → «Сохранить в файлы», или удерживайте картинку и выберите «Сохранить изображение».</div>
       </div>
 
       <label class="fld" style="margin-top:16px" id="outLbl">Результат</label>
@@ -1641,7 +1654,6 @@ function renderStegImage(el){
   const secret = $('secret'), encPwd = $('encPwd'), decPwd = $('decPwd');
   const actions = $('actions'), goBtn = $('goBtn');
   const resultBlock = $('resultBlock'), resultImg = $('resultImg');
-  const botPreview = $('botPreview'), botPreviewImg = $('botPreviewImg'), botPreviewMeta = $('botPreviewMeta');
   const out = $('out'), err = $('err'), info = $('info'), outLbl = $('outLbl');
 
   const showErr = msg => { err.textContent = msg; err.classList.remove('hidden'); };
@@ -1781,7 +1793,6 @@ function renderStegImage(el){
       goBtn.textContent = 'Извлечь';
     }
     resultBlock.classList.add('hidden');
-    botPreview.classList.add('hidden');
     out.innerHTML = '<span class="empty">—</span>';
     resultUrl = null;
     hideErr();
@@ -1804,27 +1815,18 @@ function renderStegImage(el){
     img.onload = () => {
       URL.revokeObjectURL(url);
       let w = img.naturalWidth, h = img.naturalHeight;
-      const MAX = 1200;
+      const MAX = 2000;
       if (Math.max(w, h) > MAX){
         const k = MAX / Math.max(w, h);
         w = Math.round(w * k); h = Math.round(h * k);
       }
       cv.width = w; cv.height = h;
       ctx.drawImage(img, 0, 0, w, h);
-
-      // Сохраняем копию оригинала для возможного уменьшения
-      originalCanvas = document.createElement('canvas');
-      originalCanvas.width = w;
-      originalCanvas.height = h;
-      originalCanvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      originalImgData = originalCanvas.getContext('2d').getImageData(0, 0, w, h);
-
       imgData = ctx.getImageData(0, 0, w, h);
 
       previewBox.classList.remove('hidden');
       actions.classList.remove('hidden');
       resultBlock.classList.add('hidden');
-      botPreview.classList.add('hidden');
       dropText.textContent = file.name;
 
       const capBytes = Math.floor((w * h * 3) / 8) - 9;
@@ -1859,18 +1861,14 @@ function renderStegImage(el){
     if (!text){ showErr('Введите текст для сокрытия'); return; }
     try {
       const copy = new ImageData(
-        new Uint8ClampedArray(originalImgData.data),
-        originalImgData.width, originalImgData.height
+        new Uint8ClampedArray(imgData.data),
+        imgData.width, imgData.height
       );
       encodeInto(copy, text, encPwd.value || '');
       ctx.putImageData(copy, 0, 0);
-      imgData = copy;
-      lastSecretText = text;
-      lastSecretPwd = encPwd.value || '';
       resultUrl = cv.toDataURL('image/png');
       resultImg.src = resultUrl;
       resultBlock.classList.remove('hidden');
-      botPreview.classList.add('hidden');
       const pwdMsg = encPwd.value ? ' с паролем' : '';
       out.textContent = `Готово! Сообщение длиной ${text.length} симв.${pwdMsg} спрятано.`;
       toast('Сообщение спрятано');
@@ -1883,104 +1881,6 @@ function renderStegImage(el){
 
   goBtn.onclick = () => { mode === 'enc' ? runHide() : runExtract(); };
 
-  /* ─────── Уменьшение для sendData ─────── */
-  function trySizes(text, password){
-    // Пробуем размеры по убыванию
-    const sizes = [96, 80, 64, 48, 32, 24, 16];
-    const totalPixels = originalImgData.width * originalImgData.height;
-
-    for (const size of sizes){
-      // Сохраняем пропорции исходника
-      const ratio = originalImgData.width / originalImgData.height;
-      let w, h;
-      if (ratio >= 1){ w = size; h = Math.max(1, Math.round(size / ratio)); }
-      else           { h = size; w = Math.max(1, Math.round(size * ratio)); }
-
-      // Проверяем, хватит ли места под сообщение
-      const availBits = w * h * 3;
-      const headerBytes = 9 + (password ? 4 : 0);
-      const msgBytes = enc.encode(text).length;
-      if ((headerBytes + msgBytes) * 8 > availBits) continue;
-
-      // Рисуем уменьшенную копию
-      const c = document.createElement('canvas');
-      c.width = w; c.height = h;
-      const cctx = c.getContext('2d', { willReadFrequently: true });
-      cctx.imageSmoothingEnabled = true;
-      cctx.imageSmoothingQuality = 'high';
-      cctx.drawImage(originalCanvas, 0, 0, w, h);
-      const small = cctx.getImageData(0, 0, w, h);
-
-      try {
-        encodeInto(small, text, password);
-      } catch(e){ continue; }
-
-      cctx.putImageData(small, 0, 0);
-      const dataUrl = c.toDataURL('image/png');
-      const base64 = dataUrl.split(',')[1] || '';
-      if (base64.length <= TELEGRAM_DATA_LIMIT){
-        return { dataUrl, base64, w, h, bytes: base64.length };
-      }
-    }
-    return null;
-  }
-
-  /* ─────── Кнопки ─────── */
-  $('botBtn').onclick = () => {
-    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
-    if (!lastSecretText){ showErr('Нет текста для повторного кодирования'); return; }
-
-    if (!(tg && tg.sendData)){
-      showErr('sendData недоступен — приложение открыто не через кнопку бота');
-      return;
-    }
-
-    hideErr();
-    botPreview.classList.add('hidden');
-
-    const btn = $('botBtn');
-    const oldText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Подготовка…';
-
-    try {
-      // Быстрый путь — большой PNG уже укладывается
-      const bigBase64 = resultUrl.split(',')[1] || '';
-      if (bigBase64.length <= TELEGRAM_DATA_LIMIT){
-        tg.sendData(bigBase64);
-        tg.HapticFeedback?.notificationOccurred?.('success');
-        toast('Отправлено боту');
-        setTimeout(() => { try { tg.close(); } catch(_){} }, 700);
-        return;
-      }
-
-      // Ищем уменьшенную версию
-      const small = trySizes(lastSecretText, lastSecretPwd);
-      if (!small){
-        showErr('Сообщение слишком длинное — не помещается даже в 16×16. Используйте «Поделиться».');
-        btn.disabled = false;
-        btn.textContent = oldText;
-        return;
-      }
-
-      // Показываем превью уменьшенной версии
-      botPreviewImg.src = small.dataUrl;
-      botPreviewMeta.textContent = `${small.w}×${small.h} px • ${small.bytes.toLocaleString('ru-RU')} Б / ${TELEGRAM_DATA_LIMIT} Б`;
-      botPreview.classList.remove('hidden');
-
-      tg.sendData(small.base64);
-      tg.HapticFeedback?.notificationOccurred?.('success');
-      toast('Отправлено боту (сжатая версия)');
-      setTimeout(() => { try { tg.close(); } catch(_){} }, 900);
-    } catch(e){
-      showErr('Не удалось отправить: ' + (e.message || 'неизвестная ошибка'));
-    } finally {
-      btn.disabled = false;
-      btn.textContent = oldText;
-    }
-  };
-
-  // ── Поделиться ────────────────────────────────────────
   $('shareBtn').onclick = async () => {
     if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
     const btn = $('shareBtn');
@@ -1994,7 +1894,9 @@ function renderStegImage(el){
         try {
           if (tg) tg.openLink(resultUrl);
           else window.open(resultUrl, '_blank');
-        } catch(_){ toast('Нажмите «Скачать PNG»'); }
+        } catch(_){
+          toast('Нажмите «Скачать PNG» или удерживайте картинку');
+        }
       }
     } finally {
       btn.textContent = oldText;
@@ -2002,7 +1904,6 @@ function renderStegImage(el){
     }
   };
 
-  // ── Открыть ───────────────────────────────────────────
   $('openBtn').onclick = () => {
     if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
     try {
@@ -2011,7 +1912,6 @@ function renderStegImage(el){
     } catch(e){ toast('Не удалось открыть'); }
   };
 
-  // ── Скачать PNG ───────────────────────────────────────
   $('dlBtn').onclick = () => {
     if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
     try {
@@ -2025,10 +1925,10 @@ function renderStegImage(el){
     } catch(e){ toast('Используйте «Поделиться»'); }
   };
 
-  // ── Base64 ────────────────────────────────────────────
   $('b64Btn').onclick = () => {
     if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
-    copyText(resultUrl.split(',')[1] || '');
+    const b64 = resultUrl.split(',')[1] || '';
+    copyText(b64);
   };
 
   drop.onclick = () => $('file').click();
@@ -2566,7 +2466,7 @@ async function shareImageFile(dataUrl, fileName){
     const res = await fetch(dataUrl);
     const blob = await res.blob();
     const file = new File([blob], fileName, { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
       await navigator.share({
         files: [file],
         title: 'Изображение со скрытым сообщением'
