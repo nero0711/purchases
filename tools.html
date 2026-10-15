@@ -70,7 +70,6 @@
   input[type=password]::-ms-reveal,
   input[type=password]::-ms-clear{display:none;}
 
-  /* Обёртка для поля с паролем + кнопка "глаз" */
   .pwd-wrap{position:relative;display:block;}
   .pwd-wrap input{padding-right:48px;}
   .pwd-toggle{
@@ -214,6 +213,17 @@
   .drop:active{border-color:var(--btn);}
   .drop .ic{font-size:30px;display:block;margin-bottom:4px;}
   .drop .lbl{color:var(--hint);}
+
+  .previewMini{
+    display:flex;gap:12px;align-items:center;
+    background:var(--sec);border-radius:12px;padding:10px;margin-top:12px;
+  }
+  .previewMini img{
+    width:72px;height:72px;image-rendering:pixelated;
+    border-radius:8px;flex-shrink:0;background:#fff;
+  }
+  .previewMini .meta{font-size:12px;color:var(--hint);line-height:1.4;}
+  .previewMini .meta b{color:var(--text);font-weight:600;font-size:13px;}
 
   .toast{
     position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
@@ -1420,6 +1430,8 @@ function renderDiff(el){
 /* ── 7. Стеганография (текст) ────────────────────────────── */
 function renderStegano(el){
   let mode = 'enc';
+  const isTelegram = tg && tg.platform && tg.platform !== 'unknown';
+
   el.innerHTML = `
     <div class="panel">
       <div class="seg" id="seg">
@@ -1436,17 +1448,19 @@ function renderStegano(el){
         <button class="btn" id="goBtn">Выполнить</button>
         <button class="btn ghost" id="copyBtn">Копировать</button>
       </div>
+      <div class="row hidden" id="botRow">
+        <button class="btn" id="botBtn">📨 Отправить боту</button>
+      </div>
       <label class="fld" style="margin-top:16px">Результат</label>
       <div class="out" id="out"><span class="empty">—</span></div>
-      <div class="hintnote">Используются невидимые Unicode-символы (U+200B, U+200C, U+2060). Работает в Telegram и большинстве текстовых полей.</div>
+      <div class="err hidden" id="err"></div>
+      <div class="hintnote">Используются невидимые Unicode-символы (U+200B, U+200C, U+2060). Работает в Telegram.</div>
     </div>`;
-  const seg = el.querySelector('#seg');
-  const coverWrap = el.querySelector('#coverWrap');
-  const cover = el.querySelector('#cover');
-  const inp = el.querySelector('#inp');
-  const lbl = el.querySelector('#lbl');
-  const out = el.querySelector('#out');
-  const goBtn = el.querySelector('#goBtn');
+
+  const $ = id => el.querySelector('#' + id);
+  const seg = $('seg'), coverWrap = $('coverWrap'), cover = $('cover');
+  const inp = $('inp'), lbl = $('lbl'), out = $('out'), goBtn = $('goBtn');
+  const botRow = $('botRow'), botBtn = $('botBtn'), err = $('err');
 
   let result = '';
 
@@ -1458,13 +1472,16 @@ function renderStegano(el){
       lbl.textContent = 'Секретное сообщение';
       inp.placeholder = 'Что спрятать…';
       goBtn.textContent = 'Спрятать';
+      botRow.classList.add('hidden');
     } else {
       coverWrap.classList.add('hidden');
       lbl.textContent = 'Текст со скрытым сообщением';
       inp.placeholder = 'Вставьте текст сюда…';
       goBtn.textContent = 'Извлечь';
+      botRow.classList.add('hidden');
     }
     out.innerHTML = '<span class="empty">—</span>';
+    err.classList.add('hidden');
     result = '';
     refreshMainButton();
   };
@@ -1475,12 +1492,24 @@ function renderStegano(el){
   });
 
   goBtn.onclick = () => {
+    err.classList.add('hidden');
     if (mode === 'enc'){
       if (!inp.value){ toast('Введите секретное сообщение'); return; }
       result = stegEncode(cover.value, inp.value);
       out.textContent = result;
       out.style.wordBreak = 'break-all';
       toast('Готово — скопируйте и отправьте');
+
+      if (isTelegram){
+        const bytes = enc.encode(result).length;
+        if (bytes <= 4096){
+          botRow.classList.remove('hidden');
+        } else {
+          botRow.classList.add('hidden');
+          err.textContent = `Текст ${bytes} Б — не влезет в sendData (лимит 4096). Скопируйте вручную.`;
+          err.classList.remove('hidden');
+        }
+      }
     } else {
       if (!inp.value){ toast('Вставьте текст'); return; }
       const d = stegDecode(inp.value);
@@ -1490,28 +1519,43 @@ function renderStegano(el){
       } else {
         out.textContent = d;
         result = d;
+        botRow.classList.add('hidden');
       }
     }
     refreshMainButton();
   };
 
+  botBtn.onclick = () => {
+    if (!result){ toast('Сначала спрячьте сообщение'); return; }
+    try {
+      tg.sendData(result);
+      tg.HapticFeedback?.notificationOccurred?.('success');
+      toast('Отправлено боту');
+      setTimeout(() => { try { tg.close(); } catch(_){} }, 700);
+    } catch(e){
+      err.textContent = 'Не удалось отправить. Возможно, приложение открыто не через кнопку бота.';
+      err.classList.remove('hidden');
+    }
+  };
+
   el.querySelector('#copyBtn').onclick = () => copyText(result);
   setMainButton(() => result);
+  setMode('enc');
 }
 
 /* ── 8. Стеганография в изображение ──────────────────────── */
-/* ── 8. Стеганография в изображение ──────────────────────── */
 function renderStegImage(el){
   let mode = 'enc';
-  let imgData = null;
-  let resultUrl = null;
+  let originalImgData = null;      // исходный ImageData без стегано (текущего размера)
+  let originalCanvas = null;       // canvas с оригиналом (для ресайза)
+  let imgData = null;              // ImageData текущего canvas
+  let resultUrl = null;            // большой PNG (для скачивания)
+  let lastSecretText = '';         // последний введённый текст
+  let lastSecretPwd = '';          // последний пароль
   let fileName = 'stego.png';
 
   const MAGIC = [0x53, 0x54, 0x45, 0x47]; // "STEG"
-
-  // ─── Данные пользователя из Telegram ────────────────────
-  const tgUser = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
-  const autoChatId = tgUser ? String(tgUser.id) : '';
+  const TELEGRAM_DATA_LIMIT = 4096;        // лимит sendData
 
   el.innerHTML = `
     <div class="panel">
@@ -1559,6 +1603,7 @@ function renderStegImage(el){
       <div id="resultBlock" class="hidden" style="margin-top:16px">
         <label class="fld">Готовое изображение</label>
         <div class="imgbox"><img id="resultImg" class="resultImg" alt="Результат"></div>
+
         <div class="row" style="margin-top:12px">
           <button class="btn" id="botBtn">📨 Отправить боту</button>
         </div>
@@ -1571,25 +1616,15 @@ function renderStegImage(el){
           <button class="btn ghost" id="b64Btn">Копировать Base64</button>
         </div>
 
-        <div id="botSettings" class="hidden" style="margin-top:14px;padding:14px;background:var(--sec);border-radius:12px">
-          <label class="fld" style="margin-top:0">Токен бота <span style="font-weight:400;opacity:.7">— от @BotFather</span></label>
-          <div class="pwd-wrap">
-            <input type="password" id="botToken" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ" autocomplete="off">
-            <button type="button" class="pwd-toggle" data-for="botToken" aria-label="Показать токен">👁</button>
+        <div id="botPreview" class="previewMini hidden">
+          <img id="botPreviewImg" alt="Превью для бота">
+          <div class="meta">
+            <b>Версия для бота</b><br>
+            <span id="botPreviewMeta"></span>
           </div>
-          <label class="fld" style="margin-top:12px">Chat ID</label>
-          <input type="text" id="botChat" placeholder="Ваш ID" value="${esc(autoChatId)}" inputmode="numeric" autocomplete="off">
-          <div class="hintnote" style="text-align:left;margin-top:8px">
-            Обязательно напишите боту <b>/start</b> — иначе Telegram запретит боту первым писать вам.
-          </div>
-          <div class="row">
-            <button class="btn" id="botSend">Отправить</button>
-            <button class="btn ghost" id="botCancel">Отмена</button>
-          </div>
-          <div id="botStatus" class="hintnote" style="text-align:left"></div>
         </div>
 
-        <div class="hintnote">Только PNG без потерь — при пересохранении в JPEG данные потеряются.</div>
+        <div class="hintnote">Telegram-метод передаёт сжатое изображение (лимит 4 КБ). Для полного — «Поделиться» или «Скачать PNG».</div>
       </div>
 
       <label class="fld" style="margin-top:16px" id="outLbl">Результат</label>
@@ -1606,8 +1641,8 @@ function renderStegImage(el){
   const secret = $('secret'), encPwd = $('encPwd'), decPwd = $('decPwd');
   const actions = $('actions'), goBtn = $('goBtn');
   const resultBlock = $('resultBlock'), resultImg = $('resultImg');
+  const botPreview = $('botPreview'), botPreviewImg = $('botPreviewImg'), botPreviewMeta = $('botPreviewMeta');
   const out = $('out'), err = $('err'), info = $('info'), outLbl = $('outLbl');
-  const botSettings = $('botSettings'), botStatus = $('botStatus');
 
   const showErr = msg => { err.textContent = msg; err.classList.remove('hidden'); };
   const hideErr = () => err.classList.add('hidden');
@@ -1746,7 +1781,7 @@ function renderStegImage(el){
       goBtn.textContent = 'Извлечь';
     }
     resultBlock.classList.add('hidden');
-    botSettings.classList.add('hidden');
+    botPreview.classList.add('hidden');
     out.innerHTML = '<span class="empty">—</span>';
     resultUrl = null;
     hideErr();
@@ -1769,18 +1804,27 @@ function renderStegImage(el){
     img.onload = () => {
       URL.revokeObjectURL(url);
       let w = img.naturalWidth, h = img.naturalHeight;
-      const MAX = 2000;
+      const MAX = 1200;
       if (Math.max(w, h) > MAX){
         const k = MAX / Math.max(w, h);
         w = Math.round(w * k); h = Math.round(h * k);
       }
       cv.width = w; cv.height = h;
       ctx.drawImage(img, 0, 0, w, h);
+
+      // Сохраняем копию оригинала для возможного уменьшения
+      originalCanvas = document.createElement('canvas');
+      originalCanvas.width = w;
+      originalCanvas.height = h;
+      originalCanvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      originalImgData = originalCanvas.getContext('2d').getImageData(0, 0, w, h);
+
       imgData = ctx.getImageData(0, 0, w, h);
 
       previewBox.classList.remove('hidden');
       actions.classList.remove('hidden');
       resultBlock.classList.add('hidden');
+      botPreview.classList.add('hidden');
       dropText.textContent = file.name;
 
       const capBytes = Math.floor((w * h * 3) / 8) - 9;
@@ -1815,15 +1859,18 @@ function renderStegImage(el){
     if (!text){ showErr('Введите текст для сокрытия'); return; }
     try {
       const copy = new ImageData(
-        new Uint8ClampedArray(imgData.data),
-        imgData.width, imgData.height
+        new Uint8ClampedArray(originalImgData.data),
+        originalImgData.width, originalImgData.height
       );
       encodeInto(copy, text, encPwd.value || '');
       ctx.putImageData(copy, 0, 0);
+      imgData = copy;
+      lastSecretText = text;
+      lastSecretPwd = encPwd.value || '';
       resultUrl = cv.toDataURL('image/png');
       resultImg.src = resultUrl;
       resultBlock.classList.remove('hidden');
-      botSettings.classList.add('hidden');
+      botPreview.classList.add('hidden');
       const pwdMsg = encPwd.value ? ' с паролем' : '';
       out.textContent = `Готово! Сообщение длиной ${text.length} симв.${pwdMsg} спрятано.`;
       toast('Сообщение спрятано');
@@ -1836,91 +1883,102 @@ function renderStegImage(el){
 
   goBtn.onclick = () => { mode === 'enc' ? runHide() : runExtract(); };
 
-  /* ─────── Отправка боту ─────── */
-  const TOKEN_KEY = 'steg_bot_token';
-  const CHAT_KEY  = 'steg_bot_chat';
+  /* ─────── Уменьшение для sendData ─────── */
+  function trySizes(text, password){
+    // Пробуем размеры по убыванию
+    const sizes = [96, 80, 64, 48, 32, 24, 16];
+    const totalPixels = originalImgData.width * originalImgData.height;
 
-  async function sendToBot(token, chatId, caption){
-    const res = await fetch(resultUrl);
-    const blob = await res.blob();
+    for (const size of sizes){
+      // Сохраняем пропорции исходника
+      const ratio = originalImgData.width / originalImgData.height;
+      let w, h;
+      if (ratio >= 1){ w = size; h = Math.max(1, Math.round(size / ratio)); }
+      else           { h = size; w = Math.max(1, Math.round(size * ratio)); }
 
-    const form = new FormData();
-    form.append('chat_id', chatId);
-    form.append('document', blob, fileName);
-    if (caption) form.append('caption', caption);
+      // Проверяем, хватит ли места под сообщение
+      const availBits = w * h * 3;
+      const headerBytes = 9 + (password ? 4 : 0);
+      const msgBytes = enc.encode(text).length;
+      if ((headerBytes + msgBytes) * 8 > availBits) continue;
 
-    const r = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
-      method: 'POST',
-      body: form
-    });
-    const data = await r.json().catch(() => ({ ok: false, description: 'Некорректный ответ сервера' }));
-    if (!data.ok) throw new Error(data.description || 'Bot API вернул ошибку');
-    return data.result;
+      // Рисуем уменьшенную копию
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const cctx = c.getContext('2d', { willReadFrequently: true });
+      cctx.imageSmoothingEnabled = true;
+      cctx.imageSmoothingQuality = 'high';
+      cctx.drawImage(originalCanvas, 0, 0, w, h);
+      const small = cctx.getImageData(0, 0, w, h);
+
+      try {
+        encodeInto(small, text, password);
+      } catch(e){ continue; }
+
+      cctx.putImageData(small, 0, 0);
+      const dataUrl = c.toDataURL('image/png');
+      const base64 = dataUrl.split(',')[1] || '';
+      if (base64.length <= TELEGRAM_DATA_LIMIT){
+        return { dataUrl, base64, w, h, bytes: base64.length };
+      }
+    }
+    return null;
   }
 
-  async function doSend(){
+  /* ─────── Кнопки ─────── */
+  $('botBtn').onclick = () => {
     if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
-    const token = $('botToken').value.trim();
-    const chatId = $('botChat').value.trim();
-    if (!token)  { botStatus.textContent = 'Введите токен бота'; botStatus.style.color = '#e0453e'; return; }
-    if (!chatId) { botStatus.textContent = 'Введите Chat ID'; botStatus.style.color = '#e0453e'; return; }
+    if (!lastSecretText){ showErr('Нет текста для повторного кодирования'); return; }
 
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(CHAT_KEY, chatId);
+    if (!(tg && tg.sendData)){
+      showErr('sendData недоступен — приложение открыто не через кнопку бота');
+      return;
+    }
 
-    const btn = $('botSend');
-    btn.disabled = true;
+    hideErr();
+    botPreview.classList.add('hidden');
+
+    const btn = $('botBtn');
     const oldText = btn.textContent;
-    btn.textContent = 'Отправляем…';
-    botStatus.textContent = 'Загрузка файла…';
-    botStatus.style.color = 'var(--hint)';
+    btn.disabled = true;
+    btn.textContent = 'Подготовка…';
 
     try {
-      const caption = `🖼️ Изображение со скрытым сообщением (${fileName})`;
-      await sendToBot(token, chatId, caption);
-      botStatus.textContent = '✅ Отправлено! Проверьте чат с ботом.';
-      botStatus.style.color = '#34c759';
-      toast('Отправлено боту');
-      if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
-      setTimeout(() => { botSettings.classList.add('hidden'); }, 1200);
+      // Быстрый путь — большой PNG уже укладывается
+      const bigBase64 = resultUrl.split(',')[1] || '';
+      if (bigBase64.length <= TELEGRAM_DATA_LIMIT){
+        tg.sendData(bigBase64);
+        tg.HapticFeedback?.notificationOccurred?.('success');
+        toast('Отправлено боту');
+        setTimeout(() => { try { tg.close(); } catch(_){} }, 700);
+        return;
+      }
+
+      // Ищем уменьшенную версию
+      const small = trySizes(lastSecretText, lastSecretPwd);
+      if (!small){
+        showErr('Сообщение слишком длинное — не помещается даже в 16×16. Используйте «Поделиться».');
+        btn.disabled = false;
+        btn.textContent = oldText;
+        return;
+      }
+
+      // Показываем превью уменьшенной версии
+      botPreviewImg.src = small.dataUrl;
+      botPreviewMeta.textContent = `${small.w}×${small.h} px • ${small.bytes.toLocaleString('ru-RU')} Б / ${TELEGRAM_DATA_LIMIT} Б`;
+      botPreview.classList.remove('hidden');
+
+      tg.sendData(small.base64);
+      tg.HapticFeedback?.notificationOccurred?.('success');
+      toast('Отправлено боту (сжатая версия)');
+      setTimeout(() => { try { tg.close(); } catch(_){} }, 900);
     } catch(e){
-      const msg = e.message || 'Ошибка';
-      let friendly = msg;
-      if (/chat not found/i.test(msg))       friendly = 'Chat не найден. Напишите боту /start и попробуйте снова.';
-      else if (/unauthorized/i.test(msg))    friendly = 'Неверный токен бота. Проверьте у @BotFather.';
-      else if (/bot can't initiate/i.test(msg)) friendly = 'Сначала напишите боту /start — он не может писать первым.';
-      else if (/file is too big/i.test(msg)) friendly = 'Файл слишком большой для Bot API (лимит 50 МБ).';
-      botStatus.textContent = '❌ ' + friendly;
-      botStatus.style.color = '#e0453e';
-      if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('error'); } catch(e){}
+      showErr('Не удалось отправить: ' + (e.message || 'неизвестная ошибка'));
     } finally {
       btn.disabled = false;
       btn.textContent = oldText;
     }
-  }
-
-  $('botBtn').onclick = () => {
-    if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
-    const token = localStorage.getItem(TOKEN_KEY) || '';
-    const chat = localStorage.getItem(CHAT_KEY) || autoChatId;
-    if (token){
-      $('botToken').value = token;
-      $('botChat').value = chat;
-      botSettings.classList.remove('hidden');
-      doSend();
-    } else {
-      botSettings.classList.remove('hidden');
-      $('botToken').focus();
-      setTimeout(() => botSettings.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
-    }
   };
-
-  $('botCancel').onclick = () => {
-    botSettings.classList.add('hidden');
-    botStatus.textContent = '';
-  };
-
-  $('botSend').onclick = doSend;
 
   // ── Поделиться ────────────────────────────────────────
   $('shareBtn').onclick = async () => {
@@ -1936,9 +1994,7 @@ function renderStegImage(el){
         try {
           if (tg) tg.openLink(resultUrl);
           else window.open(resultUrl, '_blank');
-        } catch(_){
-          toast('Нажмите «Скачать PNG» или удерживайте картинку');
-        }
+        } catch(_){ toast('Нажмите «Скачать PNG»'); }
       }
     } finally {
       btn.textContent = oldText;
@@ -1946,15 +2002,13 @@ function renderStegImage(el){
     }
   };
 
-  // ── Открыть в браузере ────────────────────────────────
+  // ── Открыть ───────────────────────────────────────────
   $('openBtn').onclick = () => {
     if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
     try {
       if (tg) tg.openLink(resultUrl);
       else window.open(resultUrl, '_blank');
-    } catch(e){
-      toast('Не удалось открыть');
-    }
+    } catch(e){ toast('Не удалось открыть'); }
   };
 
   // ── Скачать PNG ───────────────────────────────────────
@@ -1971,11 +2025,10 @@ function renderStegImage(el){
     } catch(e){ toast('Используйте «Поделиться»'); }
   };
 
-  // ── Скопировать Base64 ────────────────────────────────
+  // ── Base64 ────────────────────────────────────────────
   $('b64Btn').onclick = () => {
     if (!resultUrl){ toast('Сначала спрячьте сообщение'); return; }
-    const b64 = resultUrl.split(',')[1] || '';
-    copyText(b64);
+    copyText(resultUrl.split(',')[1] || '');
   };
 
   drop.onclick = () => $('file').click();
@@ -1996,6 +2049,7 @@ function renderStegImage(el){
 
   setMainButton(() => '');
 }
+
 /* ── 9. Хеши ─────────────────────────────────────────────── */
 function renderHash(el){
   el.innerHTML = `
