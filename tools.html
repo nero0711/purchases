@@ -325,6 +325,32 @@
     .okBadge.bad{color:#ff8a82;}
   }
 
+  .clipItem{
+    background:var(--sec);border-radius:12px;
+    padding:12px;margin-bottom:10px;
+  }
+  .clipPreview{
+    background:var(--bg);border-radius:8px;padding:6px;
+    display:flex;justify-content:center;margin-bottom:8px;
+  }
+  .clipPreview img{
+    max-width:100%;max-height:220px;border-radius:6px;display:block;
+  }
+  .clipText{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:13.5px;line-height:1.5;
+    white-space:pre-wrap;word-break:break-word;
+    max-height:120px;overflow:hidden;
+  }
+  .clipMeta{
+    font-size:11px;color:var(--hint);margin-top:8px;
+  }
+  .clipActions{
+    display:flex;gap:8px;margin-top:8px;
+    border-top:1px solid var(--sep);padding-top:8px;
+  }
+  .clipActions .mini{font-size:12px;padding:4px 0;}
+
   .toast{
     position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
     background:rgba(0,0,0,.82);color:#fff;padding:10px 20px;border-radius:22px;
@@ -1408,6 +1434,7 @@ const TOOLS = {
   strings: { icon:'📝', title:'Сортировка строк', render: renderStrings },
   count:   { icon:'🔢', title:'Подсчёт символов', render: renderCount },
   diff:    { icon:'📊', title:'Diff двух текстов',render: renderDiff },
+  clipboard:{icon:'📋', title:'Буфер обмена',     render: renderClipboard },
 
   hashb64: { icon:'#️⃣', title:'Хеши и Base64',   render: renderHashB64 },
   dataconv:{ icon:'🗂️', title:'JSON / YAML / CSV',render: renderDataConv },
@@ -1429,8 +1456,8 @@ const TOOLS = {
 
 const CATEGORIES = {
   text:    { icon:'📝', title:'Текст',
-             desc:'Регистр, раскладка, diff, подсчёт',
-             tools:['case','layout','translit','strings','count','diff'] },
+             desc:'Регистр, раскладка, diff, буфер',
+             tools:['case','layout','translit','strings','count','diff','clipboard'] },
   data:    { icon:'💻', title:'Данные и код',
              desc:'Хеши, Base64, JSON, QR, пароли',
              tools:['hashb64','dataconv','qr','short','password','color'] },
@@ -1875,7 +1902,214 @@ function renderDiff(el){
 }
 
 /* ============================================================
-   ── 7. Хеши и Base64 ──
+   ── 7. Буфер обмена ──
+   ============================================================ */
+function blobToDataURL(blob){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
+function getImageSize(dataUrl){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => resolve({ w: 0, h: 0 });
+    img.src = dataUrl;
+  });
+}
+
+function renderClipboard(el){
+  const STORAGE_KEY = 'clipboard_history_v1';
+  const MAX_ITEMS = 30;
+  const MAX_IMAGE_BYTES = 500 * 1024;
+
+  let history = [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) history = JSON.parse(raw);
+  } catch(e){ history = []; }
+
+  el.innerHTML = `
+    <div class="panel">
+      <div class="row" style="margin-top:0">
+        <button class="btn" id="pasteBtn" style="padding:16px;font-size:17px">📋 Вставить из буфера</button>
+      </div>
+      <div class="hintnote" id="status" style="text-align:center">
+        Поддерживается текст и картинки
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <button class="btn ghost sm" id="clearBtn">🗑 Очистить историю</button>
+      </div>
+
+      <label class="fld" style="margin-top:16px">История (<span id="count">0</span>)</label>
+      <div id="list"></div>
+    </div>`;
+
+  const $ = id => el.querySelector('#' + id);
+
+  const save = () => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); }
+    catch(e){ /* quota exceeded */ }
+  };
+
+  const render = () => {
+    const list = $('list');
+    $('count').textContent = history.length;
+    if (!history.length){
+      list.innerHTML = '<div class="out"><span class="empty">Здесь появится то, что вы вставляли…</span></div>';
+      return;
+    }
+    list.innerHTML = history.map((item, i) => {
+      const time = new Date(item.t).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+      if (item.type === 'image'){
+        return `<div class="clipItem">
+          <div class="clipPreview"><img src="${item.data}" alt="image"></div>
+          <div class="clipMeta">${item.w}×${item.h} · ${time}</div>
+          <div class="clipActions">
+            <button class="mini" data-act="copy" data-i="${i}">📋 Копировать</button>
+            <button class="mini" data-act="del" data-i="${i}">🗑 Удалить</button>
+          </div>
+        </div>`;
+      }
+      const text = item.data;
+      const preview = text.length > 200 ? text.slice(0, 200) + '…' : text;
+      return `<div class="clipItem">
+        <div class="clipText">${esc(preview)}</div>
+        <div class="clipMeta">${text.length} симв. · ${time}</div>
+        <div class="clipActions">
+          <button class="mini" data-act="copy" data-i="${i}">📋 Копировать</button>
+          <button class="mini" data-act="del" data-i="${i}">🗑 Удалить</button>
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  const addText = (text) => {
+    if (!text) return;
+    if (history.length && history[0].type === 'text' && history[0].data === text) return;
+    history.unshift({ type:'text', data:text, t: Date.now() });
+    while (history.length > MAX_ITEMS) history.pop();
+    save(); render();
+  };
+
+  const addImage = (dataUrl, w, h) => {
+    if (history.length && history[0].type === 'image' && history[0].data === dataUrl) return;
+    history.unshift({ type:'image', data:dataUrl, w, h, t: Date.now() });
+    while (history.length > MAX_ITEMS) history.pop();
+    save(); render();
+  };
+
+  $('pasteBtn').addEventListener('click', async () => {
+    $('status').textContent = 'Читаем буфер…';
+    let handled = false;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.read){
+        const items = await navigator.clipboard.read();
+        for (const item of items){
+          const imgType = item.types.find(t => t.startsWith('image/'));
+          if (imgType){
+            const blob = await item.getType(imgType);
+            if (blob.size > MAX_IMAGE_BYTES){
+              toast('Картинка слишком большая: ' + Math.round(blob.size/1024) + ' КБ (макс. 500)');
+              handled = true;
+              continue;
+            }
+            const dataUrl = await blobToDataURL(blob);
+            const dims = await getImageSize(dataUrl);
+            addImage(dataUrl, dims.w, dims.h);
+            handled = true;
+            continue;
+          }
+          const txtType = item.types.find(t => t === 'text/plain' || t === 'text/html');
+          if (txtType){
+            const blob = await item.getType(txtType);
+            const txt = await blob.text();
+            addText(txt);
+            handled = true;
+          }
+        }
+      } else if (navigator.clipboard && navigator.clipboard.readText){
+        const txt = await navigator.clipboard.readText();
+        if (txt){ addText(txt); handled = true; }
+      } else {
+        $('status').textContent = 'Буфер обмена недоступен в этом браузере';
+        return;
+      }
+    } catch(e){
+      try {
+        const txt = await navigator.clipboard.readText();
+        if (txt){ addText(txt); handled = true; }
+      } catch(e2){
+        $('status').textContent = 'Не удалось прочитать буфер. Разрешите доступ.';
+        if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('error'); } catch(_){}
+        return;
+      }
+    }
+
+    $('status').textContent = handled ? '✓ Добавлено в историю' : 'В буфере ничего нет';
+    setTimeout(() => {
+      $('status').textContent = 'Поддерживается текст и картинки';
+    }, 2500);
+    if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred(handled ? 'success' : 'warning'); } catch(e){}
+  });
+
+  $('clearBtn').addEventListener('click', () => {
+    if (!history.length){ toast('История пуста'); return; }
+    const doClear = () => { history = []; save(); render(); toast('Очищено'); };
+    if (tg && tg.showConfirm){
+      tg.showConfirm('Очистить всю историю?', (ok) => { if (ok) doClear(); });
+    } else {
+      if (confirm('Очистить всю историю?')) doClear();
+    }
+  });
+
+  el.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    const i = parseInt(btn.dataset.i, 10);
+    const item = history[i];
+    if (!item) return;
+    const act = btn.dataset.act;
+
+    if (act === 'del'){
+      history.splice(i, 1); save(); render();
+      if (tg && tg.HapticFeedback) try { tg.HapticFeedback.impactOccurred('light'); } catch(_){}
+      return;
+    }
+
+    if (act === 'copy'){
+      try {
+        if (item.type === 'image' && navigator.clipboard && window.ClipboardItem){
+          const res = await fetch(item.data);
+          const blob = await res.blob();
+          await navigator.clipboard.write([ new ClipboardItem({ [blob.type]: blob }) ]);
+          toast('Картинка скопирована');
+        } else if (item.type === 'text'){
+          await navigator.clipboard.writeText(item.data);
+          toast('Скопировано');
+        } else {
+          await navigator.clipboard.writeText(item.data);
+          toast('Скопировано');
+        }
+        if (tg && tg.HapticFeedback) try { tg.HapticFeedback.impactOccurred('light'); } catch(_){}
+      } catch(err){
+        if (item.type === 'text') copyText(item.data);
+        else toast('Не удалось скопировать картинку — браузер не поддерживает');
+      }
+    }
+  });
+
+  setMainButton(() => '');
+  render();
+}
+
+/* ============================================================
+   ── 8. Хеши и Base64 ──
    ============================================================ */
 function renderHashB64(el){
   el.innerHTML = `
@@ -1958,7 +2192,7 @@ function renderHashB64(el){
 }
 
 /* ============================================================
-   ── 8. JSON / YAML / CSV ──
+   ── 9. JSON / YAML / CSV ──
    ============================================================ */
 function renderDataConv(el){
   el.innerHTML = `
@@ -2027,7 +2261,7 @@ function renderDataConv(el){
 }
 
 /* ============================================================
-   ── 9. QR-код ──
+   ── 10. QR-код ──
    ============================================================ */
 function renderQR(el){
   let mode = 'text';
@@ -2334,7 +2568,7 @@ function renderQR(el){
 }
 
 /* ============================================================
-   ── 10. Сократить ссылку ──
+   ── 11. Сократить ссылку ──
    ============================================================ */
 async function fetchWithTimeout(url, opts = {}, ms = 12000){
   const ctrl = new AbortController();
@@ -2410,7 +2644,7 @@ function renderShort(el){
 }
 
 /* ============================================================
-   ── 11. Пароли ──
+   ── 12. Пароли ──
    ============================================================ */
 function renderPassword(el){
   el.innerHTML = `
@@ -2459,7 +2693,7 @@ function renderPassword(el){
 }
 
 /* ============================================================
-   ── 12. Цвет ──
+   ── 13. Цвет ──
    ============================================================ */
 function renderColor(el){
   el.innerHTML = `
@@ -2505,7 +2739,7 @@ function renderColor(el){
 }
 
 /* ============================================================
-   ── 13. Числа прописью ──
+   ── 14. Числа прописью ──
    ============================================================ */
 function renderWords(el){
   el.innerHTML = `
@@ -2568,7 +2802,7 @@ function renderWords(el){
 }
 
 /* ============================================================
-   ── 14. Проценты ──
+   ── 15. Проценты ──
    ============================================================ */
 function renderPercent(el){
   let mode = 'of';
@@ -2681,7 +2915,7 @@ function renderPercent(el){
 }
 
 /* ============================================================
-   ── 15. Калькулятор дат ──
+   ── 16. Калькулятор дат ──
    ============================================================ */
 function renderDates(el){
   let mode = 'diff';
@@ -2824,7 +3058,7 @@ function renderDates(el){
 }
 
 /* ============================================================
-   ── 16. Таймстамп ──
+   ── 17. Таймстамп ──
    ============================================================ */
 function renderTimestamp(el){
   const now = new Date();
@@ -2892,7 +3126,7 @@ function renderTimestamp(el){
 }
 
 /* ============================================================
-   ── 17. Конвертер единиц ──
+   ── 18. Конвертер единиц ──
    ============================================================ */
 function renderUnits(el){
   el.innerHTML = `
@@ -2961,7 +3195,7 @@ function renderUnits(el){
 }
 
 /* ============================================================
-   ── 18. Разбавление ──
+   ── 19. Разбавление ──
    ============================================================ */
 function renderOil(el){
   el.innerHTML = `
@@ -3013,7 +3247,7 @@ function renderOil(el){
 }
 
 /* ============================================================
-   ── 19. Электрика (сечение / автомат / мощность / заземление / УЗО) ──
+   ── 20. Электрика ──
    ============================================================ */
 function renderElectric(el){
   let mode = 'by-cable';
@@ -3128,7 +3362,6 @@ function renderElectric(el){
   const $ = id => el.querySelector('#' + id);
   let result = '';
 
-  /* ── 1. По сечению ── */
   const updCable = () => {
     const sel = $('cableSel');
     const appSel = $('appSel');
@@ -3170,7 +3403,6 @@ function renderElectric(el){
     refreshMainButton();
   };
 
-  /* ── 2. По автомату ── */
   const updBreaker = () => {
     const sel = $('brkSel');
     const appSel = $('appSel2');
@@ -3204,7 +3436,6 @@ function renderElectric(el){
     refreshMainButton();
   };
 
-  /* ── 3. Мощность ── */
   let powerMode = 'dc';
   let powerTarget = 'pu';
 
@@ -3348,7 +3579,6 @@ function renderElectric(el){
     updPower();
   };
 
-  /* ── 4. Заземление ── */
   const updGround = () => {
     const soilEl = $('gSoil');
     const lenEl = $('gLen');
@@ -3449,7 +3679,6 @@ function renderElectric(el){
     updGround();
   };
 
-  /* ── 5. УЗО ── */
   const updRcd = () => {
     const ratingEl = $('rcdRating');
     const leakEl = $('rcdLeakage');
@@ -3526,7 +3755,6 @@ function renderElectric(el){
     updRcd();
   };
 
-  /* ── Рендер ── */
   const renderBody = () => {
     if (mode === 'by-cable'){
       body.innerHTML = `
@@ -3605,7 +3833,7 @@ function renderElectric(el){
 }
 
 /* ============================================================
-   ── 20. Нихромовый резак ──
+   ── 21. Нихромовый резак ──
    ============================================================ */
 function renderNichrome(el){
   el.innerHTML = `
