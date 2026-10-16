@@ -2023,13 +2023,13 @@ function renderQR(el){
     return n ? String(n.value || '').trim() : '';
   };
 
+  // Формат: +7 (999) 123-45-67
   function formatPhoneRU(raw){
     let d = String(raw).replace(/\D/g, '');
-    if (!d) return '';
+    if (!d) return raw;
     if (d[0] === '8') d = '7' + d.slice(1);
     else if (d[0] !== '7') d = '7' + d;
     d = d.slice(0, 11);
-    if (d.length < 2) return raw;
     let out = '+7';
     if (d.length > 1){
       out += ' (' + d.slice(1, 4);
@@ -2041,6 +2041,7 @@ function renderQR(el){
     return out;
   }
 
+  // Для QR: +7XXXXXXXXXX (только когда номер полный)
   function cleanPhone(raw){
     if (!raw) return '';
     let d = String(raw).replace(/\D/g, '');
@@ -2154,14 +2155,18 @@ function renderQR(el){
     }, 120);
   };
 
+  // Форматирование во время ввода. Если пользователь печатает в конце — 
+  // форматируем и ставим курсор в конец. Если редактирует середину — не трогаем.
   function bindPhoneInput(inp){
     if (!inp) return;
-    inp.addEventListener('input', updateQR);
-    inp.addEventListener('blur', () => {
-      if (!inp.value.trim()) return;
-      const formatted = formatPhoneRU(inp.value);
-      if (formatted && formatted !== inp.value){
+    inp.addEventListener('input', () => {
+      const raw = inp.value;
+      const pos = inp.selectionStart;
+      const wasAtEnd = pos >= raw.length;
+      const formatted = formatPhoneRU(raw);
+      if (formatted !== raw && wasAtEnd){
         inp.value = formatted;
+        try { inp.setSelectionRange(formatted.length, formatted.length); } catch(_){}
       }
       updateQR();
     });
@@ -2181,8 +2186,7 @@ function renderQR(el){
         <div class="opTitle">При сканировании откроется <b>набор номера</b></div>
         <label class="fld">Номер телефона</label>
         <input type="tel" id="t_phone" placeholder="+7 (999) 123-45-67"
-          inputmode="tel" autocomplete="off">
-        <div class="hintnote" style="text-align:left;margin-top:6px">Формат применится автоматически, когда вы закончите ввод</div>`;
+          inputmode="tel" autocomplete="off">`;
       bindPhoneInput(el.querySelector('#t_phone'));
     } else if (mode === 'email'){
       body.innerHTML = `
