@@ -3176,11 +3176,14 @@ function renderElectric(el){
     refreshMainButton();
   };
 
-  /* ── 2. По автомату ── */
+    /* ── 2. По автомату ── */
   const updBreaker = () => {
     const sel = $('brkSel');
-    if (!sel) return;
+    const appSel = $('appSel2');
+    if (!sel || !appSel) return;
     const brk = parseInt(sel.value, 10);
+    const appKey = appSel.value;
+    const app = APPS[appKey];
     const cable = minCableFor(brk);
     const power = (brk * 220 / 1000).toFixed(2);
 
@@ -3188,81 +3191,23 @@ function renderElectric(el){
     $('rCableMax').textContent = cable.maxCurrent + ' А';
     $('rBrkPwr').textContent = power + ' кВт';
 
+    // Рекомендация класса
+    const classBlock = $('classBlock2');
+    if (classBlock){
+      classBlock.innerHTML = `
+        <div class="classRow">
+          <div class="classBadge">${app.cls}</div>
+          <div class="classBody">
+            <div class="classTitle">Класс ${app.cls} для «${esc(app.label)}»</div>
+            <div class="classApp">${esc(app.why)}</div>
+          </div>
+        </div>`;
+    }
+
     result = `Автомат ${brk} А (${power} кВт)\n` +
              `Минимальное сечение: ${cable.size} мм²\n` +
              `Макс. ток кабеля: ${cable.maxCurrent} А\n` +
-             `Рекомендуемый класс: C (универсальный для бытовых сетей)`;
-    refreshMainButton();
-  };
-
-  /* ── 3. Мощность ── */
-  let powerMode = 'dc';   // dc | ac1 | ac3
-  let powerTarget = 'pu'; // pu | pi | ui
-
-  const fmtNum = n => {
-    if (!isFinite(n)) return '—';
-    const r = Math.round(n * 1e6) / 1e6;
-    return r.toLocaleString('ru-RU', { maximumFractionDigits: 6 });
-  };
-
-  const updPower = () => {
-    const cosEl = $('powerCos');
-    const inp1 = $('powerInp1');
-    const inp2 = $('powerInp2');
-    if (!inp1 || !inp2) return;
-
-    const cos = powerMode === 'dc' ? 1 : (parseFloat(cosEl?.value) || 0.95);
-    const a = parseFloat(String(inp1.value).replace(',', '.'));
-    const b = parseFloat(String(inp2.value).replace(',', '.'));
-
-    const outI = $('powerOutI');
-    const outU = $('powerOutU');
-    const outP = $('powerOutP');
-    const outR = $('powerOutR');
-    const outRLabel = $('powerOutRLabel');
-
-    if (isNaN(a) || isNaN(b) || a <= 0 || b <= 0){
-      outI.textContent = '—';
-      outU.textContent = '—';
-      outP.textContent = '—';
-      outR.textContent = '—';
-      result = '';
-      refreshMainButton();
-      return;
-    }
-
-    let U, I, P;
-    const k3 = powerMode === 'ac3' ? Math.sqrt(3) : 1;
-
-    if (powerTarget === 'pu'){          // P и U → I, R
-      P = a; U = b;
-      I = P / (U * k3 * cos);
-    } else if (powerTarget === 'pi'){   // P и I → U, R
-      P = a; I = b;
-      U = P / (I * k3 * cos);
-    } else {                            // U и I → P, R
-      U = a; I = b;
-      P = U * I * k3 * cos;
-    }
-
-    // Сопротивление / импеданс
-    let R;
-    if (powerMode === 'dc') R = U / I;
-    else if (powerMode === 'ac1') R = U / I;          // полное сопротивление Z
-    else R = (U / Math.sqrt(3)) / I;                  // Z фазное для симметричной нагрузки
-
-    outP.textContent = fmtNum(P) + ' Вт';
-    outU.textContent = fmtNum(U) + ' В';
-    outI.textContent = fmtNum(I) + ' А';
-    outR.textContent = fmtNum(R) + ' Ом';
-
-    if (outRLabel){
-      outRLabel.textContent = powerMode === 'dc' ? 'Сопротивление R'
-        : powerMode === 'ac1' ? 'Полное сопротивление Z'
-        : 'Сопротивление одной фазы Z';
-    }
-
-    result = `Мощность: ${fmtNum(P)} Вт\nНапряжение: ${fmtNum(U)} В\nТок: ${fmtNum(I)} А\nСопротивление: ${fmtNum(R)} Ом`;
+             `Класс автомата: ${app.cls} — ${app.label}`;
     refreshMainButton();
   };
 
@@ -3556,12 +3501,16 @@ function renderElectric(el){
       $('cableSel').addEventListener('change', updCable);
       $('appSel').addEventListener('change', updCable);
       updCable();
-    } else if (mode === 'by-breaker'){
+        } else if (mode === 'by-breaker'){
       body.innerHTML = `
         <div class="opTitle">Подобрать кабель <b>по номиналу автомата</b></div>
         <label class="fld">Номинал автомата</label>
         <select class="sel" id="brkSel">
           ${BREAKERS.map(b => `<option value="${b}"${b===16?' selected':''}>${b} А</option>`).join('')}
+        </select>
+        <label class="fld" style="margin-top:12px">Назначение автомата</label>
+        <select class="sel" id="appSel2">
+          ${Object.entries(APPS).map(([k,a]) => `<option value="${k}"${k==='sockets'?' selected':''}>${a.label}</option>`).join('')}
         </select>
         <label class="fld" style="margin-top:16px">Результат</label>
         <div class="stats" style="margin-top:0">
@@ -3569,33 +3518,12 @@ function renderElectric(el){
           <div class="stat"><div class="v" id="rCableMax">—</div><div class="k">макс. ток этого кабеля</div></div>
           <div class="stat full"><div class="v" id="rBrkPwr">—</div><div class="k">мощность автомата</div></div>
         </div>
-        <div class="hintnote">
-          Для бытовых сетей подходит <b>класс C</b> (универсальный),<br>
-          для двигателей и насосов — <b>класс D</b>, для освещения — <b>класс B</b>.
-        </div>`;
+        <label class="fld" style="margin-top:16px">Рекомендуемый класс</label>
+        <div id="classBlock2"></div>`;
       $('brkSel').addEventListener('change', updBreaker);
+      $('appSel2').addEventListener('change', updBreaker);
       updBreaker();
-    } else if (mode === 'power'){
-      renderPower();
-    } else if (mode === 'ground'){
-      renderGround();
-    } else {
-      renderRcd();
     }
-  };
-
-  modeSeg.addEventListener('click', e => {
-    const b = e.target.closest('button[data-m]');
-    if (!b) return;
-    mode = b.dataset.m;
-    modeSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-    renderBody();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-
-  setMainButton(() => result);
-  renderBody();
-}
 /* ============================================================
    ── 20. Нихромовый резак ──
    ============================================================ */
