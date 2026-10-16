@@ -1923,8 +1923,7 @@ function getImageSize(dataUrl){
 
 function renderClipboard(el){
   const STORAGE_KEY = 'clipboard_history_v1';
-  const MAX_ITEMS = 30;
-  const MAX_IMAGE_BYTES = 500 * 1024;
+  const MAX_ITEMS = 50;
 
   let history = [];
   try {
@@ -1934,19 +1933,20 @@ function renderClipboard(el){
 
   el.innerHTML = `
     <div class="panel">
-      <div class="row" style="margin-top:0">
-        <button class="btn" id="pasteBtn" style="padding:16px;font-size:17px">📋 Вставить из буфера</button>
+      <label class="fld">Вставьте текст</label>
+      <textarea id="inp" placeholder="Вставьте или введите текст…"
+        autocomplete="off" spellcheck="false" style="min-height:120px"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="addBtn">➕ Добавить в историю</button>
+        <button class="btn ghost" id="pasteBtn" title="Вставить из буфера">📋</button>
       </div>
-      <div class="hintnote" id="status" style="text-align:center">
-        Поддерживается текст и картинки
-      </div>
+      <div class="hintnote" id="status">Нажмите «Добавить», чтобы сохранить в историю</div>
 
-      <div class="row" style="margin-top:8px">
-        <button class="btn ghost sm" id="clearBtn">🗑 Очистить историю</button>
+      <div class="row" style="margin-top:16px">
+        <label class="fld" style="flex:1;margin:0">История (<span id="count">0</span>)</label>
+        <button class="btn ghost sm" id="clearBtn">🗑 Очистить</button>
       </div>
-
-      <label class="fld" style="margin-top:16px">История (<span id="count">0</span>)</label>
-      <div id="list"></div>
+      <div id="list" style="margin-top:8px"></div>
     </div>`;
 
   const $ = id => el.querySelector('#' + id);
@@ -1960,21 +1960,11 @@ function renderClipboard(el){
     const list = $('list');
     $('count').textContent = history.length;
     if (!history.length){
-      list.innerHTML = '<div class="out"><span class="empty">Здесь появится то, что вы вставляли…</span></div>';
+      list.innerHTML = '<div class="out"><span class="empty">Здесь появится то, что вы добавляли…</span></div>';
       return;
     }
     list.innerHTML = history.map((item, i) => {
       const time = new Date(item.t).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-      if (item.type === 'image'){
-        return `<div class="clipItem">
-          <div class="clipPreview"><img src="${item.data}" alt="image"></div>
-          <div class="clipMeta">${item.w}×${item.h} · ${time}</div>
-          <div class="clipActions">
-            <button class="mini" data-act="copy" data-i="${i}">📋 Копировать</button>
-            <button class="mini" data-act="del" data-i="${i}">🗑 Удалить</button>
-          </div>
-        </div>`;
-      }
       const text = item.data;
       const preview = text.length > 200 ? text.slice(0, 200) + '…' : text;
       return `<div class="clipItem">
@@ -1982,6 +1972,7 @@ function renderClipboard(el){
         <div class="clipMeta">${text.length} симв. · ${time}</div>
         <div class="clipActions">
           <button class="mini" data-act="copy" data-i="${i}">📋 Копировать</button>
+          <button class="mini" data-act="paste" data-i="${i}">↩ В поле</button>
           <button class="mini" data-act="del" data-i="${i}">🗑 Удалить</button>
         </div>
       </div>`;
@@ -1989,75 +1980,56 @@ function renderClipboard(el){
   };
 
   const addText = (text) => {
-    if (!text) return;
-    if (history.length && history[0].type === 'text' && history[0].data === text) return;
-    history.unshift({ type:'text', data:text, t: Date.now() });
+    text = String(text || '');
+    if (!text.trim()) return false;
+    if (history.length && history[0].data === text && Date.now() - history[0].t < 3000) return false;
+    history.unshift({ data: text, t: Date.now() });
     while (history.length > MAX_ITEMS) history.pop();
     save(); render();
+    return true;
   };
 
-  const addImage = (dataUrl, w, h) => {
-    if (history.length && history[0].type === 'image' && history[0].data === dataUrl) return;
-    history.unshift({ type:'image', data:dataUrl, w, h, t: Date.now() });
-    while (history.length > MAX_ITEMS) history.pop();
-    save(); render();
-  };
-
-  $('pasteBtn').addEventListener('click', async () => {
-    $('status').textContent = 'Читаем буфер…';
-    let handled = false;
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.read){
-        const items = await navigator.clipboard.read();
-        for (const item of items){
-          const imgType = item.types.find(t => t.startsWith('image/'));
-          if (imgType){
-            const blob = await item.getType(imgType);
-            if (blob.size > MAX_IMAGE_BYTES){
-              toast('Картинка слишком большая: ' + Math.round(blob.size/1024) + ' КБ (макс. 500)');
-              handled = true;
-              continue;
-            }
-            const dataUrl = await blobToDataURL(blob);
-            const dims = await getImageSize(dataUrl);
-            addImage(dataUrl, dims.w, dims.h);
-            handled = true;
-            continue;
-          }
-          const txtType = item.types.find(t => t === 'text/plain' || t === 'text/html');
-          if (txtType){
-            const blob = await item.getType(txtType);
-            const txt = await blob.text();
-            addText(txt);
-            handled = true;
-          }
-        }
-      } else if (navigator.clipboard && navigator.clipboard.readText){
-        const txt = await navigator.clipboard.readText();
-        if (txt){ addText(txt); handled = true; }
-      } else {
-        $('status').textContent = 'Буфер обмена недоступен в этом браузере';
-        return;
-      }
-    } catch(e){
-      try {
-        const txt = await navigator.clipboard.readText();
-        if (txt){ addText(txt); handled = true; }
-      } catch(e2){
-        $('status').textContent = 'Не удалось прочитать буфер. Разрешите доступ.';
-        if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('error'); } catch(_){}
-        return;
-      }
+  // Добавить из textarea
+  $('addBtn').addEventListener('click', () => {
+    const inp = $('inp');
+    const v = inp.value;
+    if (!v.trim()){ toast('Поле пустое'); inp.focus(); return; }
+    if (addText(v)){
+      inp.value = '';
+      $('status').textContent = '✓ Добавлено в историю';
+      setTimeout(() => { $('status').textContent = 'Нажмите «Добавить», чтобы сохранить в историю'; }, 2000);
+      if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){}
     }
-
-    $('status').textContent = handled ? '✓ Добавлено в историю' : 'В буфере ничего нет';
-    setTimeout(() => {
-      $('status').textContent = 'Поддерживается текст и картинки';
-    }, 2500);
-    if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred(handled ? 'success' : 'warning'); } catch(e){}
   });
 
+  // Попытаться вставить через clipboard API (кнопка)
+  $('pasteBtn').addEventListener('click', async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText){
+        const txt = await navigator.clipboard.readText();
+        if (txt){
+          $('inp').value = txt;
+          $('status').textContent = '✓ Вставлено в поле';
+          setTimeout(() => { $('status').textContent = 'Нажмите «Добавить», чтобы сохранить в историю'; }, 2000);
+          if (tg && tg.HapticFeedback) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
+        } else {
+          toast('Буфер пуст');
+        }
+      } else {
+        toast('Используйте Ctrl+V или долгий тап → «Вставить»');
+        $('inp').focus();
+      }
+    } catch(e){
+      toast('Используйте Ctrl+V или долгий тап → «Вставить»');
+      $('inp').focus();
+    }
+  });
+
+  // Автодобавление при вставке в textarea (если вставили и отпустили)
+  // + мягкая обработка: если пользователь вставил через paste-event, мы просто показываем в поле
+  // (не добавляем автоматически — пусть сам нажмёт «Добавить»)
+
+  // Очистка истории
   $('clearBtn').addEventListener('click', () => {
     if (!history.length){ toast('История пуста'); return; }
     const doClear = () => { history = []; save(); render(); toast('Очищено'); };
@@ -2068,6 +2040,7 @@ function renderClipboard(el){
     }
   });
 
+  // Обработка кнопок в истории
   el.addEventListener('click', async (e) => {
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
@@ -2082,32 +2055,39 @@ function renderClipboard(el){
       return;
     }
 
+    if (act === 'paste'){
+      const inp = $('inp');
+      inp.value = item.data;
+      inp.focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     if (act === 'copy'){
       try {
-        if (item.type === 'image' && navigator.clipboard && window.ClipboardItem){
-          const res = await fetch(item.data);
-          const blob = await res.blob();
-          await navigator.clipboard.write([ new ClipboardItem({ [blob.type]: blob }) ]);
-          toast('Картинка скопирована');
-        } else if (item.type === 'text'){
+        if (navigator.clipboard && window.isSecureContext){
           await navigator.clipboard.writeText(item.data);
           toast('Скопировано');
         } else {
-          await navigator.clipboard.writeText(item.data);
+          const ta = document.createElement('textarea');
+          ta.value = item.data;
+          ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
           toast('Скопировано');
         }
         if (tg && tg.HapticFeedback) try { tg.HapticFeedback.impactOccurred('light'); } catch(_){}
       } catch(err){
-        if (item.type === 'text') copyText(item.data);
-        else toast('Не удалось скопировать картинку — браузер не поддерживает');
+        toast('Не удалось скопировать');
       }
     }
   });
 
   setMainButton(() => '');
   render();
+  setTimeout(() => $('inp').focus(), 120);
 }
-
 /* ============================================================
    ── 8. Хеши и Base64 ──
    ============================================================ */
