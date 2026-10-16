@@ -41,7 +41,6 @@
   .back:active{transform:scale(.92);}
   .hidden{display:none !important;}
 
-  /* ── Категории (список-папки) ── */
   .catList{
     display:flex;flex-direction:column;gap:10px;
     animation:fade .18s ease;
@@ -71,7 +70,6 @@
     flex-shrink:0;display:flex;align-items:center;gap:2px;
   }
 
-  /* ── Сетка инструментов ── */
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;animation:fade .18s ease;}
   .card{
     background:var(--sec);border:0;border-radius:16px;
@@ -143,6 +141,16 @@
   }
   .seg button.on{background:var(--bg);box-shadow:0 1px 4px rgba(0,0,0,.12);}
   .seg.sm button{padding:7px 4px;font-size:13px;}
+  .seg.wrap{flex-wrap:wrap;gap:6px;padding:6px;}
+  .seg.wrap button{
+    flex:1 0 calc(50% - 3px);min-height:44px;
+    padding:8px 6px;font-size:13px;line-height:1.2;
+  }
+  .opTitle{
+    font-size:14px;color:var(--hint);font-weight:500;
+    margin:2px 2px 10px;text-align:center;line-height:1.4;
+  }
+  .opTitle b{color:var(--text);font-weight:600;}
 
   .row{display:flex;gap:10px;margin-top:12px;}
   .btn{
@@ -322,7 +330,7 @@
 
 <script>
 /* ============================================================
-   Telegram WebApp + MainButton
+   Telegram WebApp
    ============================================================ */
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (tg) {
@@ -2326,94 +2334,203 @@ function renderWords(el){
    ── 14. Проценты ──
    ============================================================ */
 function renderPercent(el){
+  let mode = 'of'; // of | what | diff | apply
+
   el.innerHTML = `
     <div class="panel">
-      <div class="hashrow"><div class="name">X% ОТ Y</div></div>
-      <div class="twoCols">
-        <input type="number" id="a1" placeholder="X%" inputmode="decimal">
-        <input type="number" id="a2" placeholder="Y" inputmode="decimal">
+      <div class="seg sm wrap" id="modeSeg">
+        <button class="on" data-m="of">% от суммы</button>
+        <button data-m="what">Какой это %</button>
+        <button data-m="diff">Разница в %</button>
+        <button data-m="apply">± % от суммы</button>
       </div>
-      <div class="out" id="r1" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>
-      <div class="hashrow" style="margin-top:20px"><div class="name">X СОСТАВЛЯЕТ % ОТ Y</div></div>
-      <div class="twoCols">
-        <input type="number" id="b1" placeholder="X" inputmode="decimal">
-        <input type="number" id="b2" placeholder="Y" inputmode="decimal">
-      </div>
-      <div class="out" id="r2" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>
-      <div class="hashrow" style="margin-top:20px"><div class="name">НА СКОЛЬКО % X БОЛЬШЕ/МЕНЬШЕ Y</div></div>
-      <div class="twoCols">
-        <input type="number" id="c1" placeholder="X" inputmode="decimal">
-        <input type="number" id="c2" placeholder="Y" inputmode="decimal">
-      </div>
-      <div class="out" id="r3" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>
-      <div class="hashrow" style="margin-top:20px"><div class="name">Y ± X%</div></div>
-      <div class="twoCols">
-        <input type="number" id="d1" placeholder="Y" inputmode="decimal">
-        <input type="number" id="d2" placeholder="X%" inputmode="decimal">
-      </div>
-      <div class="out" id="r4" style="margin-top:0;font-size:15px;text-align:center;font-weight:600"><span class="empty">—</span></div>
+      <div id="body"></div>
     </div>`;
-  const fmt = n => isFinite(n) ? (Math.round(n * 1e10) / 1e10).toLocaleString('ru-RU', { maximumFractionDigits: 10 }) : '—';
-  const num = id => parseFloat(el.querySelector('#' + id).value.replace(',', '.'));
+
+  const modeSeg = el.querySelector('#modeSeg');
+  const body = el.querySelector('#body');
+  const $ = id => el.querySelector('#' + id);
+
+  const fmt = n => isFinite(n)
+    ? (Math.round(n * 1e10) / 1e10).toLocaleString('ru-RU', { maximumFractionDigits: 10 })
+    : '—';
+  const num = id => {
+    const node = $(id);
+    if (!node) return NaN;
+    const v = String(node.value).trim().replace(/\s+/g,'').replace(',', '.');
+    return parseFloat(v);
+  };
+
   const upd1 = () => {
-    const x = num('a1'), y = num('a2'), r = el.querySelector('#r1');
-    if (isNaN(x) || isNaN(y)){ r.innerHTML = '<span class="empty">—</span>'; return; }
-    r.textContent = fmt(x * y / 100);
+    const p = num('p1'), s = num('s1');
+    const out = $('out1');
+    if (!out) return;
+    if (isNaN(p) || isNaN(s)){ out.innerHTML = '<span class="empty">—</span>'; return; }
+    const r = p * s / 100;
+    out.innerHTML = `<b>${fmt(r)}</b><div class="hintnote" style="margin-top:6px">${fmt(p)}% от ${fmt(s)}</div>`;
   };
   const upd2 = () => {
-    const x = num('b1'), y = num('b2'), r = el.querySelector('#r2');
-    if (isNaN(x) || isNaN(y) || y === 0){ r.innerHTML = '<span class="empty">—</span>'; return; }
-    r.textContent = fmt(x / y * 100) + '%';
+    const part = num('p2'), whole = num('w2');
+    const out = $('out2');
+    if (!out) return;
+    if (isNaN(part) || isNaN(whole) || whole === 0){ out.innerHTML = '<span class="empty">—</span>'; return; }
+    const r = part / whole * 100;
+    out.innerHTML = `<b>${fmt(r)}%</b><div class="hintnote" style="margin-top:6px">${fmt(part)} из ${fmt(whole)}</div>`;
   };
   const upd3 = () => {
-    const x = num('c1'), y = num('c2'), r = el.querySelector('#r3');
-    if (isNaN(x) || isNaN(y) || y === 0){ r.innerHTML = '<span class="empty">—</span>'; return; }
-    const p = (x - y) / y * 100;
-    r.textContent = `на ${fmt(Math.abs(p))}% ${p >= 0 ? 'больше' : 'меньше'}`;
+    const a = num('a3'), b = num('b3');
+    const out = $('out3');
+    if (!out) return;
+    if (isNaN(a) || isNaN(b) || b === 0){ out.innerHTML = '<span class="empty">—</span>'; return; }
+    const p = (a - b) / b * 100;
+    const sign = p >= 0 ? 'больше' : 'меньше';
+    const color = p >= 0 ? '#34c759' : '#e0453e';
+    out.innerHTML = `<b style="color:${color}">на ${fmt(Math.abs(p))}% ${sign}</b><div class="hintnote" style="margin-top:6px">${fmt(a)} относительно ${fmt(b)}</div>`;
   };
   const upd4 = () => {
-    const y = num('d1'), x = num('d2'), r = el.querySelector('#r4');
-    if (isNaN(x) || isNaN(y)){ r.innerHTML = '<span class="empty">—</span>'; return; }
-    r.innerHTML = `+${fmt(x)}%: <b>${fmt(y * (1 + x/100))}</b><br>−${fmt(x)}%: <b>${fmt(y * (1 - x/100))}</b>`;
+    const s = num('s4'), p = num('p4');
+    const out = $('out4');
+    if (!out) return;
+    if (isNaN(s) || isNaN(p)){ out.innerHTML = '<div class="hintnote" style="grid-column:1/-1;margin:0">—</div>'; return; }
+    const plus  = s * (1 + p / 100);
+    const minus = s * (1 - p / 100);
+    const diff  = s * p / 100;
+    out.innerHTML = `
+      <div class="stat"><div class="v small" style="color:#34c759">${fmt(plus)}</div><div class="k">${fmt(s)} + ${fmt(p)}%</div></div>
+      <div class="stat"><div class="v small" style="color:#e0453e">${fmt(minus)}</div><div class="k">${fmt(s)} − ${fmt(p)}%</div></div>
+      <div class="stat full"><div class="v small">${fmt(diff)}</div><div class="k">сам процент</div></div>
+    `;
   };
-  ['a1','a2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd1));
-  ['b1','b2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd2));
-  ['c1','c2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd3));
-  ['d1','d2'].forEach(id => el.querySelector('#'+id).addEventListener('input', upd4));
+
+  const renderBody = () => {
+    if (mode === 'of'){
+      body.innerHTML = `
+        <div class="opTitle">Найти <b>процент от суммы</b></div>
+        <div class="twoCols">
+          <div>
+            <label class="fld">Сумма</label>
+            <input type="number" id="s1" placeholder="2000" inputmode="decimal">
+          </div>
+          <div>
+            <label class="fld">Процент</label>
+            <input type="number" id="p1" placeholder="15" inputmode="decimal">
+          </div>
+        </div>
+        <label class="fld">Результат</label>
+        <div class="out" id="out1" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>`;
+      $('s1').addEventListener('input', upd1);
+      $('p1').addEventListener('input', upd1);
+      upd1();
+    } else if (mode === 'what'){
+      body.innerHTML = `
+        <div class="opTitle">Какой <b>процент</b> составляет одно число от другого</div>
+        <div class="twoCols">
+          <div>
+            <label class="fld">Часть</label>
+            <input type="number" id="p2" placeholder="300" inputmode="decimal">
+          </div>
+          <div>
+            <label class="fld">Целое</label>
+            <input type="number" id="w2" placeholder="2000" inputmode="decimal">
+          </div>
+        </div>
+        <label class="fld">Результат</label>
+        <div class="out" id="out2" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>`;
+      $('p2').addEventListener('input', upd2);
+      $('w2').addEventListener('input', upd2);
+      upd2();
+    } else if (mode === 'diff'){
+      body.innerHTML = `
+        <div class="opTitle">На сколько <b>% одно число больше/меньше</b> другого</div>
+        <div class="twoCols">
+          <div>
+            <label class="fld">Число A</label>
+            <input type="number" id="a3" placeholder="2500" inputmode="decimal">
+          </div>
+          <div>
+            <label class="fld">Число B</label>
+            <input type="number" id="b3" placeholder="2000" inputmode="decimal">
+          </div>
+        </div>
+        <label class="fld">Результат</label>
+        <div class="out" id="out3" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>`;
+      $('a3').addEventListener('input', upd3);
+      $('b3').addEventListener('input', upd3);
+      upd3();
+    } else {
+      body.innerHTML = `
+        <div class="opTitle"><b>Прибавить или отнять</b> процент</div>
+        <div class="twoCols">
+          <div>
+            <label class="fld">Сумма</label>
+            <input type="number" id="s4" placeholder="2000" inputmode="decimal">
+          </div>
+          <div>
+            <label class="fld">Процент</label>
+            <input type="number" id="p4" placeholder="15" inputmode="decimal">
+          </div>
+        </div>
+        <label class="fld">Результат</label>
+        <div class="stats" id="out4" style="margin-top:0">
+          <div class="hintnote" style="grid-column:1/-1;margin:0">—</div>
+        </div>`;
+      $('s4').addEventListener('input', upd4);
+      $('p4').addEventListener('input', upd4);
+      upd4();
+    }
+  };
+
+  modeSeg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (!b) return;
+    mode = b.dataset.m;
+    modeSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderBody();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
   setMainButton(() => '');
-  setTimeout(() => el.querySelector('#a1').focus(), 120);
+  renderBody();
 }
 
 /* ============================================================
    ── 15. Калькулятор дат ──
    ============================================================ */
 function renderDates(el){
+  let mode = 'diff'; // diff | add | age | weekday
   const today = new Date();
   const todayStr = formatUserDate(today, false);
+
   el.innerHTML = `
     <div class="panel">
-      <div class="hashrow"><div class="name">РАЗНИЦА МЕЖДУ ДАТАМИ</div></div>
-      <div class="twoCols">
-        ${dateFieldWrap('d1', todayStr, false)}
-        ${dateFieldWrap('d2', todayStr, false)}
+      <div class="seg sm wrap" id="modeSeg">
+        <button class="on" data-m="diff">📅 Разница дат</button>
+        <button data-m="add">➕ Прибавить дни</button>
+        <button data-m="age">🎂 Возраст</button>
+        <button data-m="weekday">📆 День недели</button>
       </div>
-      <div class="stats" id="out1" style="margin-top:0"></div>
-      <div class="hashrow" style="margin-top:20px"><div class="name">ДАТА + N ДНЕЙ</div></div>
-      <div class="twoCols">
-        ${dateFieldWrap('b1', todayStr, false)}
-        <input type="number" id="b2" placeholder="+ дней" inputmode="numeric">
-      </div>
-      <div class="out" id="out2" style="margin-top:0;font-size:18px;font-weight:600;text-align:center"><span class="empty">—</span></div>
-      <div class="hashrow" style="margin-top:20px"><div class="name">ДЕНЬ НЕДЕЛИ И ВОЗРАСТ</div></div>
-      ${dateFieldWrap('c1', todayStr, false)}
-      <div class="stats" id="out3" style="margin-top:12px"></div>
+      <div id="body"></div>
     </div>`;
+
+  const modeSeg = el.querySelector('#modeSeg');
+  const body = el.querySelector('#body');
   const $ = id => el.querySelector('#' + id);
   const fmtD = d => d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-  const getDate = id => { const p = parseUserDate($(id).value, false); return p ? p.date : null; };
+  const getDate = id => {
+    const node = $(id);
+    if (!node) return null;
+    const p = parseUserDate(node.value, false);
+    return p ? p.date : null;
+  };
+
   const upd1 = () => {
-    const dA = getDate('d1'), dB = getDate('d2'), out = $('out1');
-    if (!dA || !dB){ out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите обе даты</div>'; return; }
+    const dA = getDate('d1'), dB = getDate('d2');
+    const out = $('out1');
+    if (!out) return;
+    if (!dA || !dB){
+      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите обе даты</div>';
+      return;
+    }
     const ms = Math.abs(dB - dA);
     const days = Math.floor(ms / 86400000);
     const weeks = Math.floor(days / 7);
@@ -2427,23 +2544,35 @@ function renderDates(el){
     if (d < 0){ m--; d += new Date(later.getFullYear(), later.getMonth(), 0).getDate(); }
     if (m < 0){ y--; m += 12; }
     out.innerHTML = `
+      <div class="stat full"><div class="v small">${y} г. ${m} мес. ${d} дн.</div><div class="k">точно</div></div>
       <div class="stat"><div class="v">${days.toLocaleString('ru-RU')}</div><div class="k">дней</div></div>
       <div class="stat"><div class="v">${weeks.toLocaleString('ru-RU')}</div><div class="k">недель</div></div>
       <div class="stat"><div class="v">${months.toLocaleString('ru-RU')}</div><div class="k">месяцев (прибл.)</div></div>
       <div class="stat"><div class="v">${years.toLocaleString('ru-RU')}</div><div class="k">лет (прибл.)</div></div>
-      <div class="stat full"><div class="v small">${y} г. ${m} мес. ${d} дн. • ${hours.toLocaleString('ru-RU')} часов</div><div class="k">точно</div></div>
+      <div class="stat full"><div class="v small">${hours.toLocaleString('ru-RU')} часов</div><div class="k">в часах</div></div>
     `;
   };
+
   const upd2 = () => {
-    const base = getDate('b1'), n = parseInt($('b2').value, 10), out = $('out2');
+    const base = getDate('b1');
+    const n = parseInt($('b2').value, 10);
+    const out = $('out2');
+    if (!out) return;
     if (!base || isNaN(n)){ out.innerHTML = '<span class="empty">—</span>'; return; }
-    const r = new Date(base); r.setDate(r.getDate() + n);
-    out.textContent = fmtD(r);
+    const r = new Date(base);
+    r.setDate(r.getDate() + n);
+    const weekday = r.toLocaleDateString('ru-RU', { weekday: 'long' });
+    out.innerHTML = `<b>${fmtD(r)}</b><div class="hintnote" style="margin-top:6px">${weekday.charAt(0).toUpperCase() + weekday.slice(1)}</div>`;
   };
+
   const upd3 = () => {
-    const d = getDate('c1'), out = $('out3');
-    if (!d){ out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>'; return; }
-    const weekday = d.toLocaleDateString('ru-RU', { weekday: 'long' });
+    const d = getDate('c1');
+    const out = $('out3');
+    if (!out) return;
+    if (!d){
+      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>';
+      return;
+    }
     const now = new Date();
     let years = now.getFullYear() - d.getFullYear();
     let months = now.getMonth() - d.getMonth();
@@ -2451,20 +2580,96 @@ function renderDates(el){
     if (days < 0){ months--; days += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
     if (months < 0){ years--; months += 12; }
     const totalDays = Math.floor((now - d) / 86400000);
+    const nextBd = new Date(now.getFullYear(), d.getMonth(), d.getDate());
+    if (nextBd < now) nextBd.setFullYear(nextBd.getFullYear() + 1);
+    const daysToBd = Math.ceil((nextBd - now) / 86400000);
     out.innerHTML = `
-      <div class="stat"><div class="v small">${weekday.charAt(0).toUpperCase() + weekday.slice(1)}</div><div class="k">день недели</div></div>
-      <div class="stat"><div class="v small">${fmtD(d)}</div><div class="k">дата</div></div>
-      <div class="stat"><div class="v small">${years} г. ${months} мес. ${days} дн.</div><div class="k">возраст</div></div>
-      <div class="stat"><div class="v small">${totalDays.toLocaleString('ru-RU')}</div><div class="k">дней всего</div></div>
+      <div class="stat full"><div class="v small">${years} г. ${months} мес. ${days} дн.</div><div class="k">возраст</div></div>
+      <div class="stat"><div class="v">${totalDays.toLocaleString('ru-RU')}</div><div class="k">дней всего</div></div>
+      <div class="stat"><div class="v">${daysToBd}</div><div class="k">до след. дня рождения</div></div>
     `;
   };
-  bindDateField(el, 'd1', false, upd1);
-  bindDateField(el, 'd2', false, upd1);
-  bindDateField(el, 'b1', false, upd2);
-  bindDateField(el, 'c1', false, upd3);
-  $('b2').addEventListener('input', upd2);
+
+  const upd4 = () => {
+    const d = getDate('w1');
+    const out = $('out4');
+    if (!out) return;
+    if (!d){
+      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>';
+      return;
+    }
+    const weekday = d.toLocaleDateString('ru-RU', { weekday: 'long' });
+    const wd = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    out.innerHTML = `
+      <div class="stat full"><div class="v small">${wd}</div><div class="k">день недели</div></div>
+      <div class="stat"><div class="v">${d.getDate()}</div><div class="k">число</div></div>
+      <div class="stat"><div class="v">${d.getMonth() + 1}</div><div class="k">месяц</div></div>
+      <div class="stat"><div class="v">${d.getFullYear()}</div><div class="k">год</div></div>
+      <div class="stat"><div class="v">${Math.ceil((d - new Date(d.getFullYear(), 0, 0)) / 86400000)}</div><div class="k">день года</div></div>
+    `;
+  };
+
+  const renderBody = () => {
+    if (mode === 'diff'){
+      body.innerHTML = `
+        <div class="opTitle">Сколько времени между <b>двумя датами</b></div>
+        <div class="twoCols">
+          <div>
+            <label class="fld">Дата A</label>
+            ${dateFieldWrap('d1', todayStr, false)}
+          </div>
+          <div>
+            <label class="fld">Дата B</label>
+            ${dateFieldWrap('d2', todayStr, false)}
+          </div>
+        </div>
+        <div class="stats" id="out1" style="margin-top:0"></div>`;
+      bindDateField(el, 'd1', false, upd1);
+      bindDateField(el, 'd2', false, upd1);
+      upd1();
+    } else if (mode === 'add'){
+      body.innerHTML = `
+        <div class="opTitle">Какая дата будет <b>через N дней</b></div>
+        <label class="fld">Начальная дата</label>
+        ${dateFieldWrap('b1', todayStr, false)}
+        <label class="fld" style="margin-top:12px">Сколько дней прибавить</label>
+        <input type="number" id="b2" placeholder="Например, 30" inputmode="numeric">
+        <div class="hintnote" style="text-align:left;margin-top:6px">Можно ввести отрицательное число, чтобы вычесть дни</div>
+        <label class="fld" style="margin-top:16px">Результат</label>
+        <div class="out" id="out2" style="font-size:18px;text-align:center"><span class="empty">—</span></div>`;
+      bindDateField(el, 'b1', false, upd2);
+      $('b2').addEventListener('input', upd2);
+      upd2();
+    } else if (mode === 'age'){
+      body.innerHTML = `
+        <div class="opTitle">Возраст по <b>дате рождения</b></div>
+        <label class="fld">Дата рождения</label>
+        ${dateFieldWrap('c1', todayStr, false)}
+        <div class="stats" id="out3" style="margin-top:14px"></div>`;
+      bindDateField(el, 'c1', false, upd3);
+      upd3();
+    } else {
+      body.innerHTML = `
+        <div class="opTitle">Какой <b>день недели</b> у даты</div>
+        <label class="fld">Дата</label>
+        ${dateFieldWrap('w1', todayStr, false)}
+        <div class="stats" id="out4" style="margin-top:14px"></div>`;
+      bindDateField(el, 'w1', false, upd4);
+      upd4();
+    }
+  };
+
+  modeSeg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (!b) return;
+    mode = b.dataset.m;
+    modeSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderBody();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
   setMainButton(() => '');
-  upd1(); upd3();
+  renderBody();
 }
 
 /* ============================================================
@@ -2608,7 +2813,7 @@ function renderUnits(el){
 }
 
 /* ============================================================
-   Навигация: главная → категория → инструмент
+   Навигация
    ============================================================ */
 const mainEl  = document.getElementById('main');
 const titleEl = document.getElementById('title');
@@ -2620,7 +2825,6 @@ let _currentCat = null;
 function cleanup(){
   if (_currentCleanup) { try { _currentCleanup(); } catch(e){} _currentCleanup = null; }
 }
-
 function resetMain(){
   _mbGetter = null;
   if (tg && tg.MainButton) { try { tg.MainButton.hide(); } catch(e){} }
@@ -2698,8 +2902,7 @@ function openTool(key){
 
 function goBack(){
   if (_view === 'tool'){
-    const cat = _currentCat || TOOL_CATEGORY[Object.keys(TOOLS).find(k => TOOLS[k] && TOOLS[k].title === titleEl.textContent)] || 'text';
-    openCategory(cat);
+    openCategory(_currentCat || 'text');
   } else if (_view === 'category'){
     renderHome();
   }
@@ -2725,7 +2928,6 @@ document.addEventListener('click', e => {
   try { input.setSelectionRange(pos, pos); } catch(_){}
 });
 
-/* ── Старт ── */
 renderHome();
 </script>
 </body>
