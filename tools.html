@@ -2161,10 +2161,8 @@ function renderQR(el){
     if (!inp) return;
     inp.addEventListener('input', () => {
       const raw = inp.value;
-      const pos = inp.selectionStart;
-      const wasAtEnd = pos >= raw.length;
       const formatted = formatPhoneRU(raw);
-      if (formatted !== raw && wasAtEnd){
+      if (formatted !== raw){
         inp.value = formatted;
         try { inp.setSelectionRange(formatted.length, formatted.length); } catch(_){}
       }
