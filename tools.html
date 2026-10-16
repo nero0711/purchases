@@ -230,20 +230,46 @@
   .caseBtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
   .caseBtns .btn{padding:8px 12px;font-size:13px;flex:0 1 auto;border-radius:10px;}
   .classRow{
-    display:flex;gap:12px;align-items:flex-start;
-    background:var(--sec);border-radius:12px;
-    padding:12px 14px;margin-bottom:8px;
-  }
-  .classBadge{
-    width:46px;height:46px;border-radius:10px;
-    background:var(--btn);color:var(--btn-text);
-    display:flex;align-items:center;justify-content:center;
-    font-weight:700;font-size:17px;flex-shrink:0;
-    letter-spacing:-.5px;
-  }
-  .classBody{flex:1;min-width:0;}
-  .classTitle{font-weight:600;font-size:14px;margin-bottom:3px;}
-  .classApp{font-size:12.5px;color:var(--hint);line-height:1.45;}
+  display:flex;gap:12px;align-items:flex-start;
+  background:var(--sec);border-radius:12px;
+  padding:12px 14px;margin-bottom:8px;
+}
+.classBadge{
+  width:46px;height:46px;border-radius:10px;
+  background:var(--btn);color:var(--btn-text);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:17px;flex-shrink:0;
+  letter-spacing:-.5px;
+}
+.classBody{flex:1;min-width:0;}
+.classTitle{font-weight:600;font-size:14px;margin-bottom:3px;}
+.classApp{font-size:12.5px;color:var(--hint);line-height:1.45;}
+
+.infoCard{
+  background:var(--sec);border-radius:12px;padding:12px 14px;
+  margin-top:8px;
+}
+.infoCard .t{font-size:12px;color:var(--hint);font-weight:600;
+  letter-spacing:.4px;margin-bottom:6px;}
+.infoCard .d{font-size:13.5px;line-height:1.5;}
+
+.resultBig{
+  background:linear-gradient(135deg,rgba(52,199,89,.12),rgba(52,199,89,.05));
+  border-radius:12px;padding:16px;text-align:center;margin-top:12px;
+}
+.resultBig .v{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;}
+.resultBig .k{font-size:12px;color:var(--hint);margin-top:4px;}
+
+.okBadge{
+  display:inline-block;padding:4px 10px;border-radius:20px;
+  font-size:12px;font-weight:600;
+}
+.okBadge.ok{background:rgba(52,199,89,.18);color:#1c7c3f;}
+.okBadge.bad{background:rgba(255,59,48,.18);color:#b03a2e;}
+@media (prefers-color-scheme: dark){
+  .okBadge.ok{color:#7ee2a8;}
+  .okBadge.bad{color:#ff8a82;}
+}
 
   .colorPreview{height:96px;border-radius:14px;margin-bottom:16px;border:1px solid var(--sep);background:#3498db;}
 
@@ -2995,7 +3021,6 @@ function renderOil(el){
 function renderElectric(el){
   let mode = 'by-cable';
 
-  // Сечение меди (мм²) → максимальный длительный ток (А), скрытая прокладка
   const CABLE_DATA = [
     { size: 0.5,  maxCurrent: 11 },
     { size: 0.75, maxCurrent: 15 },
@@ -3009,38 +3034,45 @@ function renderElectric(el){
 
   const BREAKERS = [3, 6, 10, 16, 20, 25, 32, 40, 50, 63];
 
-  const BREAKER_CLASSES = [
-    { c: 'B', threshold: 'Превышение в 3–5 раз',
-      app: 'Цепи с минимальными пусковыми токами: линии освещения, обогреватели, длинные линии электропередач в сельской местности.' },
-    { c: 'C', threshold: 'Превышение в 5–10 раз',
-      app: 'Самый универсальный класс для стандартных бытовых сетей: подходит для розеток, бытовой техники, холодильников, ПК.' },
-    { c: 'D', threshold: 'Превышение в 10–20 раз',
-      app: 'Промышленное оборудование и цепи с высокими пусковыми токами: мощные электродвигатели, насосы, сварочные аппараты.' },
-    { c: 'A', threshold: 'Превышение в 2–3 раза',
-      app: 'Высокоточные и сверхчувствительные цепи, защита полупроводниковой электроники (в быту почти не используется).' },
-    { c: 'K / Z', threshold: 'K: 8–12×  ·  Z: 2–3×',
-      app: 'Защита индуктивных нагрузок (класс K) и чувствительных электронных плат (класс Z) на производстве.' }
-  ];
+  // Класс автомата по назначению цепи
+  const APPS = {
+    sockets:  { label:'Розетки / бытовая техника', cls:'C',
+                why:'Стандарт для быта: розетки, освещение, компрессоры холодильников. Пусковые токи в 5–10 раз выше номинала.' },
+    lighting: { label:'Освещение / обогреватели', cls:'B',
+                why:'Минимальные пусковые токи: лампы, конвекторы, длинные линии. Достаточно порога 3–5×.' },
+    motors:   { label:'Двигатели / насосы / станки', cls:'D',
+                why:'Высокие пусковые токи (10–20× номинала): насосы, компрессоры, сварочные аппараты, промышленное оборудование.' },
+    weak:     { label:'Слаботочка / электроника', cls:'B',
+                why:'Точные цепи и полупроводниковая электроника — нужен мгновенный отклик при малейшем превышении.' }
+  };
 
   const RCD_RATINGS = [16, 25, 32, 40, 63, 80, 100, 125];
 
   const RCD_LEAKAGE = [
-    { v: 10,  label: '10 мА',  desc: 'Защита отдельных линий в детских, ванных и влажных помещениях. Срабатывает при малейшей утечке — есть риск ложных срабатываний.' },
-    { v: 30,  label: '30 мА',  desc: 'Стандарт для защиты людей от поражения током: розеточные группы, кухня, ванная, стиральная машина.' },
-    { v: 100, label: '100 мА', desc: 'Противопожарная защита на вводе в квартиру или частный дом (при наличии УЗО 30 мА на отдельных линиях).' },
-    { v: 300, label: '300 мА', desc: 'Противопожарная защита на вводе в крупный объект, где на линиях уже стоят быстрые УЗО 30 мА.' },
-    { v: 500, label: '500 мА', desc: 'Только противопожарная защита в промышленных щитах и на подстанциях.' }
+    { v: 10,  label:'10 мА',
+      desc:'Используется в мокрых зонах. Срабатывает при малейшей утечке — есть риск ложных срабатываний.' },
+    { v: 30,  label:'30 мА',
+      desc:'Стандарт для защиты людей: розетки, кухня, ванная, стиральная машина.' },
+    { v: 100, label:'100 мА',
+      desc:'Противопожарная защита на вводе в квартиру или частный дом. Ставится перед УЗО 30 мА на отдельных линиях.' },
+    { v: 300, label:'300 мА',
+      desc:'Противопожарная защита на вводе в крупный объект: офис, производство, многоквартирный дом.' },
+    { v: 500, label:'500 мА',
+      desc:'Только противопожарная защита в промышленных щитах и на подстанциях.' }
   ];
 
   const RCD_TYPES = [
-    { v: 'AC', desc: 'Реагирует только на переменный синусоидальный ток утечки. Устаревший тип, для современной техники не рекомендуется.' },
-    { v: 'A',  desc: 'Реагирует на переменный и пульсирующий постоянный ток утечки. Универсальный для быта: импульсные БП, стиральные машины, ПК.' },
-    { v: 'B',  desc: 'Реагирует на переменный, пульсирующий и гладкий постоянный ток. Для инверторной техники: солнечные панели, зарядки EV, частотные приводы.' },
-    { v: 'F',  desc: 'Как тип A, но с защитой от высокочастотных утечек. Для промышленного оборудования с частотными преобразователями.' },
-    { v: 'S',  desc: 'Селективный, с задержкой срабатывания. Ставится на вводе в паре с быстрыми УЗО 30 мА на линиях.' }
+    { v:'AC',
+      where:'Простые нагрузки без электроники',
+      desc:'Реагирует только на переменный ток утечки. Подходит для ламп накаливания, ТЭНов, обогревателей. Не защитит современную технику с импульсными блоками питания — поэтому в новых щитах не ставится.' },
+    { v:'A',
+      where:'Универсальный для дома и офиса',
+      desc:'Ловит переменный и пульсирующий постоянный ток утечки. Подходит для стиральных машин, посудомоек, холодильников, ПК, СВЧ, кондиционеров. Самый популярный тип в бытовых щитах.' },
+    { v:'B',
+      where:'Техника с инверторами и преобразователями',
+      desc:'Ловит утечки любого рода, включая гладкий постоянный ток. Нужен для солнечных панелей, зарядок электромобилей, частотных приводов, промышленного оборудования с инверторами.' }
   ];
 
-  // Рекомендации по кабелю для каждого номинала УЗО (при 220 В)
   const RCD_WIRE = {
     16:  { min: 1.5,  typical: 2.5, max: 6,  power: 3.52 },
     25:  { min: 2.5,  typical: 4,   max: 10, power: 5.5  },
@@ -3051,6 +3083,22 @@ function renderElectric(el){
     100: { min: 25,   typical: 35,  max: 70, power: 22.0 },
     125: { min: 35,   typical: 50,  max: 95, power: 27.5 }
   };
+
+  // Типы грунта для заземления (удельное сопротивление, Ом·м)
+  const SOILS = [
+    { v: 20,   label: 'Чернозём / торф' },
+    { v: 60,   label: 'Глина / суглинок' },
+    { v: 100,  label: 'Смешанный грунт' },
+    { v: 300,  label: 'Супесь / влажный песок' },
+    { v: 500,  label: 'Песок / каменистый' },
+    { v: 1000, label: 'Скальный / сухой песок' }
+  ];
+
+  const NORMS = [
+    { v: 4,  label: '4 Ом — газовое оборудование' },
+    { v: 10, label: '10 Ом — повторное заземление' },
+    { v: 30, label: '30 Ом — частный дом (бытовое)' }
+  ];
 
   function maxAllowedBreaker(mc){
     let best = BREAKERS[0];
@@ -3073,7 +3121,8 @@ function renderElectric(el){
       <div class="seg sm wrap" id="modeSeg">
         <button class="on" data-m="by-cable">⚡ По сечению</button>
         <button data-m="by-breaker">🔌 По автомату</button>
-        <button data-m="classes">📋 Классы</button>
+        <button data-m="power">📐 Мощность</button>
+        <button data-m="ground">⏚ Заземление</button>
         <button data-m="rcd">🛡 УЗО</button>
       </div>
       <div id="body"></div>
@@ -3084,11 +3133,14 @@ function renderElectric(el){
   const $ = id => el.querySelector('#' + id);
   let result = '';
 
-  /* ── Расчёт по сечению ── */
+  /* ── 1. По сечению ── */
   const updCable = () => {
     const sel = $('cableSel');
-    if (!sel) return;
+    const appSel = $('appSel');
+    if (!sel || !appSel) return;
     const size = parseFloat(sel.value);
+    const appKey = appSel.value;
+    const app = APPS[appKey];
     const row = CABLE_DATA.find(r => r.size === size);
     if (!row){ result = ''; refreshMainButton(); return; }
 
@@ -3104,13 +3156,27 @@ function renderElectric(el){
     $('rPwrRec').textContent = powerRec + ' кВт';
     $('rPwrMax').textContent = powerMax + ' кВт';
 
+    // Рекомендация класса
+    const classBlock = $('classBlock');
+    if (classBlock){
+      classBlock.innerHTML = `
+        <div class="classRow">
+          <div class="classBadge">${app.cls}</div>
+          <div class="classBody">
+            <div class="classTitle">Класс ${app.cls} для «${esc(app.label)}»</div>
+            <div class="classApp">${esc(app.why)}</div>
+          </div>
+        </div>`;
+    }
+
     result = `Кабель ${row.size} мм² (макс. ${row.maxCurrent} А)\n` +
              `Рекомендуемый автомат: ${recBrk} А (${powerRec} кВт)\n` +
-             `Максимум: ${maxBrk} А (${powerMax} кВт)`;
+             `Максимум: ${maxBrk} А (${powerMax} кВт)\n` +
+             `Класс автомата: ${app.cls} — ${app.label}`;
     refreshMainButton();
   };
 
-  /* ── Расчёт по автомату ── */
+  /* ── 2. По автомату ── */
   const updBreaker = () => {
     const sel = $('brkSel');
     if (!sel) return;
@@ -3124,11 +3190,262 @@ function renderElectric(el){
 
     result = `Автомат ${brk} А (${power} кВт)\n` +
              `Минимальное сечение: ${cable.size} мм²\n` +
-             `Макс. ток кабеля: ${cable.maxCurrent} А`;
+             `Макс. ток кабеля: ${cable.maxCurrent} А\n` +
+             `Рекомендуемый класс: C (универсальный для бытовых сетей)`;
     refreshMainButton();
   };
 
-  /* ── Расчёт по УЗО ── */
+  /* ── 3. Мощность ── */
+  let powerMode = 'dc';   // dc | ac1 | ac3
+  let powerTarget = 'pu'; // pu | pi | ui
+
+  const fmtNum = n => {
+    if (!isFinite(n)) return '—';
+    const r = Math.round(n * 1e6) / 1e6;
+    return r.toLocaleString('ru-RU', { maximumFractionDigits: 6 });
+  };
+
+  const updPower = () => {
+    const cosEl = $('powerCos');
+    const inp1 = $('powerInp1');
+    const inp2 = $('powerInp2');
+    if (!inp1 || !inp2) return;
+
+    const cos = powerMode === 'dc' ? 1 : (parseFloat(cosEl?.value) || 0.95);
+    const a = parseFloat(String(inp1.value).replace(',', '.'));
+    const b = parseFloat(String(inp2.value).replace(',', '.'));
+
+    const outI = $('powerOutI');
+    const outU = $('powerOutU');
+    const outP = $('powerOutP');
+    const outR = $('powerOutR');
+    const outRLabel = $('powerOutRLabel');
+
+    if (isNaN(a) || isNaN(b) || a <= 0 || b <= 0){
+      outI.textContent = '—';
+      outU.textContent = '—';
+      outP.textContent = '—';
+      outR.textContent = '—';
+      result = '';
+      refreshMainButton();
+      return;
+    }
+
+    let U, I, P;
+    const k3 = powerMode === 'ac3' ? Math.sqrt(3) : 1;
+
+    if (powerTarget === 'pu'){          // P и U → I, R
+      P = a; U = b;
+      I = P / (U * k3 * cos);
+    } else if (powerTarget === 'pi'){   // P и I → U, R
+      P = a; I = b;
+      U = P / (I * k3 * cos);
+    } else {                            // U и I → P, R
+      U = a; I = b;
+      P = U * I * k3 * cos;
+    }
+
+    // Сопротивление / импеданс
+    let R;
+    if (powerMode === 'dc') R = U / I;
+    else if (powerMode === 'ac1') R = U / I;          // полное сопротивление Z
+    else R = (U / Math.sqrt(3)) / I;                  // Z фазное для симметричной нагрузки
+
+    outP.textContent = fmtNum(P) + ' Вт';
+    outU.textContent = fmtNum(U) + ' В';
+    outI.textContent = fmtNum(I) + ' А';
+    outR.textContent = fmtNum(R) + ' Ом';
+
+    if (outRLabel){
+      outRLabel.textContent = powerMode === 'dc' ? 'Сопротивление R'
+        : powerMode === 'ac1' ? 'Полное сопротивление Z'
+        : 'Сопротивление одной фазы Z';
+    }
+
+    result = `Мощность: ${fmtNum(P)} Вт\nНапряжение: ${fmtNum(U)} В\nТок: ${fmtNum(I)} А\nСопротивление: ${fmtNum(R)} Ом`;
+    refreshMainButton();
+  };
+
+  const renderPower = () => {
+    const cosRow = powerMode !== 'dc';
+    const labels = {
+      pu: ['Мощность P, Вт', 'Напряжение U, В'],
+      pi: ['Мощность P, Вт', 'Ток I, А'],
+      ui: ['Напряжение U, В', 'Ток I, А']
+    }[powerTarget];
+
+    body.innerHTML = `
+      <div class="opTitle">Взаиморасчёт <b>P · U · I · R</b></div>
+      <div class="seg sm" id="powerModeSeg">
+        <button class="${powerMode==='dc'?'on':''}" data-pm="dc">DC</button>
+        <button class="${powerMode==='ac1'?'on':''}" data-pm="ac1">AC 1φ</button>
+        <button class="${powerMode==='ac3'?'on':''}" data-pm="ac3">AC 3φ</button>
+      </div>
+      <div class="seg sm" id="powerTargetSeg">
+        <button class="${powerTarget==='pu'?'on':''}" data-pt="pu">P и U</button>
+        <button class="${powerTarget==='pi'?'on':''}" data-pt="pi">P и I</button>
+        <button class="${powerTarget==='ui'?'on':''}" data-pt="ui">U и I</button>
+      </div>
+      ${cosRow ? `
+        <label class="fld">cos φ (коэффициент мощности)</label>
+        <select class="sel" id="powerCos">
+          <option value="1">1.00 — активная нагрузка (ТЭНы, лампы)</option>
+          <option value="0.95" selected>0.95 — компьютеры, бытовая техника</option>
+          <option value="0.9">0.90 — стиральные машины, пылесосы</option>
+          <option value="0.8">0.80 — двигатели, насосы</option>
+          <option value="0.7">0.70 — сварка, компрессоры</option>
+          <option value="0.6">0.60 — трансформаторы без компенсации</option>
+        </select>
+      ` : ''}
+      <div class="twoCols" style="margin-top:12px">
+        <div>
+          <label class="fld">${labels[0]}</label>
+          <input type="number" id="powerInp1" inputmode="decimal" placeholder="0" autocomplete="off">
+        </div>
+        <div>
+          <label class="fld">${labels[1]}</label>
+          <input type="number" id="powerInp2" inputmode="decimal" placeholder="0" autocomplete="off">
+        </div>
+      </div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="stats" style="margin-top:0">
+        <div class="stat"><div class="v small" id="powerOutP">—</div><div class="k">Мощность P</div></div>
+        <div class="stat"><div class="v small" id="powerOutU">—</div><div class="k">Напряжение U</div></div>
+        <div class="stat"><div class="v small" id="powerOutI">—</div><div class="k">Ток I</div></div>
+        <div class="stat"><div class="v small" id="powerOutR">—</div><div class="k" id="powerOutRLabel">Сопротивление R</div></div>
+      </div>
+      <div class="hintnote">
+        ${powerMode==='dc'
+          ? 'Постоянный ток: P = U × I. Для AC учитывается cos φ.'
+          : powerMode==='ac1'
+            ? 'Однофазный: P = U × I × cos φ. Z — полное сопротивление.'
+            : 'Трёхфазный: P = √3 × U × I × cos φ, где U — линейное (380 В). Z — сопротивление одной фазы.'}
+      </div>`;
+
+    $('powerModeSeg').addEventListener('click', e => {
+      const b = e.target.closest('button[data-pm]');
+      if (!b) return;
+      powerMode = b.dataset.pm;
+      renderPower();
+    });
+    $('powerTargetSeg').addEventListener('click', e => {
+      const b = e.target.closest('button[data-pt]');
+      if (!b) return;
+      powerTarget = b.dataset.pt;
+      renderPower();
+    });
+    const cosEl = $('powerCos');
+    if (cosEl) cosEl.addEventListener('change', updPower);
+    $('powerInp1').addEventListener('input', updPower);
+    $('powerInp2').addEventListener('input', updPower);
+    updPower();
+  };
+
+  /* ── 4. Заземление ── */
+  const updGround = () => {
+    const soilEl = $('gSoil');
+    const lenEl = $('gLen');
+    const diaEl = $('gDia');
+    const nEl = $('gN');
+    const normEl = $('gNorm');
+    if (!soilEl || !lenEl || !diaEl || !nEl || !normEl) return;
+
+    const rho = parseFloat(soilEl.value);
+    const L = parseFloat(lenEl.value);
+    const d_mm = parseFloat(diaEl.value);
+    const n = parseInt(nEl.value, 10);
+    const norm = parseFloat(normEl.value);
+
+    if (isNaN(rho) || isNaN(L) || isNaN(d_mm) || isNaN(n) || L <= 0 || d_mm <= 0 || n < 1){
+      $('gR1').textContent = '—';
+      $('gRgrp').textContent = '—';
+      $('gVerdict').innerHTML = '<span class="empty">Введите все параметры</span>';
+      result = '';
+      refreshMainButton();
+      return;
+    }
+
+    // Одиночный вертикальный стержень (упрощённая формула)
+    const d = d_mm / 1000;                    // в метрах
+    const R1 = (rho / (2 * Math.PI * L)) * Math.log(4 * L / d);
+
+    // Коэффициент использования группы стержней (при расстоянии = 2L)
+    const etaTable = { 1:1, 2:0.85, 3:0.80, 4:0.75, 5:0.72, 6:0.70, 8:0.65, 10:0.60, 15:0.55, 20:0.50 };
+    let eta = 0.5;
+    for (const [k, v] of Object.entries(etaTable)){
+      if (n <= parseInt(k, 10)){ eta = v; break; }
+    }
+
+    const Rgrp = R1 / (n * eta);
+
+    $('gR1').textContent = R1.toFixed(2) + ' Ом';
+    $('gRgrp').textContent = Rgrp.toFixed(2) + ' Ом';
+
+    const ok = Rgrp <= norm;
+    $('gVerdict').innerHTML = ok
+      ? `<span class="okBadge ok">✓ Соответствует норме ${norm} Ом</span>`
+      : `<span class="okBadge bad">✗ Не хватает: нужно ${norm} Ом</span>`;
+
+    result = `Сопротивление одного заземлителя: ${R1.toFixed(2)} Ом\n` +
+             `Сопротивление группы из ${n} шт: ${Rgrp.toFixed(2)} Ом\n` +
+             `Норматив: ${norm} Ом — ${ok ? 'соответствует' : 'не соответствует'}`;
+    refreshMainButton();
+  };
+
+  const renderGround = () => {
+    body.innerHTML = `
+      <div class="opTitle">Расчёт <b>заземления</b> (вертикальные стержни)</div>
+      <div class="twoCols">
+        <div>
+          <label class="fld">Тип грунта</label>
+          <select class="sel" id="gSoil">
+            ${SOILS.map(s => `<option value="${s.v}">${s.label}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="fld">Норматив</label>
+          <select class="sel" id="gNorm">
+            ${NORMS.map(n => `<option value="${n.v}"${n.v===30?' selected':''}>${n.label}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="twoCols">
+        <div>
+          <label class="fld">Длина стержня, м</label>
+          <input type="number" id="gLen" value="3" step="0.5" min="0.5" inputmode="decimal" autocomplete="off">
+        </div>
+        <div>
+          <label class="fld">Диаметр, мм</label>
+          <input type="number" id="gDia" value="16" step="1" min="6" inputmode="decimal" autocomplete="off">
+        </div>
+      </div>
+      <label class="fld" style="margin-top:12px">Количество стержней, шт</label>
+      <input type="number" id="gN" value="3" min="1" max="30" inputmode="numeric" autocomplete="off">
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="stats" style="margin-top:0">
+        <div class="stat"><div class="v" id="gR1">—</div><div class="k">один стержень</div></div>
+        <div class="stat"><div class="v" id="gRgrp">—</div><div class="k">группа стержней</div></div>
+      </div>
+      <div class="resultBig">
+        <div class="k" style="margin-bottom:6px">Соответствие нормативу</div>
+        <div id="gVerdict"></div>
+      </div>
+      <div class="hintnote">
+        Упрощённый расчёт: R = (ρ / 2πL) · ln(4L/d). Стержни расположены с шагом ≈ 2L,<br>
+        учтён коэффициент использования группы (η). Для точного проекта — замеры грунта.
+      </div>`;
+    ['gSoil','gLen','gDia','gN','gNorm'].forEach(id => {
+      const n = $('g' + id.slice(1)) || $('gSoil') || el.querySelector('#'+id);
+      const node = el.querySelector('#' + id);
+      if (node){
+        node.addEventListener('input', updGround);
+        node.addEventListener('change', updGround);
+      }
+    });
+    updGround();
+  };
+
+  /* ── 5. УЗО ── */
   const updRcd = () => {
     const ratingEl = $('rcdRating');
     const leakEl = $('rcdLeakage');
@@ -3139,12 +3456,7 @@ function renderElectric(el){
     const leak = RCD_LEAKAGE.find(l => String(l.v) === leakEl.value) || RCD_LEAKAGE[1];
     const type = RCD_TYPES.find(t => t.v === typeEl.value) || RCD_TYPES[1];
     const wire = RCD_WIRE[rating];
-
-    if (!wire){
-      result = '';
-      refreshMainButton();
-      return;
-    }
+    if (!wire){ result = ''; refreshMainButton(); return; }
 
     $('rcdPower').textContent = wire.power.toFixed(2) + ' кВт';
     $('rcdWire').textContent = wire.typical + ' мм²';
@@ -3152,18 +3464,65 @@ function renderElectric(el){
     $('rcdRatingInfo').textContent = rating + ' А';
     $('rcdLeakageLabel').textContent = leak.label;
     $('rcdLeakageDesc').textContent = leak.desc;
-    $('rcdTypeLabel').textContent = type.v;
+    $('rcdTypeLabel').textContent = 'Тип ' + type.v;
+    $('rcdTypeWhere').textContent = type.where;
     $('rcdTypeDesc').textContent = type.desc;
 
     result = `УЗО ${rating} А / ${leak.label} / тип ${type.v}\n` +
              `Макс. мощность: ${wire.power.toFixed(2)} кВт\n` +
              `Кабель: ${wire.min}–${wire.max} мм² (типовой ${wire.typical} мм²)\n` +
              `Назначение: ${leak.desc}\n` +
-             `Тип ${type.v}: ${type.desc}`;
+             `Тип ${type.v}: ${type.where}. ${type.desc}`;
     refreshMainButton();
   };
 
-  /* ── Рендер разделов ── */
+  const renderRcd = () => {
+    body.innerHTML = `
+      <div class="opTitle">Подбор <b>УЗО</b></div>
+      <label class="fld">Номинальный ток</label>
+      <select class="sel" id="rcdRating">
+        ${RCD_RATINGS.map(r => `<option value="${r}"${r===25?' selected':''}>${r} А</option>`).join('')}
+      </select>
+      <label class="fld" style="margin-top:12px">Номинальный ток утечки</label>
+      <select class="sel" id="rcdLeakage">
+        ${RCD_LEAKAGE.map(l => `<option value="${l.v}"${l.v===30?' selected':''}>${l.label}</option>`).join('')}
+      </select>
+      <label class="fld" style="margin-top:12px">Тип по роду тока утечки</label>
+      <select class="sel" id="rcdType">
+        ${RCD_TYPES.map(t => `<option value="${t.v}"${t.v==='A'?' selected':''}>Тип ${t.v} — ${t.where}</option>`).join('')}
+      </select>
+
+      <label class="fld" style="margin-top:16px">Параметры</label>
+      <div class="stats" style="margin-top:0">
+        <div class="stat"><div class="v" id="rcdRatingInfo">—</div><div class="k">номинальный ток</div></div>
+        <div class="stat"><div class="v" id="rcdPower">—</div><div class="k">макс. мощность</div></div>
+        <div class="stat"><div class="v" id="rcdWire">—</div><div class="k">типовое сечение кабеля</div></div>
+        <div class="stat"><div class="v small" id="rcdWireRange">—</div><div class="k">диапазон сечения</div></div>
+      </div>
+
+      <div class="infoCard">
+        <div class="t">ТОК УТЕЧКИ — <span id="rcdLeakageLabel">30 мА</span></div>
+        <div class="d" id="rcdLeakageDesc">—</div>
+      </div>
+
+      <div class="infoCard">
+        <div class="t">ТИП УЗО — <span id="rcdTypeLabel">A</span></div>
+        <div class="d" style="font-weight:600;margin-bottom:6px" id="rcdTypeWhere">—</div>
+        <div class="d" id="rcdTypeDesc">—</div>
+      </div>
+
+      <div class="hintnote">
+        Правило: номинал УЗО <b>не ниже</b> номинала автомата на этой линии.<br>
+        На вводе — противопожарное 100–300 мА, на отдельных линиях — защитное 10–30 мА.
+      </div>`;
+
+    $('rcdRating').addEventListener('change', updRcd);
+    $('rcdLeakage').addEventListener('change', updRcd);
+    $('rcdType').addEventListener('change', updRcd);
+    updRcd();
+  };
+
+  /* ── Рендер ── */
   const renderBody = () => {
     if (mode === 'by-cable'){
       body.innerHTML = `
@@ -3179,6 +3538,10 @@ function renderElectric(el){
           <option value="10">10.0 мм² — вводной</option>
           <option value="16">16.0 мм²</option>
         </select>
+        <label class="fld" style="margin-top:12px">Назначение цепи</label>
+        <select class="sel" id="appSel">
+          ${Object.entries(APPS).map(([k,a]) => `<option value="${k}"${k==='sockets'?' selected':''}>${a.label}</option>`).join('')}
+        </select>
         <label class="fld" style="margin-top:16px">Результат</label>
         <div class="stats" style="margin-top:0">
           <div class="stat"><div class="v" id="rMaxCur">—</div><div class="k">макс. длительный ток</div></div>
@@ -3188,90 +3551,36 @@ function renderElectric(el){
           <div class="stat"><div class="v small" id="rPwrRec">—</div><div class="k">кВт при рекомендуемом</div></div>
           <div class="stat"><div class="v small" id="rPwrMax">—</div><div class="k">кВт при максимальном</div></div>
         </div>
-        <div class="hintnote">
-          Медь, однофазная сеть 220 В, скрытая прокладка.<br>
-          Для розеток обычно берут <b>класс C</b>, для освещения — <b>класс B</b>.
-        </div>`;
+        <label class="fld" style="margin-top:16px">Рекомендуемый класс</label>
+        <div id="classBlock"></div>`;
       $('cableSel').addEventListener('change', updCable);
+      $('appSel').addEventListener('change', updCable);
       updCable();
     } else if (mode === 'by-breaker'){
       body.innerHTML = `
         <div class="opTitle">Подобрать кабель <b>по номиналу автомата</b></div>
         <label class="fld">Номинал автомата</label>
         <select class="sel" id="brkSel">
-          ${BREAKERS.map(b => `<option value="${b}"${b === 16 ? ' selected' : ''}>${b} А</option>`).join('')}
+          ${BREAKERS.map(b => `<option value="${b}"${b===16?' selected':''}>${b} А</option>`).join('')}
         </select>
         <label class="fld" style="margin-top:16px">Результат</label>
         <div class="stats" style="margin-top:0">
           <div class="stat"><div class="v" id="rCableSize">—</div><div class="k">минимальное сечение</div></div>
           <div class="stat"><div class="v" id="rCableMax">—</div><div class="k">макс. ток этого кабеля</div></div>
           <div class="stat full"><div class="v" id="rBrkPwr">—</div><div class="k">мощность автомата</div></div>
+        </div>
+        <div class="hintnote">
+          Для бытовых сетей подходит <b>класс C</b> (универсальный),<br>
+          для двигателей и насосов — <b>класс D</b>, для освещения — <b>класс B</b>.
         </div>`;
       $('brkSel').addEventListener('change', updBreaker);
       updBreaker();
-    } else if (mode === 'classes'){
-      body.innerHTML = `
-        <div class="opTitle">Классы автоматических выключателей</div>
-        ${BREAKER_CLASSES.map(c => `
-          <div class="classRow">
-            <div class="classBadge">${c.c}</div>
-            <div class="classBody">
-              <div class="classTitle">${esc(c.threshold)}</div>
-              <div class="classApp">${esc(c.app)}</div>
-            </div>
-          </div>
-        `).join('')}
-        <div class="hintnote">
-          Буква класса = кратность тока мгновенного расцепления к номиналу.<br>
-          Например, автомат C16 сработает мгновенно при токе 80–160 А.
-        </div>`;
-      result = BREAKER_CLASSES.map(c => `${c.c} — ${c.threshold}: ${c.app}`).join('\n\n');
-      refreshMainButton();
-    } else if (mode === 'rcd'){
-      body.innerHTML = `
-        <div class="opTitle">Подбор <b>УЗО</b> (устройства защитного отключения)</div>
-        <label class="fld">Номинальный ток</label>
-        <select class="sel" id="rcdRating">
-          ${RCD_RATINGS.map(r => `<option value="${r}"${r === 25 ? ' selected' : ''}>${r} А</option>`).join('')}
-        </select>
-
-        <label class="fld" style="margin-top:12px">Номинальный ток утечки</label>
-        <select class="sel" id="rcdLeakage">
-          ${RCD_LEAKAGE.map(l => `<option value="${l.v}"${l.v === 30 ? ' selected' : ''}>${l.label}</option>`).join('')}
-        </select>
-
-        <label class="fld" style="margin-top:12px">Тип по роду тока утечки</label>
-        <select class="sel" id="rcdType">
-          ${RCD_TYPES.map(t => `<option value="${t.v}"${t.v === 'A' ? ' selected' : ''}>Тип ${t.v}</option>`).join('')}
-        </select>
-
-        <label class="fld" style="margin-top:16px">Параметры</label>
-        <div class="stats" style="margin-top:0">
-          <div class="stat"><div class="v" id="rcdRatingInfo">—</div><div class="k">номинальный ток</div></div>
-          <div class="stat"><div class="v" id="rcdPower">—</div><div class="k">макс. мощность</div></div>
-          <div class="stat"><div class="v" id="rcdWire">—</div><div class="k">типовое сечение кабеля</div></div>
-          <div class="stat"><div class="v small" id="rcdWireRange">—</div><div class="k">диапазон сечения</div></div>
-        </div>
-
-        <div class="hashrow" style="margin-top:16px">
-          <div class="name">ТОК УТЕЧКИ — <span id="rcdLeakageLabel">30 мА</span></div>
-          <div class="val" style="font-family:inherit;font-size:13.5px;line-height:1.5" id="rcdLeakageDesc">—</div>
-        </div>
-
-        <div class="hashrow">
-          <div class="name">ТИП УЗО — <span id="rcdTypeLabel">A</span></div>
-          <div class="val" style="font-family:inherit;font-size:13.5px;line-height:1.5" id="rcdTypeDesc">—</div>
-        </div>
-
-        <div class="hintnote">
-          Правило: номинальный ток УЗО должен быть <b>не ниже</b> номинала автомата на этой линии.<br>
-          На вводе ставят противопожарное УЗО 100–300 мА, на линиях — защитное 10–30 мА.
-        </div>`;
-
-      $('rcdRating').addEventListener('change', updRcd);
-      $('rcdLeakage').addEventListener('change', updRcd);
-      $('rcdType').addEventListener('change', updRcd);
-      updRcd();
+    } else if (mode === 'power'){
+      renderPower();
+    } else if (mode === 'ground'){
+      renderGround();
+    } else {
+      renderRcd();
     }
   };
 
