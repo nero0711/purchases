@@ -41,10 +41,7 @@
   .back:active{transform:scale(.92);}
   .hidden{display:none !important;}
 
-  .catList{
-    display:flex;flex-direction:column;gap:10px;
-    animation:fade .18s ease;
-  }
+  .catList{display:flex;flex-direction:column;gap:10px;animation:fade .18s ease;}
   .cat{
     display:flex;align-items:center;gap:14px;
     background:var(--sec);border:0;border-radius:16px;
@@ -65,10 +62,7 @@
     font-size:12.5px;color:var(--hint);
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
-  .catCount{
-    font-size:14px;color:var(--hint);font-weight:700;
-    flex-shrink:0;display:flex;align-items:center;gap:2px;
-  }
+  .catCount{font-size:14px;color:var(--hint);font-weight:700;flex-shrink:0;}
 
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;animation:fade .18s ease;}
   .card{
@@ -86,7 +80,7 @@
 
   label.fld{display:block;font-size:13px;color:var(--hint);margin:0 0 6px 2px;font-weight:500;}
 
-  textarea,input[type=text],input[type=password],input[type=datetime-local],input[type=date],input[type=number]{
+  textarea,input[type=text],input[type=password],input[type=datetime-local],input[type=date],input[type=number],input[type=email],input[type=tel]{
     width:100%;background:var(--sec);border:1.5px solid transparent;
     border-radius:12px;padding:12px 14px;color:var(--text);
     font-family:inherit;font-size:16px;line-height:1.45;resize:vertical;
@@ -94,7 +88,7 @@
     -webkit-appearance:none;appearance:none;
   }
   textarea{min-height:110px;}
-  textarea:focus,input[type=text]:focus,input[type=password]:focus,input[type=datetime-local]:focus,input[type=date]:focus,input[type=number]:focus{border-color:var(--btn);}
+  textarea:focus,input[type=text]:focus,input[type=password]:focus,input[type=datetime-local]:focus,input[type=date]:focus,input[type=number]:focus,input[type=email]:focus,input[type=tel]:focus{border-color:var(--btn);}
   textarea::placeholder,input::placeholder{color:var(--hint);}
   input[type=password]::-ms-reveal,
   input[type=password]::-ms-clear{display:none;}
@@ -109,7 +103,6 @@
     width:38px;height:38px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
     cursor:pointer;font-size:18px;font-family:inherit;
-    transition:background .15s,color .15s,transform .12s;
     -webkit-tap-highlight-color:transparent;
   }
   .pwd-toggle:active{transform:translateY(-50%) scale(.9);}
@@ -128,7 +121,6 @@
     width:38px;height:38px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
     cursor:pointer;font-size:18px;font-family:inherit;
-    transition:background .15s,color .15s,transform .12s;
     -webkit-tap-highlight-color:transparent;
   }
   .dateWrap .dateBtn:active{transform:translateY(-50%) scale(.9);}
@@ -146,6 +138,7 @@
     flex:1 0 calc(50% - 3px);min-height:44px;
     padding:8px 6px;font-size:13px;line-height:1.2;
   }
+  .seg.wrap button.wide{flex:1 0 100%;}
   .opTitle{
     font-size:14px;color:var(--hint);font-weight:500;
     margin:2px 2px 10px;text-align:center;line-height:1.4;
@@ -196,16 +189,12 @@
   .convRow{
     display:flex;align-items:center;gap:10px;
     background:var(--sec);border-radius:10px;padding:11px 13px;margin-bottom:8px;
-    font-family:inherit;
   }
   .convRow .cn{
     font-size:13px;color:var(--hint);flex:1;min-width:0;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
-  .convRow .cv{
-    font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;
-    white-space:nowrap;
-  }
+  .convRow .cv{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
   .convRow .cu{font-size:12px;color:var(--hint);font-weight:500;margin-left:2px;}
 
   .letters{
@@ -225,7 +214,7 @@
     margin-top:14px;background:#fff;border-radius:16px;padding:14px;
     display:flex;justify-content:center;align-items:center;min-height:120px;
   }
-  .qrbox canvas{width:100%;max-width:300px;height:auto;image-rendering:pixelated;display:block;}
+  .qrbox canvas{width:100%;max-width:340px;height:auto;image-rendering:pixelated;display:block;}
 
   .err{color:#e0453e;font-size:13px;margin-top:10px;font-weight:500;}
   .hintnote{color:var(--hint);font-size:12px;margin-top:10px;text-align:center;}
@@ -233,9 +222,7 @@
   .chk{display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 0;cursor:pointer;user-select:none;}
   .chk input{width:18px;height:18px;accent-color:var(--btn);flex-shrink:0;}
 
-  input[type=range]{
-    width:100%;height:32px;accent-color:var(--btn);background:transparent;
-  }
+  input[type=range]{width:100%;height:32px;accent-color:var(--btn);background:transparent;}
 
   .strength{height:8px;background:var(--sec);border-radius:6px;margin-top:12px;overflow:hidden;}
   .strength .bar{height:100%;width:0;transition:width .3s,background .3s;border-radius:6px;}
@@ -243,10 +230,7 @@
   .caseBtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
   .caseBtns .btn{padding:8px 12px;font-size:13px;flex:0 1 auto;border-radius:10px;}
 
-  .colorPreview{
-    height:96px;border-radius:14px;margin-bottom:16px;
-    border:1px solid var(--sep);background:#3498db;
-  }
+  .colorPreview{height:96px;border-radius:14px;margin-bottom:16px;border:1px solid var(--sep);background:#3498db;}
 
   .twoCols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
   @media (max-width:520px) and (orientation:portrait){
@@ -257,8 +241,7 @@
 
   .diff2{
     margin-top:6px;background:var(--sec);border-radius:12px;padding:8px;
-    display:grid;gap:2px 6px;
-    max-height:520px;overflow-y:auto;
+    display:grid;gap:2px 6px;max-height:520px;overflow-y:auto;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
     font-size:12.5px;line-height:1.5;
   }
@@ -266,9 +249,7 @@
   .diff2.unified{grid-template-columns:auto 1fr;column-gap:8px;}
   .diff2 .lno{
     color:var(--hint);font-size:11px;text-align:right;
-    padding:1px 2px;user-select:none;
-    font-variant-numeric:tabular-nums;
-    min-width:22px;
+    padding:1px 2px;user-select:none;font-variant-numeric:tabular-nums;min-width:22px;
   }
   .diff2 .cell{
     padding:1px 8px;white-space:pre-wrap;word-break:break-word;
@@ -283,15 +264,13 @@
     .diff2 .cell.del{color:#ff8a82;}
   }
   .diff2 .hdr{
-    color:var(--hint);font-size:11px;
-    letter-spacing:.4px;margin:6px 4px 2px;font-weight:600;
-    text-align:center;
+    color:var(--hint);font-size:11px;letter-spacing:.4px;
+    margin:6px 4px 2px;font-weight:600;text-align:center;
   }
   .diff2 .hdr.span2{grid-column:span 2;}
   .diff2 .summary{
     grid-column:1/-1;color:var(--hint);font-size:11px;
-    letter-spacing:.4px;margin:8px 4px 2px;font-weight:600;
-    text-align:center;
+    letter-spacing:.4px;margin:8px 4px 2px;font-weight:600;text-align:center;
   }
 
   select.sel{
@@ -300,14 +279,10 @@
     font-family:inherit;font-size:15px;outline:none;appearance:none;
     -webkit-appearance:none;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%23888' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");
-    background-repeat:no-repeat;
-    background-position:right 12px center;
+    background-repeat:no-repeat;background-position:right 12px center;
   }
 
-  input[type=color]{
-    width:100%;height:52px;border:0;border-radius:12px;
-    background:var(--sec);padding:4px;cursor:pointer;
-  }
+  input[type=color]{width:100%;height:52px;border:0;border-radius:12px;background:var(--sec);padding:4px;cursor:pointer;}
 
   .toast{
     position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
@@ -351,10 +326,7 @@ function refreshMainButton(){
   let r = '';
   try { r = _mbGetter() || ''; } catch(e){ r = ''; }
   if (String(r).trim().length){
-    try {
-      tg.MainButton.setText('Отправить в чат');
-      tg.MainButton.show();
-    } catch(e){}
+    try { tg.MainButton.setText('Отправить в чат'); tg.MainButton.show(); } catch(e){}
   } else {
     try { tg.MainButton.hide(); } catch(e){}
   }
@@ -365,9 +337,7 @@ if (tg && tg.MainButton){
     let text = '';
     try { text = String(_mbGetter() || ''); } catch(e){}
     if (!text.trim()) return;
-    try {
-      tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(text));
-    } catch(e){}
+    try { tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(text)); } catch(e){}
   });
 }
 
@@ -391,11 +361,9 @@ async function copyText(txt){
       await navigator.clipboard.writeText(txt);
     } else {
       const ta = document.createElement('textarea');
-      ta.value = txt;
-      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
       document.body.appendChild(ta); ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+      document.execCommand('copy'); document.body.removeChild(ta);
     }
     toast('Скопировано');
     if (tg && tg.HapticFeedback) try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
@@ -412,20 +380,16 @@ function parseUserDate(str, withTime){
   if (!str) return null;
   str = String(str).trim();
   if (!str) return null;
-
   let time = { h: 0, m: 0, s: 0 };
   let hasTime = false;
-
   const timeMatch = str.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s*$/);
   if (timeMatch){
     const h = +timeMatch[1], m = +timeMatch[2], s = timeMatch[3] ? +timeMatch[3] : 0;
     if (h > 23 || m > 59 || s > 59) return null;
-    time = { h, m, s };
-    hasTime = true;
+    time = { h, m, s }; hasTime = true;
     str = str.slice(0, timeMatch.index).trim();
     if (!str) return null;
   }
-
   let y, mo, d;
   let m = str.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})$/);
   if (m){ y = +m[1]; mo = +m[2]; d = +m[3]; }
@@ -437,8 +401,7 @@ function parseUserDate(str, withTime){
     } else {
       m = str.match(/^(\d{8})$/);
       if (m){
-        const s = m[1];
-        const first4 = +s.slice(0,4);
+        const s = m[1]; const first4 = +s.slice(0,4);
         if (first4 >= 1900 && first4 <= 2199){ y = first4; mo = +s.slice(4,6); d = +s.slice(6,8); }
         else { d = +s.slice(0,2); mo = +s.slice(2,4); y = +s.slice(4,8); }
       } else {
@@ -451,7 +414,6 @@ function parseUserDate(str, withTime){
       }
     }
   }
-
   if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1900 || y > 2199) return null;
   const dt = new Date(y, mo - 1, d, time.h, time.m, time.s);
   if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
@@ -508,12 +470,9 @@ function bindDateField(container, id, withTime, onChange){
     if (p){ txt.value = formatUserDate(p.date, withTime); onChange(); }
   });
   btn.addEventListener('click', e => {
-    e.preventDefault();
-    syncNative();
-    try {
-      if (typeof native.showPicker === 'function') native.showPicker();
-      else native.click();
-    } catch(err) { try { native.click(); } catch(_){} }
+    e.preventDefault(); syncNative();
+    try { if (typeof native.showPicker === 'function') native.showPicker(); else native.click(); }
+    catch(err) { try { native.click(); } catch(_){} }
   });
   native.addEventListener('change', () => {
     if (!native.value) return;
@@ -687,7 +646,7 @@ function translit(text, mode){
 }
 
 /* ============================================================
-   QR-код
+   QR-код (расширенный: до версии 15)
    ============================================================ */
 const QR = (function(){
   const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
@@ -719,6 +678,7 @@ const QR = (function(){
     for (let i=data.length;i<res.length;i++) out.push(res[i]);
     return out;
   }
+  // Формат: {align, L:[totalData, ecPerBlock, [[count, dataLen], ...]], M/Q/H аналогично}
   const INFO = [ null,
     {align:[],         L:[19,7, [[1,19]]],          M:[16,10,[[1,16]]],           Q:[13,13,[[1,13]]],           H:[9,17, [[1,9]]]},
     {align:[6,18],     L:[34,10,[[1,34]]],          M:[28,16,[[1,28]]],           Q:[22,22,[[1,22]]],           H:[16,28,[[1,16]]]},
@@ -729,7 +689,12 @@ const QR = (function(){
     {align:[6,22,38],  L:[156,20,[[2,78]]],         M:[124,18,[[4,31]]],          Q:[88,18,[[2,14],[4,15]]],    H:[66,26,[[4,13],[1,14]]]},
     {align:[6,24,42],  L:[194,24,[[2,97]]],         M:[154,22,[[2,38],[2,39]]],   Q:[110,22,[[4,18],[2,19]]],   H:[86,26,[[4,14],[2,15]]]},
     {align:[6,26,46],  L:[232,30,[[2,116]]],        M:[182,22,[[3,36],[2,37]]],   Q:[132,20,[[4,16],[4,17]]],   H:[100,24,[[4,12],[4,13]]]},
-    {align:[6,28,50],  L:[274,18,[[2,68],[2,69]]],  M:[216,26,[[4,43],[1,44]]],   Q:[154,24,[[6,19],[2,20]]],   H:[122,28,[[6,15],[2,16]]]}
+    {align:[6,28,50],  L:[274,18,[[2,68],[2,69]]],  M:[216,26,[[4,43],[1,44]]],   Q:[154,24,[[6,19],[2,20]]],   H:[122,28,[[6,15],[2,16]]]},
+    {align:[6,30,54],  L:[324,20,[[4,81]]],         M:[254,30,[[1,82],[4,43]]],   Q:[180,28,[[4,22],[4,23]]],   H:[140,24,[[3,12],[8,13]]]},
+    {align:[6,32,58],  L:[370,24,[[2,92],[2,93]]],  M:[290,22,[[6,36],[2,37]]],   Q:[206,26,[[4,20],[6,21]]],   H:[158,28,[[7,14],[4,15]]]},
+    {align:[6,34,62],  L:[428,26,[[4,107]]],        M:[334,22,[[8,37],[1,38]]],   Q:[244,24,[[8,20],[4,21]]],   H:[180,22,[[12,11],[4,12]]]},
+    {align:[6,26,46,66], L:[461,30,[[3,115],[1,116]]], M:[365,24,[[4,40],[5,41]]], Q:[261,20,[[11,16],[5,17]]], H:[197,24,[[11,12],[5,13]]]},
+    {align:[6,26,48,70], L:[523,22,[[5,87],[1,88]]], M:[415,24,[[5,41],[5,42]]], Q:[295,30,[[5,24],[7,25]]], H:[223,24,[[11,12],[7,13]]]}
   ];
   const EC_BITS = {L:1, M:0, Q:3, H:2};
   const MASKS = [
@@ -867,13 +832,13 @@ const QR = (function(){
   function encode(text, ecl){
     const bytes = enc.encode(text);
     let ver=0, spec=null;
-    for (let v=1;v<=10;v++){
+    for (let v=1;v<=15;v++){
       const s = INFO[v][ecl];
-      const cbits = v<10?8:16;
-      if (4+cbits+bytes.length*8 <= s[0]*8){ ver=v; spec=s; break; }
+      const cbits = v < 10 ? 8 : 16;
+      if (4 + cbits + bytes.length * 8 <= s[0] * 8){ ver=v; spec=s; break; }
     }
-    if (!ver) throw new Error('Текст слишком длинный (макс. 274 байта)');
-    const totalData=spec[0], blocks=spec[2], ecLen=spec[1];
+    if (!ver) throw new Error('Текст слишком длинный для QR (макс. ~520 байт)');
+    const totalData = spec[0], blocks = spec[2], ecLen = spec[1];
     const bits = [];
     const put = (val,len) => { for (let i=len-1;i>=0;i--) bits.push((val>>>i)&1); };
     put(4,4); put(bytes.length, ver<10?8:16);
@@ -918,7 +883,7 @@ const QR = (function(){
     quiet = quiet==null?4:quiet;
     const {matrix, size} = res;
     const total = size + quiet*2;
-    const scale = Math.max(2, Math.round(360/total));
+    const scale = Math.max(2, Math.floor(360/total));
     const px = total*scale;
     canvas.width = px; canvas.height = px;
     canvas.style.width = '100%';
@@ -1128,8 +1093,7 @@ function parseScalarValue(str){
     for (const pair of inner.split(',')){
       const idx = pair.indexOf(':');
       if (idx < 0) continue;
-      const k = pair.slice(0,idx).trim();
-      const v = pair.slice(idx+1).trim();
+      const k = pair.slice(0,idx).trim(), v = pair.slice(idx+1).trim();
       obj[k] = parseScalarValue(v);
     }
     return obj;
@@ -1165,13 +1129,11 @@ function parseYAML(text){
         else if (/^[^:]+:\s?/.test(rest) && !rest.startsWith('[') && !rest.startsWith('{')){
           const obj = {};
           const m = rest.match(/^([^:]+):\s*(.*)$/);
-          const k = m[1].trim();
-          const v = m[2].trim();
+          const k = m[1].trim(), v = m[2].trim();
           obj[k] = v === '' ? parseBlock(baseIndent + 4) : parseScalarValue(v);
           while (i < lines.length){
             const l = lines[i];
-            const li = getIndent(l);
-            if (li !== baseIndent + 2) break;
+            if (getIndent(l) !== baseIndent + 2) break;
             const c = l.trimStart();
             if (c.startsWith('-')) break;
             const mm = c.match(/^([^:]+):\s*(.*)$/);
@@ -1466,13 +1428,11 @@ function renderCase(el){
       <label class="fld" style="margin-top:16px">Результат</label>
       <div class="out" id="out"><span class="empty">—</span></div>
     </div>`;
-  const inp = el.querySelector('#inp');
-  const out = el.querySelector('#out');
+  const inp = el.querySelector('#inp'), out = el.querySelector('#out');
   const apply = (fn) => {
     const v = inp.value;
     if (!v){ toast('Введите текст'); return; }
-    out.textContent = fn(v);
-    refreshMainButton();
+    out.textContent = fn(v); refreshMainButton();
   };
   el.querySelector('#caseBtns').addEventListener('click', e => {
     const b = e.target.closest('button[data-c]');
@@ -1620,9 +1580,7 @@ function renderStrings(el){
   const pushUndo = () => { stack.push(inp.value); if (stack.length > 30) stack.shift(); };
   const apply = (fn) => {
     if (!inp.value.trim()){ toast('Введите список'); return; }
-    pushUndo();
-    inp.value = fn(inp.value);
-    updInfo();
+    pushUndo(); inp.value = fn(inp.value); updInfo();
   };
   const ops = {
     sortAsc: v => v.split('\n').sort((a,b) => a.localeCompare(b, 'ru')).join('\n'),
@@ -1633,10 +1591,7 @@ function renderStrings(el){
       const a = v.split('\n');
       const arr = new Uint32Array(a.length);
       crypto.getRandomValues(arr);
-      for (let i = a.length - 1; i > 0; i--){
-        const j = arr[i] % (i + 1);
-        [a[i], a[j]] = [a[j], a[i]];
-      }
+      for (let i = a.length - 1; i > 0; i--){ const j = arr[i] % (i + 1); [a[i], a[j]] = [a[j], a[i]]; }
       return a.join('\n');
     },
     uniq: v => {
@@ -1655,8 +1610,7 @@ function renderStrings(el){
   });
   undoBtn.onclick = () => {
     if (!stack.length){ toast('Нечего отменять'); return; }
-    inp.value = stack.pop();
-    updInfo();
+    inp.value = stack.pop(); updInfo();
   };
   el.querySelector('#copyBtn').onclick = () => copyText(inp.value);
   inp.addEventListener('input', updInfo);
@@ -1842,13 +1796,8 @@ function renderDiff(el){
     const b = e.target.closest('button[data-l]');
     if (!b) return;
     const chosen = b.dataset.l;
-    if (userLocked && chosen === inLayout){
-      userLocked = false;
-      inLayout = getAutoLayout();
-    } else {
-      userLocked = true;
-      inLayout = chosen;
-    }
+    if (userLocked && chosen === inLayout){ userLocked = false; inLayout = getAutoLayout(); }
+    else { userLocked = true; inLayout = chosen; }
     applyLayout();
   });
   const onResize = () => {
@@ -2013,11 +1962,9 @@ function renderDataConv(el){
       if (dst === 'json') outStr = JSON.stringify(parsed, null, 2);
       else if (dst === 'yaml') outStr = yamlStringify(parsed);
       else if (dst === 'csv') outStr = stringifyCSV(parsed);
-      result = outStr;
-      out.textContent = outStr;
+      result = outStr; out.textContent = outStr;
     } catch(e){
-      result = '';
-      out.innerHTML = '<span class="empty">—</span>';
+      result = ''; out.innerHTML = '<span class="empty">—</span>';
       err.textContent = 'Ошибка: ' + (e.message || 'неверный формат');
       err.classList.remove('hidden');
     }
@@ -2033,67 +1980,340 @@ function renderDataConv(el){
 }
 
 /* ============================================================
-   ── 9. QR ──
+   ── 9. QR-код с выбором типа ──
    ============================================================ */
 function renderQR(el){
+  let mode = 'text';
   let ecl = 'M';
+
   el.innerHTML = `
     <div class="panel">
-      <label class="fld">Текст или ссылка</label>
-      <textarea id="inp" placeholder="Введите текст, ссылку или контакты…" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
-      <label class="fld" style="margin-top:14px">Уровень коррекции ошибок</label>
-      <div class="seg" id="seg">
+      <div class="seg sm wrap" id="modeSeg">
+        <button class="on" data-m="text">🔗 Текст</button>
+        <button data-m="phone">📞 Телефон</button>
+        <button data-m="email">✉️ Email</button>
+        <button data-m="wifi">📶 Wi-Fi</button>
+        <button data-m="vcard">👤 Визитка</button>
+      </div>
+      <div id="body"></div>
+
+      <label class="fld" style="margin-top:16px">Уровень коррекции ошибок</label>
+      <div class="seg" id="eclSeg">
         <button data-e="L">L</button>
         <button class="on" data-e="M">M</button>
         <button data-e="Q">Q</button>
         <button data-e="H">H</button>
       </div>
+
       <div class="qrbox"><canvas id="cv"></canvas></div>
       <div class="err hidden" id="err"></div>
       <div class="row"><button class="btn" id="dlBtn">Скачать PNG</button></div>
+      <div class="hintnote" id="preview"></div>
     </div>`;
-  const inp = el.querySelector('#inp'), cv = el.querySelector('#cv');
-  const err = el.querySelector('#err'), seg = el.querySelector('#seg');
-  const ctx = cv.getContext('2d');
+
+  const modeSeg = el.querySelector('#modeSeg');
+  const eclSeg  = el.querySelector('#eclSeg');
+  const body    = el.querySelector('#body');
+  const cv      = el.querySelector('#cv');
+  const err     = el.querySelector('#err');
+  const preview = el.querySelector('#preview');
+  const ctx     = cv.getContext('2d');
+
+  const get = id => {
+    const n = el.querySelector('#' + id);
+    return n ? String(n.value || '').trim() : '';
+  };
+
+  // Форматирование российского номера
+  function formatPhoneRU(raw){
+    let d = String(raw).replace(/\D/g, '');
+    if (!d) return '';
+    if (d[0] === '8') d = '7' + d.slice(1);
+    else if (d[0] !== '7') d = '7' + d;
+    d = d.slice(0, 11);
+    let out = '+7';
+    if (d.length > 1){
+      out += ' (' + d.slice(1, 4);
+      if (d.length >= 4) out += ')';
+    }
+    if (d.length >= 5) out += ' ' + d.slice(4, 7);
+    if (d.length >= 8) out += '-' + d.slice(7, 9);
+    if (d.length >= 10) out += '-' + d.slice(9, 11);
+    return out;
+  }
+
+  // Оставляем только значащие цифры телефона в формате +7XXXXXXXXXX
+  function cleanPhone(raw){
+    if (!raw) return '';
+    let d = String(raw).replace(/\D/g, '');
+    if (!d) return '';
+    if (d[0] === '8') d = '7' + d.slice(1);
+    else if (d[0] !== '7') d = '7' + d;
+    d = d.slice(0, 11);
+    return '+' + d;
+  }
+
+  // Экранирование для WiFi (WIFI:T:...;S:...;P:...;;)
+  function escapeWifi(s){
+    return String(s).replace(/([\\;:,])/g, '\\$1');
+  }
+  // Экранирование для vCard
+  function escapeVCard(s){
+    return String(s).replace(/[\\;,]/g, c => '\\' + c).replace(/\r?\n/g, '\\n');
+  }
+
+  function buildQRData(){
+    if (mode === 'text') return get('t_text');
+
+    if (mode === 'phone'){
+      const p = cleanPhone(get('t_phone'));
+      if (p === '+7' || p.length < 3) return '';
+      return 'tel:' + p;
+    }
+
+    if (mode === 'email'){
+      const em = get('t_email');
+      if (!em) return '';
+      const subj = get('t_email_subject');
+      if (subj){
+        // MATMSG формат — более совместим со сканерами
+        return 'MATMSG:TO:' + em + ';SUB:' + subj.replace(/([\\;:,"])/g,'\\$1') + ';BODY:;;';
+      }
+      return 'mailto:' + em;
+    }
+
+    if (mode === 'wifi'){
+      const ssid = get('t_wifi_ssid');
+      if (!ssid) return '';
+      const pass = get('t_wifi_pass');
+      const enc = get('t_wifi_enc') || 'WPA';
+      const hidden = el.querySelector('#t_wifi_hidden')?.checked;
+      let s = 'WIFI:';
+      if (hidden) s += 'H:true;';
+      s += 'T:' + enc + ';';
+      s += 'S:' + escapeWifi(ssid) + ';';
+      if (enc !== 'nopass' && pass) s += 'P:' + escapeWifi(pass) + ';';
+      s += ';';
+      return s;
+    }
+
+    if (mode === 'vcard'){
+      const first = get('t_vc_first');
+      const last  = get('t_vc_last');
+      const org   = get('t_vc_org');
+      const title = get('t_vc_title');
+      const tw    = cleanPhone(get('t_vc_tel_work'));
+      const th    = cleanPhone(get('t_vc_tel_home'));
+      const em    = get('t_vc_email');
+      const url   = get('t_vc_url');
+      const addr  = get('t_vc_addr');
+      const note  = get('t_vc_note');
+
+      if (!first && !last && !org && !em && tw.length < 3 && th.length < 3) return '';
+
+      const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
+      lines.push('N:' + escapeVCard(last) + ';' + escapeVCard(first) + ';;;');
+      const fn = [first, last].filter(Boolean).join(' ');
+      if (fn) lines.push('FN:' + escapeVCard(fn));
+      if (org) lines.push('ORG:' + escapeVCard(org));
+      if (title) lines.push('TITLE:' + escapeVCard(title));
+      if (tw && tw.length > 3) lines.push('TEL;TYPE=WORK:' + tw);
+      if (th && th.length > 3) lines.push('TEL;TYPE=HOME:' + th);
+      if (em) lines.push('EMAIL:' + escapeVCard(em));
+      if (url) lines.push('URL:' + escapeVCard(url));
+      if (addr) lines.push('ADR:;;' + escapeVCard(addr) + ';;;;');
+      if (note) lines.push('NOTE:' + escapeVCard(note));
+      lines.push('END:VCARD');
+      return lines.join('\n');
+    }
+
+    return '';
+  }
+
   let t = null;
-  const upd = () => {
+  const updateQR = () => {
     clearTimeout(t);
     t = setTimeout(() => {
-      const v = inp.value;
       err.classList.add('hidden');
-      if (!v){ cv.width = 0; cv.height = 0; cv.style.width = '100%'; refreshMainButton(); return; }
+      const data = buildQRData();
+      if (!data){
+        cv.width = 0; cv.height = 0; cv.style.width = '100%';
+        preview.textContent = '';
+        refreshMainButton();
+        return;
+      }
       try {
-        const res = QR.encode(v, ecl);
+        const res = QR.encode(data, ecl);
         QR.draw(cv, res, 4);
+        // Показываем, что именно закодировано (короткое превью)
+        const short = data.length > 80 ? data.slice(0, 80) + '…' : data;
+        preview.textContent = `В QR: ${short}`;
       } catch(e){
         ctx.clearRect(0,0,cv.width,cv.height);
         cv.width = 0; cv.height = 0;
         err.textContent = e.message || 'Ошибка';
         err.classList.remove('hidden');
+        preview.textContent = '';
       }
       refreshMainButton();
     }, 120);
   };
-  inp.addEventListener('input', upd);
-  seg.addEventListener('click', e => {
+
+  // Автоформат телефона с восстановлением позиции курсора
+  function bindPhoneInput(inp){
+    if (!inp) return;
+    inp.addEventListener('input', () => {
+      const raw = inp.value;
+      const pos = inp.selectionStart;
+      const digitsBefore = raw.slice(0, pos).replace(/\D/g, '').length;
+      const formatted = formatPhoneRU(raw);
+      inp.value = formatted;
+      let count = 0, newPos = formatted.length;
+      for (let i = 0; i < formatted.length; i++){
+        if (/\d/.test(formatted[i])){
+          count++;
+          if (count === digitsBefore){ newPos = i + 1; break; }
+        }
+      }
+      try { inp.setSelectionRange(newPos, newPos); } catch(_){}
+      updateQR();
+    });
+  }
+
+  function renderBody(){
+    if (mode === 'text'){
+      body.innerHTML = `
+        <div class="opTitle">Ссылка или <b>произвольный текст</b></div>
+        <label class="fld">Содержимое</label>
+        <textarea id="t_text" placeholder="https://example.com или любой текст…"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          style="min-height:90px"></textarea>`;
+      el.querySelector('#t_text').addEventListener('input', updateQR);
+    } else if (mode === 'phone'){
+      body.innerHTML = `
+        <div class="opTitle">При сканировании откроется <b>набор номера</b></div>
+        <label class="fld">Номер телефона</label>
+        <input type="tel" id="t_phone" placeholder="+7 (999) 123-45-67"
+          inputmode="tel" autocomplete="off">`;
+      bindPhoneInput(el.querySelector('#t_phone'));
+    } else if (mode === 'email'){
+      body.innerHTML = `
+        <div class="opTitle">При сканировании откроется <b>письмо</b></div>
+        <label class="fld">Email получателя</label>
+        <input type="email" id="t_email" placeholder="user@example.com"
+          inputmode="email" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <label class="fld" style="margin-top:12px">Тема письма <span style="font-weight:400;opacity:.7">— необязательно</span></label>
+        <input type="text" id="t_email_subject" placeholder="Тема"
+          autocomplete="off" autocorrect="off" spellcheck="false">`;
+      el.querySelector('#t_email').addEventListener('input', updateQR);
+      el.querySelector('#t_email_subject').addEventListener('input', updateQR);
+    } else if (mode === 'wifi'){
+      body.innerHTML = `
+        <div class="opTitle">Подключение к <b>Wi-Fi сети</b></div>
+        <label class="fld">Название сети (SSID)</label>
+        <input type="text" id="t_wifi_ssid" placeholder="MyNetwork"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <label class="fld" style="margin-top:12px">Пароль</label>
+        <div class="pwd-wrap">
+          <input type="password" id="t_wifi_pass" placeholder="Пароль"
+            autocomplete="new-password">
+          <button type="button" class="pwd-toggle" data-for="t_wifi_pass">👁</button>
+        </div>
+        <label class="fld" style="margin-top:12px">Тип шифрования</label>
+        <select class="sel" id="t_wifi_enc">
+          <option value="WPA">WPA / WPA2</option>
+          <option value="WEP">WEP</option>
+          <option value="nopass">Без пароля</option>
+        </select>
+        <label class="chk" style="margin-top:6px">
+          <input type="checkbox" id="t_wifi_hidden"> Скрытая сеть
+        </label>`;
+      ['t_wifi_ssid','t_wifi_pass','t_wifi_enc','t_wifi_hidden'].forEach(id => {
+        const n = el.querySelector('#' + id);
+        n.addEventListener('input', updateQR);
+        n.addEventListener('change', updateQR);
+      });
+    } else if (mode === 'vcard'){
+      body.innerHTML = `
+        <div class="opTitle">Контакт при <b>сканировании</b></div>
+        <div class="twoCols">
+          <div>
+            <label class="fld">Имя</label>
+            <input type="text" id="t_vc_first" placeholder="Иван"
+              autocomplete="off" autocorrect="off" spellcheck="false">
+          </div>
+          <div>
+            <label class="fld">Фамилия</label>
+            <input type="text" id="t_vc_last" placeholder="Петров"
+              autocomplete="off" autocorrect="off" spellcheck="false">
+          </div>
+        </div>
+        <label class="fld" style="margin-top:12px">Компания</label>
+        <input type="text" id="t_vc_org" placeholder="ООО «Ромашка»"
+          autocomplete="off" autocorrect="off" spellcheck="false">
+        <label class="fld" style="margin-top:12px">Должность</label>
+        <input type="text" id="t_vc_title" placeholder="Менеджер"
+          autocomplete="off" autocorrect="off" spellcheck="false">
+        <label class="fld" style="margin-top:12px">Телефон рабочий</label>
+        <input type="tel" id="t_vc_tel_work" placeholder="+7 (999) 123-45-67"
+          inputmode="tel" autocomplete="off">
+        <label class="fld" style="margin-top:12px">Телефон домашний</label>
+        <input type="tel" id="t_vc_tel_home" placeholder="+7 (999) 123-45-67"
+          inputmode="tel" autocomplete="off">
+        <label class="fld" style="margin-top:12px">Email</label>
+        <input type="email" id="t_vc_email" placeholder="user@example.com"
+          inputmode="email" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <label class="fld" style="margin-top:12px">Сайт</label>
+        <input type="text" id="t_vc_url" placeholder="https://example.com"
+          inputmode="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <label class="fld" style="margin-top:12px">Адрес</label>
+        <input type="text" id="t_vc_addr" placeholder="г. Москва, ул. Ленина, д. 1"
+          autocomplete="off" autocorrect="off" spellcheck="false">
+        <label class="fld" style="margin-top:12px">Комментарий</label>
+        <textarea id="t_vc_note" placeholder="Заметки о контакте…"
+          autocomplete="off" autocorrect="off" spellcheck="false"
+          style="min-height:70px"></textarea>`;
+
+      ['t_vc_first','t_vc_last','t_vc_org','t_vc_title',
+       't_vc_email','t_vc_url','t_vc_addr','t_vc_note'].forEach(id => {
+        el.querySelector('#' + id).addEventListener('input', updateQR);
+      });
+      bindPhoneInput(el.querySelector('#t_vc_tel_work'));
+      bindPhoneInput(el.querySelector('#t_vc_tel_home'));
+    }
+    updateQR();
+  }
+
+  modeSeg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (!b) return;
+    mode = b.dataset.m;
+    modeSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderBody();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  eclSeg.addEventListener('click', e => {
     const b = e.target.closest('button[data-e]');
     if (!b) return;
     ecl = b.dataset.e;
-    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
-    upd();
+    eclSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    updateQR();
   });
+
   el.querySelector('#dlBtn').onclick = () => {
-    if (!cv.width){ toast('Сначала введите текст'); return; }
+    if (!cv.width){ toast('Сначала заполните поля'); return; }
     try {
       const a = document.createElement('a');
-      a.download = 'qrcode.png';
+      a.download = 'qrcode-' + mode + '.png';
       a.href = cv.toDataURL('image/png');
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       toast('Сохранено');
     } catch(e){ toast('Ошибка'); }
   };
-  setMainButton(() => inp.value.trim() ? inp.value : '');
-  setTimeout(() => inp.focus(), 120);
+
+  setMainButton(() => buildQRData());
+  renderBody();
 }
 
 /* ============================================================
@@ -2334,8 +2554,7 @@ function renderWords(el){
    ── 14. Проценты ──
    ============================================================ */
 function renderPercent(el){
-  let mode = 'of'; // of | what | diff | apply
-
+  let mode = 'of';
   el.innerHTML = `
     <div class="panel">
       <div class="seg sm wrap" id="modeSeg">
@@ -2346,11 +2565,9 @@ function renderPercent(el){
       </div>
       <div id="body"></div>
     </div>`;
-
   const modeSeg = el.querySelector('#modeSeg');
   const body = el.querySelector('#body');
   const $ = id => el.querySelector('#' + id);
-
   const fmt = n => isFinite(n)
     ? (Math.round(n * 1e10) / 1e10).toLocaleString('ru-RU', { maximumFractionDigits: 10 })
     : '—';
@@ -2360,27 +2577,21 @@ function renderPercent(el){
     const v = String(node.value).trim().replace(/\s+/g,'').replace(',', '.');
     return parseFloat(v);
   };
-
   const upd1 = () => {
     const p = num('p1'), s = num('s1');
-    const out = $('out1');
-    if (!out) return;
+    const out = $('out1'); if (!out) return;
     if (isNaN(p) || isNaN(s)){ out.innerHTML = '<span class="empty">—</span>'; return; }
-    const r = p * s / 100;
-    out.innerHTML = `<b>${fmt(r)}</b><div class="hintnote" style="margin-top:6px">${fmt(p)}% от ${fmt(s)}</div>`;
+    out.innerHTML = `<b>${fmt(p * s / 100)}</b><div class="hintnote" style="margin-top:6px">${fmt(p)}% от ${fmt(s)}</div>`;
   };
   const upd2 = () => {
     const part = num('p2'), whole = num('w2');
-    const out = $('out2');
-    if (!out) return;
+    const out = $('out2'); if (!out) return;
     if (isNaN(part) || isNaN(whole) || whole === 0){ out.innerHTML = '<span class="empty">—</span>'; return; }
-    const r = part / whole * 100;
-    out.innerHTML = `<b>${fmt(r)}%</b><div class="hintnote" style="margin-top:6px">${fmt(part)} из ${fmt(whole)}</div>`;
+    out.innerHTML = `<b>${fmt(part / whole * 100)}%</b><div class="hintnote" style="margin-top:6px">${fmt(part)} из ${fmt(whole)}</div>`;
   };
   const upd3 = () => {
     const a = num('a3'), b = num('b3');
-    const out = $('out3');
-    if (!out) return;
+    const out = $('out3'); if (!out) return;
     if (isNaN(a) || isNaN(b) || b === 0){ out.innerHTML = '<span class="empty">—</span>'; return; }
     const p = (a - b) / b * 100;
     const sign = p >= 0 ? 'больше' : 'меньше';
@@ -2389,97 +2600,57 @@ function renderPercent(el){
   };
   const upd4 = () => {
     const s = num('s4'), p = num('p4');
-    const out = $('out4');
-    if (!out) return;
+    const out = $('out4'); if (!out) return;
     if (isNaN(s) || isNaN(p)){ out.innerHTML = '<div class="hintnote" style="grid-column:1/-1;margin:0">—</div>'; return; }
-    const plus  = s * (1 + p / 100);
-    const minus = s * (1 - p / 100);
-    const diff  = s * p / 100;
     out.innerHTML = `
-      <div class="stat"><div class="v small" style="color:#34c759">${fmt(plus)}</div><div class="k">${fmt(s)} + ${fmt(p)}%</div></div>
-      <div class="stat"><div class="v small" style="color:#e0453e">${fmt(minus)}</div><div class="k">${fmt(s)} − ${fmt(p)}%</div></div>
-      <div class="stat full"><div class="v small">${fmt(diff)}</div><div class="k">сам процент</div></div>
+      <div class="stat"><div class="v small" style="color:#34c759">${fmt(s * (1 + p / 100))}</div><div class="k">${fmt(s)} + ${fmt(p)}%</div></div>
+      <div class="stat"><div class="v small" style="color:#e0453e">${fmt(s * (1 - p / 100))}</div><div class="k">${fmt(s)} − ${fmt(p)}%</div></div>
+      <div class="stat full"><div class="v small">${fmt(s * p / 100)}</div><div class="k">сам процент</div></div>
     `;
   };
-
   const renderBody = () => {
     if (mode === 'of'){
       body.innerHTML = `
         <div class="opTitle">Найти <b>процент от суммы</b></div>
         <div class="twoCols">
-          <div>
-            <label class="fld">Сумма</label>
-            <input type="number" id="s1" placeholder="2000" inputmode="decimal">
-          </div>
-          <div>
-            <label class="fld">Процент</label>
-            <input type="number" id="p1" placeholder="15" inputmode="decimal">
-          </div>
+          <div><label class="fld">Сумма</label><input type="number" id="s1" placeholder="2000" inputmode="decimal"></div>
+          <div><label class="fld">Процент</label><input type="number" id="p1" placeholder="15" inputmode="decimal"></div>
         </div>
         <label class="fld">Результат</label>
         <div class="out" id="out1" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>`;
-      $('s1').addEventListener('input', upd1);
-      $('p1').addEventListener('input', upd1);
-      upd1();
+      $('s1').addEventListener('input', upd1); $('p1').addEventListener('input', upd1); upd1();
     } else if (mode === 'what'){
       body.innerHTML = `
         <div class="opTitle">Какой <b>процент</b> составляет одно число от другого</div>
         <div class="twoCols">
-          <div>
-            <label class="fld">Часть</label>
-            <input type="number" id="p2" placeholder="300" inputmode="decimal">
-          </div>
-          <div>
-            <label class="fld">Целое</label>
-            <input type="number" id="w2" placeholder="2000" inputmode="decimal">
-          </div>
+          <div><label class="fld">Часть</label><input type="number" id="p2" placeholder="300" inputmode="decimal"></div>
+          <div><label class="fld">Целое</label><input type="number" id="w2" placeholder="2000" inputmode="decimal"></div>
         </div>
         <label class="fld">Результат</label>
         <div class="out" id="out2" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>`;
-      $('p2').addEventListener('input', upd2);
-      $('w2').addEventListener('input', upd2);
-      upd2();
+      $('p2').addEventListener('input', upd2); $('w2').addEventListener('input', upd2); upd2();
     } else if (mode === 'diff'){
       body.innerHTML = `
         <div class="opTitle">На сколько <b>% одно число больше/меньше</b> другого</div>
         <div class="twoCols">
-          <div>
-            <label class="fld">Число A</label>
-            <input type="number" id="a3" placeholder="2500" inputmode="decimal">
-          </div>
-          <div>
-            <label class="fld">Число B</label>
-            <input type="number" id="b3" placeholder="2000" inputmode="decimal">
-          </div>
+          <div><label class="fld">Число A</label><input type="number" id="a3" placeholder="2500" inputmode="decimal"></div>
+          <div><label class="fld">Число B</label><input type="number" id="b3" placeholder="2000" inputmode="decimal"></div>
         </div>
         <label class="fld">Результат</label>
         <div class="out" id="out3" style="margin-top:0;font-size:20px;text-align:center;font-weight:700"><span class="empty">—</span></div>`;
-      $('a3').addEventListener('input', upd3);
-      $('b3').addEventListener('input', upd3);
-      upd3();
+      $('a3').addEventListener('input', upd3); $('b3').addEventListener('input', upd3); upd3();
     } else {
       body.innerHTML = `
         <div class="opTitle"><b>Прибавить или отнять</b> процент</div>
         <div class="twoCols">
-          <div>
-            <label class="fld">Сумма</label>
-            <input type="number" id="s4" placeholder="2000" inputmode="decimal">
-          </div>
-          <div>
-            <label class="fld">Процент</label>
-            <input type="number" id="p4" placeholder="15" inputmode="decimal">
-          </div>
+          <div><label class="fld">Сумма</label><input type="number" id="s4" placeholder="2000" inputmode="decimal"></div>
+          <div><label class="fld">Процент</label><input type="number" id="p4" placeholder="15" inputmode="decimal"></div>
         </div>
         <label class="fld">Результат</label>
-        <div class="stats" id="out4" style="margin-top:0">
-          <div class="hintnote" style="grid-column:1/-1;margin:0">—</div>
-        </div>`;
-      $('s4').addEventListener('input', upd4);
-      $('p4').addEventListener('input', upd4);
-      upd4();
+        <div class="stats" id="out4" style="margin-top:0"><div class="hintnote" style="grid-column:1/-1;margin:0">—</div></div>`;
+      $('s4').addEventListener('input', upd4); $('p4').addEventListener('input', upd4); upd4();
     }
   };
-
   modeSeg.addEventListener('click', e => {
     const b = e.target.closest('button[data-m]');
     if (!b) return;
@@ -2488,7 +2659,6 @@ function renderPercent(el){
     renderBody();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
-
   setMainButton(() => '');
   renderBody();
 }
@@ -2497,10 +2667,9 @@ function renderPercent(el){
    ── 15. Калькулятор дат ──
    ============================================================ */
 function renderDates(el){
-  let mode = 'diff'; // diff | add | age | weekday
+  let mode = 'diff';
   const today = new Date();
   const todayStr = formatUserDate(today, false);
-
   el.innerHTML = `
     <div class="panel">
       <div class="seg sm wrap" id="modeSeg">
@@ -2511,26 +2680,19 @@ function renderDates(el){
       </div>
       <div id="body"></div>
     </div>`;
-
   const modeSeg = el.querySelector('#modeSeg');
   const body = el.querySelector('#body');
   const $ = id => el.querySelector('#' + id);
   const fmtD = d => d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
   const getDate = id => {
-    const node = $(id);
-    if (!node) return null;
+    const node = $(id); if (!node) return null;
     const p = parseUserDate(node.value, false);
     return p ? p.date : null;
   };
-
   const upd1 = () => {
     const dA = getDate('d1'), dB = getDate('d2');
-    const out = $('out1');
-    if (!out) return;
-    if (!dA || !dB){
-      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите обе даты</div>';
-      return;
-    }
+    const out = $('out1'); if (!out) return;
+    if (!dA || !dB){ out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите обе даты</div>'; return; }
     const ms = Math.abs(dB - dA);
     const days = Math.floor(ms / 86400000);
     const weeks = Math.floor(days / 7);
@@ -2549,30 +2711,21 @@ function renderDates(el){
       <div class="stat"><div class="v">${weeks.toLocaleString('ru-RU')}</div><div class="k">недель</div></div>
       <div class="stat"><div class="v">${months.toLocaleString('ru-RU')}</div><div class="k">месяцев (прибл.)</div></div>
       <div class="stat"><div class="v">${years.toLocaleString('ru-RU')}</div><div class="k">лет (прибл.)</div></div>
-      <div class="stat full"><div class="v small">${hours.toLocaleString('ru-RU')} часов</div><div class="k">в часах</div></div>
-    `;
+      <div class="stat full"><div class="v small">${hours.toLocaleString('ru-RU')} часов</div><div class="k">в часах</div></div>`;
   };
-
   const upd2 = () => {
     const base = getDate('b1');
     const n = parseInt($('b2').value, 10);
-    const out = $('out2');
-    if (!out) return;
+    const out = $('out2'); if (!out) return;
     if (!base || isNaN(n)){ out.innerHTML = '<span class="empty">—</span>'; return; }
-    const r = new Date(base);
-    r.setDate(r.getDate() + n);
+    const r = new Date(base); r.setDate(r.getDate() + n);
     const weekday = r.toLocaleDateString('ru-RU', { weekday: 'long' });
     out.innerHTML = `<b>${fmtD(r)}</b><div class="hintnote" style="margin-top:6px">${weekday.charAt(0).toUpperCase() + weekday.slice(1)}</div>`;
   };
-
   const upd3 = () => {
     const d = getDate('c1');
-    const out = $('out3');
-    if (!out) return;
-    if (!d){
-      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>';
-      return;
-    }
+    const out = $('out3'); if (!out) return;
+    if (!d){ out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>'; return; }
     const now = new Date();
     let years = now.getFullYear() - d.getFullYear();
     let months = now.getMonth() - d.getMonth();
@@ -2586,18 +2739,12 @@ function renderDates(el){
     out.innerHTML = `
       <div class="stat full"><div class="v small">${years} г. ${months} мес. ${days} дн.</div><div class="k">возраст</div></div>
       <div class="stat"><div class="v">${totalDays.toLocaleString('ru-RU')}</div><div class="k">дней всего</div></div>
-      <div class="stat"><div class="v">${daysToBd}</div><div class="k">до след. дня рождения</div></div>
-    `;
+      <div class="stat"><div class="v">${daysToBd}</div><div class="k">до след. дня рождения</div></div>`;
   };
-
   const upd4 = () => {
     const d = getDate('w1');
-    const out = $('out4');
-    if (!out) return;
-    if (!d){
-      out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>';
-      return;
-    }
+    const out = $('out4'); if (!out) return;
+    if (!d){ out.innerHTML = '<div class="hintnote" style="text-align:left;margin:6px 0 0">Введите дату</div>'; return; }
     const weekday = d.toLocaleDateString('ru-RU', { weekday: 'long' });
     const wd = weekday.charAt(0).toUpperCase() + weekday.slice(1);
     out.innerHTML = `
@@ -2605,23 +2752,15 @@ function renderDates(el){
       <div class="stat"><div class="v">${d.getDate()}</div><div class="k">число</div></div>
       <div class="stat"><div class="v">${d.getMonth() + 1}</div><div class="k">месяц</div></div>
       <div class="stat"><div class="v">${d.getFullYear()}</div><div class="k">год</div></div>
-      <div class="stat"><div class="v">${Math.ceil((d - new Date(d.getFullYear(), 0, 0)) / 86400000)}</div><div class="k">день года</div></div>
-    `;
+      <div class="stat"><div class="v">${Math.ceil((d - new Date(d.getFullYear(), 0, 0)) / 86400000)}</div><div class="k">день года</div></div>`;
   };
-
   const renderBody = () => {
     if (mode === 'diff'){
       body.innerHTML = `
         <div class="opTitle">Сколько времени между <b>двумя датами</b></div>
         <div class="twoCols">
-          <div>
-            <label class="fld">Дата A</label>
-            ${dateFieldWrap('d1', todayStr, false)}
-          </div>
-          <div>
-            <label class="fld">Дата B</label>
-            ${dateFieldWrap('d2', todayStr, false)}
-          </div>
+          <div><label class="fld">Дата A</label>${dateFieldWrap('d1', todayStr, false)}</div>
+          <div><label class="fld">Дата B</label>${dateFieldWrap('d2', todayStr, false)}</div>
         </div>
         <div class="stats" id="out1" style="margin-top:0"></div>`;
       bindDateField(el, 'd1', false, upd1);
@@ -2630,8 +2769,7 @@ function renderDates(el){
     } else if (mode === 'add'){
       body.innerHTML = `
         <div class="opTitle">Какая дата будет <b>через N дней</b></div>
-        <label class="fld">Начальная дата</label>
-        ${dateFieldWrap('b1', todayStr, false)}
+        <label class="fld">Начальная дата</label>${dateFieldWrap('b1', todayStr, false)}
         <label class="fld" style="margin-top:12px">Сколько дней прибавить</label>
         <input type="number" id="b2" placeholder="Например, 30" inputmode="numeric">
         <div class="hintnote" style="text-align:left;margin-top:6px">Можно ввести отрицательное число, чтобы вычесть дни</div>
@@ -2643,22 +2781,19 @@ function renderDates(el){
     } else if (mode === 'age'){
       body.innerHTML = `
         <div class="opTitle">Возраст по <b>дате рождения</b></div>
-        <label class="fld">Дата рождения</label>
-        ${dateFieldWrap('c1', todayStr, false)}
+        <label class="fld">Дата рождения</label>${dateFieldWrap('c1', todayStr, false)}
         <div class="stats" id="out3" style="margin-top:14px"></div>`;
       bindDateField(el, 'c1', false, upd3);
       upd3();
     } else {
       body.innerHTML = `
         <div class="opTitle">Какой <b>день недели</b> у даты</div>
-        <label class="fld">Дата</label>
-        ${dateFieldWrap('w1', todayStr, false)}
+        <label class="fld">Дата</label>${dateFieldWrap('w1', todayStr, false)}
         <div class="stats" id="out4" style="margin-top:14px"></div>`;
       bindDateField(el, 'w1', false, upd4);
       upd4();
     }
   };
-
   modeSeg.addEventListener('click', e => {
     const b = e.target.closest('button[data-m]');
     if (!b) return;
@@ -2667,7 +2802,6 @@ function renderDates(el){
     renderBody();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
-
   setMainButton(() => '');
   renderBody();
 }
@@ -2716,8 +2850,7 @@ function renderTimestamp(el){
       <div class="stat"><div class="v" style="font-size:14px">${d.toLocaleString('ru-RU')}</div><div class="k">Локальное время</div></div>
       <div class="stat"><div class="v" style="font-size:14px">${Math.floor(ms/1000)}</div><div class="k">Секунды</div></div>
       <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>
-      <div class="stat" style="grid-column:1/-1"><div class="v" style="font-size:14px">${fmtRel(ms)}</div><div class="k">Относительно</div></div>
-    `;
+      <div class="stat" style="grid-column:1/-1"><div class="v" style="font-size:14px">${fmtRel(ms)}</div><div class="k">Относительно</div></div>`;
     refreshMainButton();
   };
   const updDt = () => {
@@ -2726,8 +2859,7 @@ function renderTimestamp(el){
     const ms = p.date.getTime(), sec = Math.floor(ms/1000);
     $('dtOut').innerHTML = `
       <div class="stat"><div class="v" style="font-size:14px">${sec}</div><div class="k">Секунды</div></div>
-      <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>
-    `;
+      <div class="stat"><div class="v" style="font-size:14px">${ms}</div><div class="k">Миллисекунды</div></div>`;
     refreshMainButton();
   };
   $('ts').addEventListener('input', updTs);
@@ -2769,8 +2901,7 @@ function renderUnits(el){
     const units = UNITS[cat].units;
     const keys = Object.keys(units);
     unitEl.innerHTML = keys.map(k => `<option value="${k}">${esc(units[k].n)} (${k})</option>`).join('');
-    unitEl.value = keys[0];
-    upd();
+    unitEl.value = keys[0]; upd();
   };
   const upd = () => {
     const cat = catEl.value;
@@ -2832,13 +2963,11 @@ function resetMain(){
 
 function renderHome(){
   cleanup();
-  _view = 'home';
-  _currentCat = null;
+  _view = 'home'; _currentCat = null;
   titleEl.textContent = 'Инструменты';
   backBtn.classList.add('hidden');
   if (tg && tg.BackButton) { try { tg.BackButton.hide(); } catch(e){} }
   resetMain();
-
   mainEl.innerHTML = `<div class="catList">${
     Object.entries(CATEGORIES).map(([k, c]) => `
       <button class="cat" data-cat="${k}">
@@ -2850,7 +2979,6 @@ function renderHome(){
         <span class="catCount">${c.tools.length} ›</span>
       </button>`).join('')
   }</div>`;
-
   mainEl.querySelectorAll('[data-cat]').forEach(btn => {
     btn.addEventListener('click', () => openCategory(btn.dataset.cat));
   });
@@ -2861,13 +2989,11 @@ function openCategory(catKey){
   const cat = CATEGORIES[catKey];
   if (!cat){ renderHome(); return; }
   cleanup();
-  _view = 'category';
-  _currentCat = catKey;
+  _view = 'category'; _currentCat = catKey;
   titleEl.textContent = cat.title;
   backBtn.classList.remove('hidden');
   if (tg && tg.BackButton) { try { tg.BackButton.show(); } catch(e){} }
   resetMain();
-
   mainEl.innerHTML = `<div class="grid">${
     cat.tools.map(toolKey => {
       const t = TOOLS[toolKey];
@@ -2878,7 +3004,6 @@ function openCategory(catKey){
       </button>`;
     }).join('')
   }</div>`;
-
   mainEl.querySelectorAll('[data-tool]').forEach(btn => {
     btn.addEventListener('click', () => openTool(btn.dataset.tool));
   });
@@ -2894,18 +3019,14 @@ function openTool(key){
   backBtn.classList.remove('hidden');
   if (tg && tg.BackButton) { try { tg.BackButton.show(); } catch(e){} }
   resetMain();
-
   mainEl.innerHTML = '';
   t.render(mainEl);
   window.scrollTo(0, 0);
 }
 
 function goBack(){
-  if (_view === 'tool'){
-    openCategory(_currentCat || 'text');
-  } else if (_view === 'category'){
-    renderHome();
-  }
+  if (_view === 'tool') openCategory(_currentCat || 'text');
+  else if (_view === 'category') renderHome();
 }
 
 backBtn.addEventListener('click', goBack);
