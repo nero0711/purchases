@@ -2979,16 +2979,43 @@ function renderOil(el){
    ============================================================ */
 function renderElectric(el){
   let mode = 'by-cable';
-  const data = [
-    { size: 0.5,  maxCurrent: 11, standardBreaker: 3  },
-    { size: 0.75, maxCurrent: 15, standardBreaker: 6  },
-    { size: 1.5,  maxCurrent: 15, standardBreaker: 10 },
-    { size: 2.5,  maxCurrent: 21, standardBreaker: 16 },
-    { size: 4.0,  maxCurrent: 27, standardBreaker: 20 },
-    { size: 6.0,  maxCurrent: 34, standardBreaker: 25 },
-    { size: 10.0, maxCurrent: 50, standardBreaker: 40 },
-    { size: 16.0, maxCurrent: 68, standardBreaker: 50 }
+
+  // Сечение меди (мм²) → максимальный длительный ток (А)
+  // Значения — по ПУЭ для скрытой прокладки в стене, однофазная 220 В
+  const CABLE_DATA = [
+    { size: 0.5,  maxCurrent: 11 },
+    { size: 0.75, maxCurrent: 15 },
+    { size: 1.5,  maxCurrent: 15 },
+    { size: 2.5,  maxCurrent: 21 },
+    { size: 4.0,  maxCurrent: 27 },
+    { size: 6.0,  maxCurrent: 34 },
+    { size: 10.0, maxCurrent: 50 },
+    { size: 16.0, maxCurrent: 68 }
   ];
+
+  const BREAKERS = [3, 6, 10, 16, 20, 25, 32, 40, 50, 63];
+
+  // Максимальный автомат, который ещё защищает кабель (≤ макс. ток кабеля)
+  function maxAllowedBreaker(maxCurrent){
+    let best = BREAKERS[0];
+    for (const b of BREAKERS) if (b <= maxCurrent) best = b;
+    return best;
+  }
+
+  // Рекомендуемый — с запасом 15% (на ступень ниже максимума)
+  function recommendedBreaker(maxCurrent){
+    const safe = maxCurrent * 0.85;
+    let best = BREAKERS[0];
+    for (const b of BREAKERS) if (b <= safe) best = b;
+    return best;
+  }
+
+  // Для автомата — минимальное сечение, у которого макс. ток ≥ номинала
+  function minCableFor(breaker){
+    for (const c of CABLE_DATA) if (c.maxCurrent >= breaker) return c;
+    return CABLE_DATA[CABLE_DATA.length - 1];
+  }
+
   el.innerHTML = `
     <div class="panel">
       <div class="seg" id="modeSeg">
@@ -2996,8 +3023,12 @@ function renderElectric(el){
         <button data-m="by-breaker">По автомату</button>
       </div>
       <div id="body"></div>
-      <div class="hintnote">Медный двухжильный кабель, однофазная сеть 220 В. Номинал автомата защищает кабель от перегрева.</div>
+      <div class="hintnote">
+        Медный кабель, однофазная сеть 220 В, скрытая прокладка.
+        <b>Рекомендуемый</b> — с запасом 15%, <b>максимально допустимый</b> — по длительному току кабеля.
+      </div>
     </div>`;
+
   const modeSeg = el.querySelector('#modeSeg');
   const body = el.querySelector('#body');
   const $ = id => el.querySelector('#' + id);
@@ -3007,26 +3038,41 @@ function renderElectric(el){
     const sel = $('cableSel');
     if (!sel) return;
     const size = parseFloat(sel.value);
-    const row = data.find(r => r.size === size);
+    const row = CABLE_DATA.find(r => r.size === size);
     if (!row){ result = ''; refreshMainButton(); return; }
-    const power = (row.standardBreaker * 220 / 1000).toFixed(2);
-    $('rMaxCur').textContent = row.maxCurrent;
-    $('rBrk').textContent = row.standardBreaker;
-    $('rPwr').textContent = power;
-    result = `Кабель ${row.size} мм²\nМакс. ток: ${row.maxCurrent} А\nАвтомат: ${row.standardBreaker} А\nМощность: ${power} кВт`;
+
+    const recBrk = recommendedBreaker(row.maxCurrent);
+    const maxBrk = maxAllowedBreaker(row.maxCurrent);
+    const powerRec = (recBrk * 220 / 1000).toFixed(2);
+    const powerMax = (maxBrk * 220 / 1000).toFixed(2);
+
+    $('rMaxCur').textContent = row.maxCurrent + ' А';
+    $('rRecBrk').textContent = recBrk + ' А';
+    $('rMaxBrk').textContent = maxBrk + ' А';
+    $('rRange').textContent = `${recBrk}–${maxBrk} А`;
+    $('rPwrRec').textContent = powerRec + ' кВт';
+    $('rPwrMax').textContent = powerMax + ' кВт';
+
+    result = `Кабель ${row.size} мм² (макс. ${row.maxCurrent} А)\n` +
+             `Рекомендуемый автомат: ${recBrk} А (${powerRec} кВт)\n` +
+             `Максимум: ${maxBrk} А (${powerMax} кВт)`;
     refreshMainButton();
   };
+
   const updBreaker = () => {
     const sel = $('brkSel');
     if (!sel) return;
     const brk = parseInt(sel.value, 10);
-    let row = data.find(r => r.standardBreaker >= brk);
-    if (!row) row = data[data.length - 1];
+    const cable = minCableFor(brk);
     const power = (brk * 220 / 1000).toFixed(2);
-    $('rCableSize').textContent = row.size;
-    $('rCableMax').textContent = row.maxCurrent;
-    $('rBrkPwr').textContent = power;
-    result = `Автомат ${brk} А\nМин. сечение: ${row.size} мм²\nМакс. ток кабеля: ${row.maxCurrent} А\nМощность: ${power} кВт`;
+
+    $('rCableSize').textContent = cable.size + ' мм²';
+    $('rCableMax').textContent = cable.maxCurrent + ' А';
+    $('rBrkPwr').textContent = power + ' кВт';
+
+    result = `Автомат ${brk} А (${power} кВт)\n` +
+             `Минимальное сечение: ${cable.size} мм²\n` +
+             `Макс. ток кабеля: ${cable.maxCurrent} А`;
     refreshMainButton();
   };
 
@@ -3047,9 +3093,12 @@ function renderElectric(el){
         </select>
         <label class="fld" style="margin-top:16px">Результат</label>
         <div class="stats" style="margin-top:0">
-          <div class="stat"><div class="v" id="rMaxCur">—</div><div class="k">макс. ток кабеля, А</div></div>
-          <div class="stat"><div class="v" id="rBrk">—</div><div class="k">номинал автомата, А</div></div>
-          <div class="stat full"><div class="v" id="rPwr">—</div><div class="k">макс. мощность, кВт</div></div>
+          <div class="stat"><div class="v" id="rMaxCur">—</div><div class="k">макс. длительный ток</div></div>
+          <div class="stat"><div class="v" id="rRecBrk">—</div><div class="k">рекомендуемый (запас 15%)</div></div>
+          <div class="stat"><div class="v" id="rMaxBrk">—</div><div class="k">максимальный автомат</div></div>
+          <div class="stat"><div class="v" id="rRange">—</div><div class="k">допустимый диапазон</div></div>
+          <div class="stat"><div class="v small" id="rPwrRec">—</div><div class="k">кВт при рекомендуемом</div></div>
+          <div class="stat"><div class="v small" id="rPwrMax">—</div><div class="k">кВт при максимальном</div></div>
         </div>`;
       $('cableSel').addEventListener('change', updCable);
       updCable();
@@ -3058,21 +3107,13 @@ function renderElectric(el){
         <div class="opTitle">Подобрать кабель <b>по номиналу автомата</b></div>
         <label class="fld">Номинал автомата</label>
         <select class="sel" id="brkSel">
-          <option value="3">3 А</option>
-          <option value="6">6 А</option>
-          <option value="10">10 А</option>
-          <option value="16" selected>16 А</option>
-          <option value="20">20 А</option>
-          <option value="25">25 А</option>
-          <option value="32">32 А</option>
-          <option value="40">40 А</option>
-          <option value="50">50 А</option>
+          ${BREAKERS.map(b => `<option value="${b}"${b === 16 ? ' selected' : ''}>${b} А</option>`).join('')}
         </select>
         <label class="fld" style="margin-top:16px">Результат</label>
         <div class="stats" style="margin-top:0">
-          <div class="stat"><div class="v" id="rCableSize">—</div><div class="k">мин. сечение, мм²</div></div>
-          <div class="stat"><div class="v" id="rCableMax">—</div><div class="k">макс. ток кабеля, А</div></div>
-          <div class="stat full"><div class="v" id="rBrkPwr">—</div><div class="k">мощность автомата, кВт</div></div>
+          <div class="stat"><div class="v" id="rCableSize">—</div><div class="k">минимальное сечение</div></div>
+          <div class="stat"><div class="v" id="rCableMax">—</div><div class="k">макс. ток этого кабеля</div></div>
+          <div class="stat full"><div class="v" id="rBrkPwr">—</div><div class="k">мощность автомата</div></div>
         </div>`;
       $('brkSel').addEventListener('change', updBreaker);
       updBreaker();
@@ -3090,7 +3131,6 @@ function renderElectric(el){
   setMainButton(() => result);
   renderBody();
 }
-
 /* ============================================================
    ── 20. Нихромовый резак ──
    ============================================================ */
