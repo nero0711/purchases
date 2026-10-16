@@ -646,7 +646,7 @@ function translit(text, mode){
 }
 
 /* ============================================================
-   QR-код (расширенный: до версии 15)
+   QR-код
    ============================================================ */
 const QR = (function(){
   const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
@@ -1376,10 +1376,14 @@ const TOOLS = {
   color:   { icon:'🎨', title:'Конвертер цветов', render: renderColor },
 
   words:   { icon:'📖', title:'Числа прописью',   render: renderWords },
+  time:    { icon:'⏱️', title:'Таймстамп ↔ дата', render: renderTimestamp },
+
   percent: { icon:'💯', title:'Проценты',         render: renderPercent },
   dates:   { icon:'📅', title:'Калькулятор дат',  render: renderDates },
-  time:    { icon:'⏱️', title:'Таймстамп ↔ дата', render: renderTimestamp },
-  units:   { icon:'📏', title:'Конвертер единиц', render: renderUnits }
+  units:   { icon:'📏', title:'Конвертер единиц', render: renderUnits },
+  oil:     { icon:'💧', title:'Разбавление',      render: renderOil },
+  electric:{ icon:'⚡', title:'Кабель и автомат', render: renderElectric },
+  nichrome:{ icon:'🔥', title:'Нихромовый резак', render: renderNichrome }
 };
 
 const CATEGORIES = {
@@ -1389,9 +1393,12 @@ const CATEGORIES = {
   data:    { icon:'💻', title:'Данные и код',
              desc:'Хеши, Base64, JSON, QR, пароли',
              tools:['hashb64','dataconv','qr','short','password','color'] },
+  calc:    { icon:'🧮', title:'Калькуляторы',
+             desc:'Проценты, даты, единицы, кабель, нихром',
+             tools:['percent','dates','units','oil','electric','nichrome'] },
   numbers: { icon:'🔢', title:'Числа и время',
-             desc:'Проценты, даты, единицы, timestamp',
-             tools:['words','percent','dates','time','units'] }
+             desc:'Числа прописью, timestamp',
+             tools:['words','time'] }
 };
 
 const TOOL_CATEGORY = (() => {
@@ -1979,12 +1986,11 @@ function renderDataConv(el){
 }
 
 /* ============================================================
-   ── 9. QR-код с выбором типа ──
+   ── 9. QR-код ──
    ============================================================ */
 function renderQR(el){
   let mode = 'text';
   let ecl = 'M';
-
   el.innerHTML = `
     <div class="panel">
       <div class="seg sm wrap" id="modeSeg">
@@ -1995,7 +2001,6 @@ function renderQR(el){
         <button data-m="vcard">👤 Визитка</button>
       </div>
       <div id="body"></div>
-
       <label class="fld" style="margin-top:16px">Уровень коррекции ошибок</label>
       <div class="seg" id="eclSeg">
         <button data-e="L">L</button>
@@ -2003,7 +2008,6 @@ function renderQR(el){
         <button data-e="Q">Q</button>
         <button data-e="H">H</button>
       </div>
-
       <div class="qrbox"><canvas id="cv"></canvas></div>
       <div class="err hidden" id="err"></div>
       <div class="row"><button class="btn" id="dlBtn">Скачать PNG</button></div>
@@ -2023,7 +2027,6 @@ function renderQR(el){
     return n ? String(n.value || '').trim() : '';
   };
 
-  // Формат: +7 (999) 123-45-67
   function formatPhoneRU(raw){
     let d = String(raw).replace(/\D/g, '');
     if (!d) return raw;
@@ -2040,8 +2043,6 @@ function renderQR(el){
     if (d.length >= 10) out += '-' + d.slice(9, 11);
     return out;
   }
-
-  // Для QR: +7XXXXXXXXXX (только когда номер полный)
   function cleanPhone(raw){
     if (!raw) return '';
     let d = String(raw).replace(/\D/g, '');
@@ -2052,23 +2053,16 @@ function renderQR(el){
     if (d.length < 11) return '';
     return '+' + d;
   }
-
-  function escapeWifi(s){
-    return String(s).replace(/([\\;:,])/g, '\\$1');
-  }
-  function escapeVCard(s){
-    return String(s).replace(/[\\;,]/g, c => '\\' + c).replace(/\r?\n/g, '\\n');
-  }
+  function escapeWifi(s){ return String(s).replace(/([\\;:,])/g, '\\$1'); }
+  function escapeVCard(s){ return String(s).replace(/[\\;,]/g, c => '\\' + c).replace(/\r?\n/g, '\\n'); }
 
   function buildQRData(){
     if (mode === 'text') return get('t_text');
-
     if (mode === 'phone'){
       const p = cleanPhone(get('t_phone'));
       if (!p) return '';
       return 'tel:' + p;
     }
-
     if (mode === 'email'){
       const em = get('t_email');
       if (!em) return '';
@@ -2078,7 +2072,6 @@ function renderQR(el){
       }
       return 'mailto:' + em;
     }
-
     if (mode === 'wifi'){
       const ssid = get('t_wifi_ssid');
       if (!ssid) return '';
@@ -2093,7 +2086,6 @@ function renderQR(el){
       s += ';';
       return s;
     }
-
     if (mode === 'vcard'){
       const first = get('t_vc_first');
       const last  = get('t_vc_last');
@@ -2105,9 +2097,7 @@ function renderQR(el){
       const url   = get('t_vc_url');
       const addr  = get('t_vc_addr');
       const note  = get('t_vc_note');
-
       if (!first && !last && !org && !em && !tw && !th) return '';
-
       const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
       lines.push('N:' + escapeVCard(last) + ';' + escapeVCard(first) + ';;;');
       const fn = [first, last].filter(Boolean).join(' ');
@@ -2123,7 +2113,6 @@ function renderQR(el){
       lines.push('END:VCARD');
       return lines.join('\n');
     }
-
     return '';
   }
 
@@ -2155,8 +2144,6 @@ function renderQR(el){
     }, 120);
   };
 
-  // Форматирование во время ввода. Если пользователь печатает в конце — 
-  // форматируем и ставим курсор в конец. Если редактирует середину — не трогаем.
   function bindPhoneInput(inp){
     if (!inp) return;
     inp.addEventListener('input', () => {
@@ -2263,7 +2250,6 @@ function renderQR(el){
         <textarea id="t_vc_note" placeholder="Заметки о контакте…"
           autocomplete="off" autocorrect="off" spellcheck="false"
           style="min-height:70px"></textarea>`;
-
       ['t_vc_first','t_vc_last','t_vc_org','t_vc_title',
        't_vc_email','t_vc_url','t_vc_addr','t_vc_note'].forEach(id => {
         el.querySelector('#' + id).addEventListener('input', updateQR);
@@ -2931,6 +2917,241 @@ function renderUnits(el){
   });
   fillUnits();
   setMainButton(() => mainText);
+}
+
+/* ============================================================
+   ── 18. Разбавление жидкостей ──
+   ============================================================ */
+function renderOil(el){
+  el.innerHTML = `
+    <div class="panel">
+      <div class="opTitle">Разбавить базу <b>в пропорции 1 : N</b></div>
+      <div class="twoCols">
+        <div>
+          <label class="fld">Объём базы (мл)</label>
+          <input type="number" id="base" value="1000" inputmode="decimal" min="0" autocomplete="off">
+        </div>
+        <div>
+          <label class="fld">Пропорция (1 к …)</label>
+          <input type="number" id="ratio" value="50" inputmode="decimal" min="1" autocomplete="off">
+        </div>
+      </div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="stats" id="out" style="margin-top:0">
+        <div class="stat"><div class="v" id="rBase">0</div><div class="k">мл базы</div></div>
+        <div class="stat"><div class="v" id="rAdd">0</div><div class="k">мл добавки</div></div>
+        <div class="stat full"><div class="v" id="rTotal">0</div><div class="k">мл итоговой смеси</div></div>
+      </div>
+      <div class="hintnote">Пример: 1000 мл базы при пропорции 1:50 → 20 мл добавки, всего 1020 мл</div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  const baseEl = $('base'), ratioEl = $('ratio');
+  let result = '';
+
+  const upd = () => {
+    const base = parseFloat(baseEl.value);
+    const ratio = parseFloat(ratioEl.value);
+    if (isNaN(base) || isNaN(ratio) || ratio <= 0 || base <= 0){
+      $('rBase').textContent = '0';
+      $('rAdd').textContent = '0';
+      $('rTotal').textContent = '0';
+      result = '';
+      refreshMainButton();
+      return;
+    }
+    const add = Math.round(base / ratio);
+    const total = base + add;
+    $('rBase').textContent = base.toLocaleString('ru-RU');
+    $('rAdd').textContent = add.toLocaleString('ru-RU');
+    $('rTotal').textContent = total.toLocaleString('ru-RU');
+    result = `База: ${base} мл\nДобавка: ${add} мл\nИтого: ${total} мл`;
+    refreshMainButton();
+  };
+
+  baseEl.addEventListener('input', upd);
+  ratioEl.addEventListener('input', upd);
+  setMainButton(() => result);
+  upd();
+}
+
+/* ============================================================
+   ── 19. Кабель и автомат ──
+   ============================================================ */
+function renderElectric(el){
+  let mode = 'by-cable';
+  const data = [
+    { size: 0.5,  maxCurrent: 11, standardBreaker: 3  },
+    { size: 0.75, maxCurrent: 15, standardBreaker: 6  },
+    { size: 1.5,  maxCurrent: 15, standardBreaker: 10 },
+    { size: 2.5,  maxCurrent: 21, standardBreaker: 16 },
+    { size: 4.0,  maxCurrent: 27, standardBreaker: 20 },
+    { size: 6.0,  maxCurrent: 34, standardBreaker: 25 },
+    { size: 10.0, maxCurrent: 50, standardBreaker: 40 },
+    { size: 16.0, maxCurrent: 68, standardBreaker: 50 }
+  ];
+  el.innerHTML = `
+    <div class="panel">
+      <div class="seg" id="modeSeg">
+        <button class="on" data-m="by-cable">По сечению</button>
+        <button data-m="by-breaker">По автомату</button>
+      </div>
+      <div id="body"></div>
+      <div class="hintnote">Медный двухжильный кабель, однофазная сеть 220 В. Номинал автомата защищает кабель от перегрева.</div>
+    </div>`;
+  const modeSeg = el.querySelector('#modeSeg');
+  const body = el.querySelector('#body');
+  const $ = id => el.querySelector('#' + id);
+  let result = '';
+
+  const updCable = () => {
+    const sel = $('cableSel');
+    if (!sel) return;
+    const size = parseFloat(sel.value);
+    const row = data.find(r => r.size === size);
+    if (!row){ result = ''; refreshMainButton(); return; }
+    const power = (row.standardBreaker * 220 / 1000).toFixed(2);
+    $('rMaxCur').textContent = row.maxCurrent;
+    $('rBrk').textContent = row.standardBreaker;
+    $('rPwr').textContent = power;
+    result = `Кабель ${row.size} мм²\nМакс. ток: ${row.maxCurrent} А\nАвтомат: ${row.standardBreaker} А\nМощность: ${power} кВт`;
+    refreshMainButton();
+  };
+  const updBreaker = () => {
+    const sel = $('brkSel');
+    if (!sel) return;
+    const brk = parseInt(sel.value, 10);
+    let row = data.find(r => r.standardBreaker >= brk);
+    if (!row) row = data[data.length - 1];
+    const power = (brk * 220 / 1000).toFixed(2);
+    $('rCableSize').textContent = row.size;
+    $('rCableMax').textContent = row.maxCurrent;
+    $('rBrkPwr').textContent = power;
+    result = `Автомат ${brk} А\nМин. сечение: ${row.size} мм²\nМакс. ток кабеля: ${row.maxCurrent} А\nМощность: ${power} кВт`;
+    refreshMainButton();
+  };
+
+  const renderBody = () => {
+    if (mode === 'by-cable'){
+      body.innerHTML = `
+        <div class="opTitle">Подобрать автомат <b>по сечению кабеля</b></div>
+        <label class="fld">Сечение медного кабеля</label>
+        <select class="sel" id="cableSel">
+          <option value="0.5">0.5 мм² — слаботочка / шлейфы</option>
+          <option value="0.75">0.75 мм² — подсветка / бра</option>
+          <option value="1.5">1.5 мм² — обычно свет</option>
+          <option value="2.5" selected>2.5 мм² — обычно розетки</option>
+          <option value="4">4.0 мм²</option>
+          <option value="6">6.0 мм² — плита / варочная</option>
+          <option value="10">10.0 мм² — вводной</option>
+          <option value="16">16.0 мм²</option>
+        </select>
+        <label class="fld" style="margin-top:16px">Результат</label>
+        <div class="stats" style="margin-top:0">
+          <div class="stat"><div class="v" id="rMaxCur">—</div><div class="k">макс. ток кабеля, А</div></div>
+          <div class="stat"><div class="v" id="rBrk">—</div><div class="k">номинал автомата, А</div></div>
+          <div class="stat full"><div class="v" id="rPwr">—</div><div class="k">макс. мощность, кВт</div></div>
+        </div>`;
+      $('cableSel').addEventListener('change', updCable);
+      updCable();
+    } else {
+      body.innerHTML = `
+        <div class="opTitle">Подобрать кабель <b>по номиналу автомата</b></div>
+        <label class="fld">Номинал автомата</label>
+        <select class="sel" id="brkSel">
+          <option value="3">3 А</option>
+          <option value="6">6 А</option>
+          <option value="10">10 А</option>
+          <option value="16" selected>16 А</option>
+          <option value="20">20 А</option>
+          <option value="25">25 А</option>
+          <option value="32">32 А</option>
+          <option value="40">40 А</option>
+          <option value="50">50 А</option>
+        </select>
+        <label class="fld" style="margin-top:16px">Результат</label>
+        <div class="stats" style="margin-top:0">
+          <div class="stat"><div class="v" id="rCableSize">—</div><div class="k">мин. сечение, мм²</div></div>
+          <div class="stat"><div class="v" id="rCableMax">—</div><div class="k">макс. ток кабеля, А</div></div>
+          <div class="stat full"><div class="v" id="rBrkPwr">—</div><div class="k">мощность автомата, кВт</div></div>
+        </div>`;
+      $('brkSel').addEventListener('change', updBreaker);
+      updBreaker();
+    }
+  };
+
+  modeSeg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (!b) return;
+    mode = b.dataset.m;
+    modeSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderBody();
+  });
+
+  setMainButton(() => result);
+  renderBody();
+}
+
+/* ============================================================
+   ── 20. Нихромовый резак ──
+   ============================================================ */
+function renderNichrome(el){
+  el.innerHTML = `
+    <div class="panel">
+      <div class="opTitle">Рассчитать параметры <b>нихромовой нити</b></div>
+      <div class="twoCols">
+        <div>
+          <label class="fld">Диаметр нити, мм</label>
+          <input type="number" id="d" step="0.05" min="0.05" max="2" value="0.1" inputmode="decimal" autocomplete="off">
+        </div>
+        <div>
+          <label class="fld">Длина, см</label>
+          <input type="number" id="len" step="1" min="1" max="500" value="30" inputmode="decimal" autocomplete="off">
+        </div>
+      </div>
+      <label class="fld" style="margin-top:16px">Результат</label>
+      <div class="stats" style="margin-top:0">
+        <div class="stat"><div class="v" id="rR">0</div><div class="k">сопротивление, Ом</div></div>
+        <div class="stat"><div class="v" id="rI">0</div><div class="k">сила тока, А</div></div>
+        <div class="stat full"><div class="v" id="rU">0</div><div class="k">рекомендуемое напряжение, В</div></div>
+        <div class="stat full"><div class="v small" id="rP">0</div><div class="k">мин. мощность блока питания, Вт</div></div>
+      </div>
+      <div class="hintnote">Расчёт для нихрома Х20Н80, ρ = 1.1·10⁻⁶ Ом·м. Целевая температура ~200 °C.</div>
+    </div>`;
+  const $ = id => el.querySelector('#' + id);
+  let result = '';
+  const upd = () => {
+    const d = parseFloat($('d').value);
+    const L_cm = parseFloat($('len').value);
+    if (isNaN(d) || isNaN(L_cm) || d <= 0 || L_cm <= 0){
+      $('rR').textContent = '0';
+      $('rI').textContent = '0';
+      $('rU').textContent = '0';
+      $('rP').textContent = '0';
+      result = '';
+      refreshMainButton();
+      return;
+    }
+    const L_m = L_cm / 100;
+    const rho = 1.1e-6;
+    const radius_m = (d / 1000) / 2;
+    const S = Math.PI * Math.pow(radius_m, 2);
+    const R = rho * (L_m / S);
+    let I = 13.5 * Math.pow(d, 1.15);
+    if (d <= 0.12) I = 0.5;
+    const U = I * R;
+    const P = U * I;
+    $('rR').textContent = R.toFixed(2);
+    $('rI').textContent = I.toFixed(2);
+    $('rU').textContent = U.toFixed(1);
+    $('rP').textContent = Math.ceil(P);
+    result = `Сопротивление: ${R.toFixed(2)} Ом\nТок: ${I.toFixed(2)} А\nНапряжение: ${U.toFixed(1)} В\nМощность БП: ≥ ${Math.ceil(P)} Вт`;
+    refreshMainButton();
+  };
+  ['d','len'].forEach(id => $('d') && el.querySelector('#' + id).addEventListener('input', upd));
+  $('d').addEventListener('input', upd);
+  $('len').addEventListener('input', upd);
+  setMainButton(() => result);
+  upd();
 }
 
 /* ============================================================
