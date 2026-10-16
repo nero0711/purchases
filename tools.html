@@ -217,7 +217,7 @@
   .qrbox canvas{width:100%;max-width:340px;height:auto;image-rendering:pixelated;display:block;}
 
   .err{color:#e0453e;font-size:13px;margin-top:10px;font-weight:500;}
-  .hintnote{color:var(--hint);font-size:12px;margin-top:10px;text-align:center;}
+  .hintnote{color:var(--hint);font-size:12px;margin-top:10px;text-align:center;line-height:1.5;}
 
   .chk{display:flex;align-items:center;gap:10px;font-size:14px;padding:8px 0;cursor:pointer;user-select:none;}
   .chk input{width:18px;height:18px;accent-color:var(--btn);flex-shrink:0;}
@@ -229,47 +229,6 @@
 
   .caseBtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
   .caseBtns .btn{padding:8px 12px;font-size:13px;flex:0 1 auto;border-radius:10px;}
-  .classRow{
-  display:flex;gap:12px;align-items:flex-start;
-  background:var(--sec);border-radius:12px;
-  padding:12px 14px;margin-bottom:8px;
-}
-.classBadge{
-  width:46px;height:46px;border-radius:10px;
-  background:var(--btn);color:var(--btn-text);
-  display:flex;align-items:center;justify-content:center;
-  font-weight:700;font-size:17px;flex-shrink:0;
-  letter-spacing:-.5px;
-}
-.classBody{flex:1;min-width:0;}
-.classTitle{font-weight:600;font-size:14px;margin-bottom:3px;}
-.classApp{font-size:12.5px;color:var(--hint);line-height:1.45;}
-
-.infoCard{
-  background:var(--sec);border-radius:12px;padding:12px 14px;
-  margin-top:8px;
-}
-.infoCard .t{font-size:12px;color:var(--hint);font-weight:600;
-  letter-spacing:.4px;margin-bottom:6px;}
-.infoCard .d{font-size:13.5px;line-height:1.5;}
-
-.resultBig{
-  background:linear-gradient(135deg,rgba(52,199,89,.12),rgba(52,199,89,.05));
-  border-radius:12px;padding:16px;text-align:center;margin-top:12px;
-}
-.resultBig .v{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;}
-.resultBig .k{font-size:12px;color:var(--hint);margin-top:4px;}
-
-.okBadge{
-  display:inline-block;padding:4px 10px;border-radius:20px;
-  font-size:12px;font-weight:600;
-}
-.okBadge.ok{background:rgba(52,199,89,.18);color:#1c7c3f;}
-.okBadge.bad{background:rgba(255,59,48,.18);color:#b03a2e;}
-@media (prefers-color-scheme: dark){
-  .okBadge.ok{color:#7ee2a8;}
-  .okBadge.bad{color:#ff8a82;}
-}
 
   .colorPreview{height:96px;border-radius:14px;margin-bottom:16px;border:1px solid var(--sep);background:#3498db;}
 
@@ -324,6 +283,47 @@
   }
 
   input[type=color]{width:100%;height:52px;border:0;border-radius:12px;background:var(--sec);padding:4px;cursor:pointer;}
+
+  .classRow{
+    display:flex;gap:12px;align-items:flex-start;
+    background:var(--sec);border-radius:12px;
+    padding:12px 14px;margin-bottom:8px;
+  }
+  .classBadge{
+    width:46px;height:46px;border-radius:10px;
+    background:var(--btn);color:var(--btn-text);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:17px;flex-shrink:0;
+    letter-spacing:-.5px;
+  }
+  .classBody{flex:1;min-width:0;}
+  .classTitle{font-weight:600;font-size:14px;margin-bottom:3px;}
+  .classApp{font-size:12.5px;color:var(--hint);line-height:1.45;}
+
+  .infoCard{
+    background:var(--sec);border-radius:12px;padding:12px 14px;
+    margin-top:8px;
+  }
+  .infoCard .t{font-size:12px;color:var(--hint);font-weight:600;
+    letter-spacing:.4px;margin-bottom:6px;}
+  .infoCard .d{font-size:13.5px;line-height:1.5;}
+
+  .resultBig{
+    background:rgba(52,199,89,.10);
+    border-radius:12px;padding:16px;text-align:center;margin-top:12px;
+  }
+  .resultBig .k{font-size:12px;color:var(--hint);margin-bottom:6px;}
+
+  .okBadge{
+    display:inline-block;padding:5px 12px;border-radius:20px;
+    font-size:13px;font-weight:600;
+  }
+  .okBadge.ok{background:rgba(52,199,89,.22);color:#1c7c3f;}
+  .okBadge.bad{background:rgba(255,59,48,.22);color:#b03a2e;}
+  @media (prefers-color-scheme: dark){
+    .okBadge.ok{color:#7ee2a8;}
+    .okBadge.bad{color:#ff8a82;}
+  }
 
   .toast{
     position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);
@@ -2961,7 +2961,7 @@ function renderUnits(el){
 }
 
 /* ============================================================
-   ── 18. Разбавление жидкостей ──
+   ── 18. Разбавление ──
    ============================================================ */
 function renderOil(el){
   el.innerHTML = `
@@ -2988,7 +2988,6 @@ function renderOil(el){
   const $ = id => el.querySelector('#' + id);
   const baseEl = $('base'), ratioEl = $('ratio');
   let result = '';
-
   const upd = () => {
     const base = parseFloat(baseEl.value);
     const ratio = parseFloat(ratioEl.value);
@@ -2996,8 +2995,7 @@ function renderOil(el){
       $('rBase').textContent = '0';
       $('rAdd').textContent = '0';
       $('rTotal').textContent = '0';
-      result = '';
-      refreshMainButton();
+      result = ''; refreshMainButton();
       return;
     }
     const add = Math.round(base / ratio);
@@ -3008,7 +3006,6 @@ function renderOil(el){
     result = `База: ${base} мл\nДобавка: ${add} мл\nИтого: ${total} мл`;
     refreshMainButton();
   };
-
   baseEl.addEventListener('input', upd);
   ratioEl.addEventListener('input', upd);
   setMainButton(() => result);
@@ -3016,7 +3013,7 @@ function renderOil(el){
 }
 
 /* ============================================================
-   ── 19. Кабель и автомат ──
+   ── 19. Электрика (сечение / автомат / мощность / заземление / УЗО) ──
    ============================================================ */
 function renderElectric(el){
   let mode = 'by-cable';
@@ -3034,7 +3031,6 @@ function renderElectric(el){
 
   const BREAKERS = [3, 6, 10, 16, 20, 25, 32, 40, 50, 63];
 
-  // Класс автомата по назначению цепи
   const APPS = {
     sockets:  { label:'Розетки / бытовая техника', cls:'C',
                 why:'Стандарт для быта: розетки, освещение, компрессоры холодильников. Пусковые токи в 5–10 раз выше номинала.' },
@@ -3084,7 +3080,6 @@ function renderElectric(el){
     125: { min: 35,   typical: 50,  max: 95, power: 27.5 }
   };
 
-  // Типы грунта для заземления (удельное сопротивление, Ом·м)
   const SOILS = [
     { v: 20,   label: 'Чернозём / торф' },
     { v: 60,   label: 'Глина / суглинок' },
@@ -3156,7 +3151,6 @@ function renderElectric(el){
     $('rPwrRec').textContent = powerRec + ' кВт';
     $('rPwrMax').textContent = powerMax + ' кВт';
 
-    // Рекомендация класса
     const classBlock = $('classBlock');
     if (classBlock){
       classBlock.innerHTML = `
@@ -3176,7 +3170,7 @@ function renderElectric(el){
     refreshMainButton();
   };
 
-    /* ── 2. По автомату ── */
+  /* ── 2. По автомату ── */
   const updBreaker = () => {
     const sel = $('brkSel');
     const appSel = $('appSel2');
@@ -3191,7 +3185,6 @@ function renderElectric(el){
     $('rCableMax').textContent = cable.maxCurrent + ' А';
     $('rBrkPwr').textContent = power + ' кВт';
 
-    // Рекомендация класса
     const classBlock = $('classBlock2');
     if (classBlock){
       classBlock.innerHTML = `
@@ -3208,6 +3201,75 @@ function renderElectric(el){
              `Минимальное сечение: ${cable.size} мм²\n` +
              `Макс. ток кабеля: ${cable.maxCurrent} А\n` +
              `Класс автомата: ${app.cls} — ${app.label}`;
+    refreshMainButton();
+  };
+
+  /* ── 3. Мощность ── */
+  let powerMode = 'dc';
+  let powerTarget = 'pu';
+
+  const fmtNum = n => {
+    if (!isFinite(n)) return '—';
+    const r = Math.round(n * 1e6) / 1e6;
+    return r.toLocaleString('ru-RU', { maximumFractionDigits: 6 });
+  };
+
+  const updPower = () => {
+    const cosEl = $('powerCos');
+    const inp1 = $('powerInp1');
+    const inp2 = $('powerInp2');
+    if (!inp1 || !inp2) return;
+
+    const cos = powerMode === 'dc' ? 1 : (parseFloat(cosEl?.value) || 0.95);
+    const a = parseFloat(String(inp1.value).replace(',', '.'));
+    const b = parseFloat(String(inp2.value).replace(',', '.'));
+
+    const outI = $('powerOutI');
+    const outU = $('powerOutU');
+    const outP = $('powerOutP');
+    const outR = $('powerOutR');
+    const outRLabel = $('powerOutRLabel');
+
+    if (isNaN(a) || isNaN(b) || a <= 0 || b <= 0){
+      outI.textContent = '—';
+      outU.textContent = '—';
+      outP.textContent = '—';
+      outR.textContent = '—';
+      result = ''; refreshMainButton();
+      return;
+    }
+
+    let U, I, P;
+    const k3 = powerMode === 'ac3' ? Math.sqrt(3) : 1;
+
+    if (powerTarget === 'pu'){
+      P = a; U = b;
+      I = P / (U * k3 * cos);
+    } else if (powerTarget === 'pi'){
+      P = a; I = b;
+      U = P / (I * k3 * cos);
+    } else {
+      U = a; I = b;
+      P = U * I * k3 * cos;
+    }
+
+    let R;
+    if (powerMode === 'dc') R = U / I;
+    else if (powerMode === 'ac1') R = U / I;
+    else R = (U / Math.sqrt(3)) / I;
+
+    outP.textContent = fmtNum(P) + ' Вт';
+    outU.textContent = fmtNum(U) + ' В';
+    outI.textContent = fmtNum(I) + ' А';
+    outR.textContent = fmtNum(R) + ' Ом';
+
+    if (outRLabel){
+      outRLabel.textContent = powerMode === 'dc' ? 'Сопротивление R'
+        : powerMode === 'ac1' ? 'Полное сопротивление Z'
+        : 'Сопротивление одной фазы Z';
+    }
+
+    result = `Мощность: ${fmtNum(P)} Вт\nНапряжение: ${fmtNum(U)} В\nТок: ${fmtNum(I)} А\nСопротивление: ${fmtNum(R)} Ом`;
     refreshMainButton();
   };
 
@@ -3304,17 +3366,14 @@ function renderElectric(el){
     if (isNaN(rho) || isNaN(L) || isNaN(d_mm) || isNaN(n) || L <= 0 || d_mm <= 0 || n < 1){
       $('gR1').textContent = '—';
       $('gRgrp').textContent = '—';
-      $('gVerdict').innerHTML = '<span class="empty">Введите все параметры</span>';
-      result = '';
-      refreshMainButton();
+      $('gVerdict').innerHTML = '<span class="empty" style="color:var(--hint)">Введите все параметры</span>';
+      result = ''; refreshMainButton();
       return;
     }
 
-    // Одиночный вертикальный стержень (упрощённая формула)
-    const d = d_mm / 1000;                    // в метрах
+    const d = d_mm / 1000;
     const R1 = (rho / (2 * Math.PI * L)) * Math.log(4 * L / d);
 
-    // Коэффициент использования группы стержней (при расстоянии = 2L)
     const etaTable = { 1:1, 2:0.85, 3:0.80, 4:0.75, 5:0.72, 6:0.70, 8:0.65, 10:0.60, 15:0.55, 20:0.50 };
     let eta = 0.5;
     for (const [k, v] of Object.entries(etaTable)){
@@ -3372,15 +3431,15 @@ function renderElectric(el){
         <div class="stat"><div class="v" id="gRgrp">—</div><div class="k">группа стержней</div></div>
       </div>
       <div class="resultBig">
-        <div class="k" style="margin-bottom:6px">Соответствие нормативу</div>
+        <div class="k">Соответствие нормативу</div>
         <div id="gVerdict"></div>
       </div>
       <div class="hintnote">
-        Упрощённый расчёт: R = (ρ / 2πL) · ln(4L/d). Стержни расположены с шагом ≈ 2L,<br>
-        учтён коэффициент использования группы (η). Для точного проекта — замеры грунта.
+        Упрощённый расчёт: R = (ρ / 2πL) · ln(4L/d). Стержни с шагом ≈ 2L,<br>
+        учтён коэффициент использования группы. Для точного проекта — замеры грунта.
       </div>`;
+
     ['gSoil','gLen','gDia','gN','gNorm'].forEach(id => {
-      const n = $('g' + id.slice(1)) || $('gSoil') || el.querySelector('#'+id);
       const node = el.querySelector('#' + id);
       if (node){
         node.addEventListener('input', updGround);
@@ -3501,7 +3560,7 @@ function renderElectric(el){
       $('cableSel').addEventListener('change', updCable);
       $('appSel').addEventListener('change', updCable);
       updCable();
-        } else if (mode === 'by-breaker'){
+    } else if (mode === 'by-breaker'){
       body.innerHTML = `
         <div class="opTitle">Подобрать кабель <b>по номиналу автомата</b></div>
         <label class="fld">Номинал автомата</label>
@@ -3523,7 +3582,28 @@ function renderElectric(el){
       $('brkSel').addEventListener('change', updBreaker);
       $('appSel2').addEventListener('change', updBreaker);
       updBreaker();
+    } else if (mode === 'power'){
+      renderPower();
+    } else if (mode === 'ground'){
+      renderGround();
+    } else {
+      renderRcd();
     }
+  };
+
+  modeSeg.addEventListener('click', e => {
+    const b = e.target.closest('button[data-m]');
+    if (!b) return;
+    mode = b.dataset.m;
+    modeSeg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderBody();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  setMainButton(() => result);
+  renderBody();
+}
+
 /* ============================================================
    ── 20. Нихромовый резак ──
    ============================================================ */
@@ -3560,8 +3640,7 @@ function renderNichrome(el){
       $('rI').textContent = '0';
       $('rU').textContent = '0';
       $('rP').textContent = '0';
-      result = '';
-      refreshMainButton();
+      result = ''; refreshMainButton();
       return;
     }
     const L_m = L_cm / 100;
@@ -3580,7 +3659,6 @@ function renderNichrome(el){
     result = `Сопротивление: ${R.toFixed(2)} Ом\nТок: ${I.toFixed(2)} А\nНапряжение: ${U.toFixed(1)} В\nМощность БП: ≥ ${Math.ceil(P)} Вт`;
     refreshMainButton();
   };
-  ['d','len'].forEach(id => $('d') && el.querySelector('#' + id).addEventListener('input', upd));
   $('d').addEventListener('input', upd);
   $('len').addEventListener('input', upd);
   setMainButton(() => result);
