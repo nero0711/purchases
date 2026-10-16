@@ -2025,16 +2025,18 @@ function renderQR(el){
   };
 
   // Форматирование российского номера
-  function formatPhoneRU(raw){
+    function formatPhoneRU(raw){
     let d = String(raw).replace(/\D/g, '');
     if (!d) return '';
     if (d[0] === '8') d = '7' + d.slice(1);
     else if (d[0] !== '7') d = '7' + d;
     d = d.slice(0, 11);
+    // Слишком мало цифр — не форматируем, чтобы не мешать вводу
+    if (d.length < 2) return raw;
     let out = '+7';
     if (d.length > 1){
       out += ' (' + d.slice(1, 4);
-      if (d.length >= 4) out += ')';
+      if (d.length >= 5) out += ')';
     }
     if (d.length >= 5) out += ' ' + d.slice(4, 7);
     if (d.length >= 8) out += '-' + d.slice(7, 9);
@@ -2043,13 +2045,15 @@ function renderQR(el){
   }
 
   // Оставляем только значащие цифры телефона в формате +7XXXXXXXXXX
-  function cleanPhone(raw){
+   function cleanPhone(raw){
     if (!raw) return '';
     let d = String(raw).replace(/\D/g, '');
     if (!d) return '';
     if (d[0] === '8') d = '7' + d.slice(1);
     else if (d[0] !== '7') d = '7' + d;
     d = d.slice(0, 11);
+    // Если номер неполный (меньше 11 цифр) — не выдаём битый tel:
+    if (d.length < 11) return '';
     return '+' + d;
   }
 
@@ -2159,23 +2163,17 @@ function renderQR(el){
     }, 120);
   };
 
-  // Автоформат телефона с восстановлением позиции курсора
+
+    // Автоформат телефона — только при потере фокуса, чтобы не мешать вводу
   function bindPhoneInput(inp){
     if (!inp) return;
-    inp.addEventListener('input', () => {
-      const raw = inp.value;
-      const pos = inp.selectionStart;
-      const digitsBefore = raw.slice(0, pos).replace(/\D/g, '').length;
-      const formatted = formatPhoneRU(raw);
-      inp.value = formatted;
-      let count = 0, newPos = formatted.length;
-      for (let i = 0; i < formatted.length; i++){
-        if (/\d/.test(formatted[i])){
-          count++;
-          if (count === digitsBefore){ newPos = i + 1; break; }
-        }
+    inp.addEventListener('input', updateQR);
+    inp.addEventListener('blur', () => {
+      if (!inp.value.trim()) return;
+      const formatted = formatPhoneRU(inp.value);
+      if (formatted && formatted !== inp.value){
+        inp.value = formatted;
       }
-      try { inp.setSelectionRange(newPos, newPos); } catch(_){}
       updateQR();
     });
   }
